@@ -1,0 +1,20 @@
+export type CardProfileRecord = {
+  id?: string;
+  card_id: string;
+  public_id: string;
+  owner_user_id: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  birth_date?: string | null;
+  blood_type?: string | null;
+  allergies?: string | null;
+  diagnoses?: string | null;
+  medications?: string | null;
+  implants?: string | null;
+  language?: string | null;
+  emergency_contact_name?: string | null;
+  emergency_contact_relation?: string | null;
+  emergency_contact_phone?: string | null;
+  emergency_contact_notes?: string | null;
+  updated_at?: string | null;
+};
