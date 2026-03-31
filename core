@@ -1,0 +1,15 @@
+npm install @supabase/supabase-js
+npm install @react-navigation/native
+npm install @react-navigation/native-stack
+npm install @react-navigation/bottom-tabs
+npm install react-native-safe-area-context
+npm install react-native-screens
+npm install react-native-svg
+npm install react-native-qrcode-svg
+npm install expo-secure-store
+npm install expo-linking
+npm install expo-constants
+npm install dotenv
+npm install react-hook-form
+npm install zod
+npm install @hookform/resolvers
