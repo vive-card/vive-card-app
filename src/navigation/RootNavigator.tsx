@@ -1,34 +1,28 @@
 import React, { useEffect, useState } from "react";
+import { ActivityIndicator, View, StyleSheet } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
-import { supabase } from "../lib/supabase";
-import { getCurrentUser } from "../lib/auth";
-import { AuthNavigator } from "./AuthNavigator";
-import { AppNavigator } from "./AppNavigator";
-import { SplashScreen } from "../screens/SplashScreen";
 
-export function RootNavigator() {
+import { supabase } from "../lib/supabase";
+import AppNavigator from "./AppNavigator";
+import AuthNavigator from "./AuthNavigator";
+
+export default function RootNavigator() {
   const [loading, setLoading] = useState(true);
-  const [isSignedIn, setIsSignedIn] = useState(false);
+  const [session, setSession] = useState<any>(null);
 
   useEffect(() => {
     let mounted = true;
 
-    async function boot() {
-      try {
-        const user = await getCurrentUser();
-        if (!mounted) return;
-        setIsSignedIn(!!user);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    }
-
-    boot();
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
+      setSession(data.session ?? null);
+      setLoading(false);
+    });
 
     const {
-      data: { subscription }
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsSignedIn(!!session?.user);
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession ?? null);
       setLoading(false);
     });
 
@@ -39,12 +33,25 @@ export function RootNavigator() {
   }, []);
 
   if (loading) {
-    return <SplashScreen />;
+    return (
+      <View style={styles.loadingWrap}>
+        <ActivityIndicator size="large" color="#e10600" />
+      </View>
+    );
   }
 
   return (
     <NavigationContainer>
-      {isSignedIn ? <AppNavigator /> : <AuthNavigator />}
+      {session ? <AppNavigator /> : <AuthNavigator />}
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingWrap: {
+    flex: 1,
+    backgroundColor: "#06080d",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});
