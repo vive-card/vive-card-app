@@ -1,38 +1,39 @@
 import React, { useState } from "react";
 import {
-  View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform
+  View,
 } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { signIn } from "../lib/auth";
-import { colors } from "../constants/colors";
-import { AuthStackParamList } from "../navigation/AuthNavigator";
+import { supabase } from "../lib/supabase";
 
-type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
-
-export function LoginScreen({ navigation }: Props) {
+export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  async function handleLogin() {
+  const handleLogin = async () => {
     try {
-      setBusy(true);
-      setError("");
+      setLoading(true);
 
-      await signIn(email.trim(), password);
-    } catch (e: any) {
-      setError(e?.message || "Login fehlgeschlagen");
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (error) {
+        Alert.alert("Login fehlgeschlagen", error.message);
+      }
+    } catch (err: any) {
+      Alert.alert("Fehler", err?.message || "Unbekannter Fehler");
     } finally {
-      setBusy(false);
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -43,46 +44,50 @@ export function LoginScreen({ navigation }: Props) {
         <Text style={styles.title}>VIVE CARD</Text>
         <Text style={styles.subtitle}>Login in dein Dashboard</Text>
 
-        <View style={styles.form}>
+        <View style={styles.card}>
           <Text style={styles.label}>E-Mail</Text>
           <TextInput
             style={styles.input}
-            value={email}
-            onChangeText={setEmail}
+            placeholder="deine@email.ch"
+            placeholderTextColor="#7e8797"
             autoCapitalize="none"
             keyboardType="email-address"
-            placeholder="deine@email.ch"
-            placeholderTextColor={colors.muted}
+            value={email}
+            onChangeText={setEmail}
           />
 
-          <Text style={styles.label}>Passwort</Text>
+          <Text style={[styles.label, { marginTop: 14 }]}>Passwort</Text>
           <TextInput
             style={styles.input}
+            placeholder="Passwort"
+            placeholderTextColor="#7e8797"
+            secureTextEntry
             value={password}
             onChangeText={setPassword}
-            secureTextEntry
-            placeholder="Passwort"
-            placeholderTextColor={colors.muted}
           />
 
-          {!!error && <Text style={styles.error}>{error}</Text>}
-
           <TouchableOpacity
-            style={[styles.button, busy && styles.buttonDisabled]}
+            style={styles.primaryButton}
             onPress={handleLogin}
-            disabled={busy}
+            disabled={loading}
           >
-            <Text style={styles.buttonText}>
-              {busy ? "Login läuft ..." : "Einloggen"}
+            <Text style={styles.primaryButtonText}>
+              {loading ? "Einloggen ..." : "Einloggen"}
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => navigation.navigate("ForgotPassword")}>
-            <Text style={styles.link}>Passwort vergessen?</Text>
+          <TouchableOpacity
+            style={styles.linkButton}
+            onPress={() => navigation?.navigate?.("ForgotPassword")}
+          >
+            <Text style={styles.linkText}>Passwort vergessen?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => navigation.navigate("Register")}>
-            <Text style={styles.link}>Noch kein Konto? Registrieren</Text>
+          <TouchableOpacity
+            style={styles.linkButton}
+            onPress={() => navigation?.navigate?.("Register")}
+          >
+            <Text style={styles.linkText}>Noch kein Konto? Registrieren</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -93,70 +98,64 @@ export function LoginScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.bg
+    backgroundColor: "#06080d",
   },
   container: {
     flex: 1,
+    padding: 24,
     justifyContent: "center",
-    padding: 24
   },
   title: {
-    color: colors.text,
-    fontSize: 32,
-    fontWeight: "900"
+    color: "#ffffff",
+    fontSize: 34,
+    fontWeight: "900",
+    marginBottom: 8,
   },
   subtitle: {
-    color: colors.muted,
-    fontSize: 15,
-    marginTop: 8,
-    marginBottom: 28
+    color: "#aeb6c4",
+    fontSize: 18,
+    marginBottom: 28,
   },
-  form: {
-    backgroundColor: colors.panel,
-    borderRadius: 18,
-    padding: 18,
+  card: {
+    backgroundColor: "#10141f",
+    borderRadius: 22,
+    padding: 20,
     borderWidth: 1,
-    borderColor: colors.line
+    borderColor: "rgba(255,255,255,0.08)",
   },
   label: {
-    color: colors.muted,
+    color: "#c8cfdb",
+    fontSize: 14,
     marginBottom: 8,
-    marginTop: 10,
-    fontSize: 13
   },
   input: {
-    backgroundColor: colors.panel2,
+    backgroundColor: "#1b2232",
     borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: colors.text
+    borderColor: "rgba(255,255,255,0.08)",
+    borderRadius: 16,
+    color: "#ffffff",
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    fontSize: 18,
   },
-  button: {
+  primaryButton: {
+    backgroundColor: "#e10600",
+    borderRadius: 16,
+    paddingVertical: 16,
+    alignItems: "center",
     marginTop: 20,
-    backgroundColor: colors.accent,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center"
   },
-  buttonDisabled: {
-    opacity: 0.6
+  primaryButtonText: {
+    color: "#ffffff",
+    fontSize: 18,
+    fontWeight: "800",
   },
-  buttonText: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "800"
+  linkButton: {
+    marginTop: 18,
+    alignItems: "center",
   },
-  link: {
-    color: colors.muted,
-    textAlign: "center",
-    marginTop: 14,
-    fontSize: 14
+  linkText: {
+    color: "#c7ccd6",
+    fontSize: 16,
   },
-  error: {
-    color: colors.err,
-    marginTop: 12,
-    fontSize: 14
-  }
 });
