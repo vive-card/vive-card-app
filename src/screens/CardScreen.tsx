@@ -1,11 +1,11 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { colors } from "../constants/colors";
+import { StyleSheet, Text, View } from "react-native";
 
-export function CardScreen() {
+export default function CardScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Meine Karte</Text>
+      <Text style={styles.title}>Karte</Text>
+      <Text style={styles.text}>Card Screen ist verbunden.</Text>
     </View>
   );
 }
@@ -13,12 +13,18 @@ export function CardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bg,
-    padding: 24
+    backgroundColor: "#06080d",
+    padding: 20,
+    justifyContent: "center",
   },
   title: {
-    color: colors.text,
-    fontSize: 28,
-    fontWeight: "800"
-  }
+    color: "#ffffff",
+    fontSize: 32,
+    fontWeight: "900",
+    marginBottom: 12,
+  },
+  text: {
+    color: "#aeb6c4",
+    fontSize: 16,
+  },
 });
