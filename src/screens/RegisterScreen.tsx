@@ -1,42 +1,69 @@
 import React, { useState } from "react";
 import {
-  View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform
+  View,
 } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { signUp } from "../lib/auth";
-import { colors } from "../constants/colors";
-import { AuthStackParamList } from "../navigation/AuthNavigator";
+import { supabase } from "../lib/supabase";
 
-type Props = NativeStackScreenProps<AuthStackParamList, "Register">;
-
-export function RegisterScreen({ navigation }: Props) {
+export default function RegisterScreen({ navigation }: any) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  async function handleRegister() {
+  const handleRegister = async () => {
     try {
-      setBusy(true);
-      setError("");
-      setMessage("");
+      const cleanEmail = email.trim().toLowerCase();
 
-      await signUp(email.trim(), password);
+      if (!cleanEmail || !password || !confirmPassword) {
+        Alert.alert("Hinweis", "Bitte alle Felder ausfüllen");
+        return;
+      }
 
-      setMessage("Registrierung erfolgreich. Prüfe deine E-Mails.");
-    } catch (e: any) {
-      setError(e?.message || "Registrierung fehlgeschlagen");
+      if (password !== confirmPassword) {
+        Alert.alert("Hinweis", "Die Passwörter stimmen nicht überein");
+        return;
+      }
+
+      if (password.length < 6) {
+        Alert.alert("Hinweis", "Das Passwort muss mindestens 6 Zeichen lang sein");
+        return;
+      }
+
+      setLoading(true);
+
+      const { error } = await supabase.auth.signUp({
+        email: cleanEmail,
+        password,
+      });
+
+      if (error) {
+        Alert.alert("Registrierung fehlgeschlagen", error.message);
+        return;
+      }
+
+      Alert.alert(
+        "Erfolgreich",
+        "Konto wurde erstellt. Bitte prüfe je nach Supabase-Einstellung dein E-Mail-Postfach.",
+        [
+          {
+            text: "OK",
+            onPress: () => navigation?.navigate?.("Login"),
+          },
+        ]
+      );
+    } catch (err: any) {
+      Alert.alert("Fehler", err?.message || "Unbekannter Fehler");
     } finally {
-      setBusy(false);
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -44,46 +71,56 @@ export function RegisterScreen({ navigation }: Props) {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <View style={styles.container}>
-        <Text style={styles.title}>Registrieren</Text>
-        <Text style={styles.subtitle}>Neues VIVE CARD Konto erstellen</Text>
+        <Text style={styles.title}>VIVE CARD</Text>
+        <Text style={styles.subtitle}>Neues Konto erstellen</Text>
 
-        <View style={styles.form}>
+        <View style={styles.card}>
           <Text style={styles.label}>E-Mail</Text>
           <TextInput
             style={styles.input}
-            value={email}
-            onChangeText={setEmail}
+            placeholder="deine@email.ch"
+            placeholderTextColor="#7e8797"
             autoCapitalize="none"
             keyboardType="email-address"
-            placeholder="deine@email.ch"
-            placeholderTextColor={colors.muted}
+            value={email}
+            onChangeText={setEmail}
           />
 
-          <Text style={styles.label}>Passwort</Text>
+          <Text style={[styles.label, { marginTop: 14 }]}>Passwort</Text>
           <TextInput
             style={styles.input}
+            placeholder="Passwort"
+            placeholderTextColor="#7e8797"
+            secureTextEntry
             value={password}
             onChangeText={setPassword}
-            secureTextEntry
-            placeholder="Passwort"
-            placeholderTextColor={colors.muted}
           />
 
-          {!!error && <Text style={styles.error}>{error}</Text>}
-          {!!message && <Text style={styles.success}>{message}</Text>}
+          <Text style={[styles.label, { marginTop: 14 }]}>Passwort wiederholen</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Passwort wiederholen"
+            placeholderTextColor="#7e8797"
+            secureTextEntry
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+          />
 
           <TouchableOpacity
-            style={[styles.button, busy && styles.buttonDisabled]}
+            style={styles.primaryButton}
             onPress={handleRegister}
-            disabled={busy}
+            disabled={loading}
           >
-            <Text style={styles.buttonText}>
-              {busy ? "Registrierung läuft ..." : "Registrieren"}
+            <Text style={styles.primaryButtonText}>
+              {loading ? "Registrieren ..." : "Registrieren"}
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-            <Text style={styles.link}>Zurück zum Login</Text>
+          <TouchableOpacity
+            style={styles.linkButton}
+            onPress={() => navigation?.navigate?.("Login")}
+          >
+            <Text style={styles.linkText}>Schon ein Konto? Einloggen</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -94,75 +131,64 @@ export function RegisterScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.bg
+    backgroundColor: "#06080d",
   },
   container: {
     flex: 1,
+    padding: 24,
     justifyContent: "center",
-    padding: 24
   },
   title: {
-    color: colors.text,
-    fontSize: 32,
-    fontWeight: "900"
+    color: "#ffffff",
+    fontSize: 34,
+    fontWeight: "900",
+    marginBottom: 8,
   },
   subtitle: {
-    color: colors.muted,
-    fontSize: 15,
-    marginTop: 8,
-    marginBottom: 28
+    color: "#aeb6c4",
+    fontSize: 18,
+    marginBottom: 28,
   },
-  form: {
-    backgroundColor: colors.panel,
-    borderRadius: 18,
-    padding: 18,
+  card: {
+    backgroundColor: "#10141f",
+    borderRadius: 22,
+    padding: 20,
     borderWidth: 1,
-    borderColor: colors.line
+    borderColor: "rgba(255,255,255,0.08)",
   },
   label: {
-    color: colors.muted,
+    color: "#c8cfdb",
+    fontSize: 14,
     marginBottom: 8,
-    marginTop: 10,
-    fontSize: 13
   },
   input: {
-    backgroundColor: colors.panel2,
+    backgroundColor: "#1b2232",
     borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: colors.text
+    borderColor: "rgba(255,255,255,0.08)",
+    borderRadius: 16,
+    color: "#ffffff",
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    fontSize: 18,
   },
-  button: {
+  primaryButton: {
+    backgroundColor: "#e10600",
+    borderRadius: 16,
+    paddingVertical: 16,
+    alignItems: "center",
     marginTop: 20,
-    backgroundColor: colors.accent,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center"
   },
-  buttonDisabled: {
-    opacity: 0.6
+  primaryButtonText: {
+    color: "#ffffff",
+    fontSize: 18,
+    fontWeight: "800",
   },
-  buttonText: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "800"
+  linkButton: {
+    marginTop: 18,
+    alignItems: "center",
   },
-  link: {
-    color: colors.muted,
-    textAlign: "center",
-    marginTop: 14,
-    fontSize: 14
+  linkText: {
+    color: "#c7ccd6",
+    fontSize: 16,
   },
-  error: {
-    color: colors.err,
-    marginTop: 12,
-    fontSize: 14
-  },
-  success: {
-    color: colors.ok,
-    marginTop: 12,
-    fontSize: 14
-  }
 });
