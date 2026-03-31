@@ -1,39 +1,11 @@
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { signOut } from "../lib/auth";
-import { colors } from "../constants/colors";
+import React from "react";
+import { StyleSheet, Text, View } from "react-native";
 
-export function SettingsScreen() {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-
-  async function handleLogout() {
-    try {
-      setBusy(true);
-      setError("");
-      await signOut();
-    } catch (e: any) {
-      setError(e?.message || "Logout fehlgeschlagen");
-    } finally {
-      setBusy(false);
-    }
-  }
-
+export default function SettingsScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Einstellungen</Text>
-
-      <TouchableOpacity
-        style={[styles.button, busy && styles.buttonDisabled]}
-        onPress={handleLogout}
-        disabled={busy}
-      >
-        <Text style={styles.buttonText}>
-          {busy ? "Logout ..." : "Logout"}
-        </Text>
-      </TouchableOpacity>
-
-      {!!error && <Text style={styles.error}>{error}</Text>}
+      <Text style={styles.title}>Settings</Text>
+      <Text style={styles.text}>Settings Screen ist verbunden.</Text>
     </View>
   );
 }
@@ -41,31 +13,18 @@ export function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bg,
-    padding: 24
+    backgroundColor: "#06080d",
+    padding: 20,
+    justifyContent: "center",
   },
   title: {
-    color: colors.text,
-    fontSize: 28,
+    color: "#ffffff",
+    fontSize: 32,
     fontWeight: "900",
-    marginBottom: 20
+    marginBottom: 12,
   },
-  button: {
-    backgroundColor: colors.accent,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center"
+  text: {
+    color: "#aeb6c4",
+    fontSize: 16,
   },
-  buttonDisabled: {
-    opacity: 0.6
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "800"
-  },
-  error: {
-    color: colors.err,
-    marginTop: 14
-  }
 });
