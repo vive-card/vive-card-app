@@ -19,12 +19,14 @@ import {
   getStatusLabel,
   lineValue,
 } from "../services/profileService";
+import { useCardRealtime } from "../hooks/useCardRealtime";
 
 export default function DashboardScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [userEmail, setUserEmail] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
   const [card, setCard] = useState<CardRow | null>(null);
   const [profile, setProfile] = useState<ProfileRow | null>(null);
 
@@ -34,6 +36,7 @@ export default function DashboardScreen({ navigation }: any) {
     const result = await getCurrentUserCardProfile();
 
     setUserEmail(result.user?.email || "");
+    setUserId(result.user?.id || null);
     setCard(result.card || null);
     setProfile(result.profile || null);
   }, []);
@@ -71,6 +74,13 @@ export default function DashboardScreen({ navigation }: any) {
 
     return unsubscribe;
   }, [navigation, loadData]);
+
+  useCardRealtime({
+    cardId: card?.id || null,
+    ownerUserId: userId,
+    enabled: !loading,
+    onChange: loadData,
+  });
 
   const handleOpenCard = async () => {
     if (!card?.public_id) {
