@@ -18,67 +18,60 @@ export function useCardRealtime({
     if (!enabled) return;
     if (!ownerUserId) return;
 
-    let active = true;
-    let timeoutRef: ReturnType<typeof setTimeout> | null = null;
+    let timeoutRef: any = null;
 
     const trigger = () => {
-      if (!active) return;
-
-      if (timeoutRef) {
-        clearTimeout(timeoutRef);
-      }
+      if (timeoutRef) clearTimeout(timeoutRef);
 
       timeoutRef = setTimeout(() => {
         Promise.resolve(onChange()).catch(() => {});
-      }, 250);
+      }, 200);
     };
 
     const channels: any[] = [];
 
-    const cardsChannel = supabase
-      .channel(`app-cards-${ownerUserId}`)
-      .on(
+    // ✅ Cards Channel
+    const cardsChannel = supabase.channel(`cards-${ownerUserId}`);
+
+    cardsChannel.on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "cards",
+        filter: `owner_user_id=eq.${ownerUserId}`,
+      },
+      trigger
+    );
+
+    cardsChannel.subscribe();
+    channels.push(cardsChannel);
+
+    // ✅ Profile Channel
+    if (cardId) {
+      const profileChannel = supabase.channel(`profiles-${cardId}`);
+
+      profileChannel.on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
-          table: "cards",
-          filter: `owner_user_id=eq.${ownerUserId}`,
+          table: "card_profiles",
+          filter: `card_id=eq.${cardId}`,
         },
-        () => trigger()
-      )
-      .subscribe();
+        trigger
+      );
 
-    channels.push(cardsChannel);
-
-    if (cardId) {
-      const profilesChannel = supabase
-        .channel(`app-card-profiles-${cardId}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "card_profiles",
-            filter: `card_id=eq.${cardId}`,
-          },
-          () => trigger()
-        )
-        .subscribe();
-
-      channels.push(profilesChannel);
+      profileChannel.subscribe();
+      channels.push(profileChannel);
     }
 
     return () => {
-      active = false;
+      if (timeoutRef) clearTimeout(timeoutRef);
 
-      if (timeoutRef) {
-        clearTimeout(timeoutRef);
-      }
-
-      channels.forEach((channel) => {
+      channels.forEach((ch) => {
         try {
-          supabase.removeChannel(channel);
+          supabase.removeChannel(ch);
         } catch {}
       });
     };
