@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Linking,
   RefreshControl,
   ScrollView,
@@ -10,8 +11,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
+import * as DocumentPicker from "expo-document-picker";
 
 import { supabase } from "../lib/supabase";
 import {
@@ -27,13 +28,17 @@ import { useCardRealtime } from "../hooks/useCardRealtime";
 
 type MedicalDocumentRow = {
   id: string;
-  public_id: string;
   owner_id?: string | null;
-  file_name?: string | null;
+  public_id: string;
+  file_name: string;
   file_path: string;
   mime_type?: string | null;
   file_size?: number | null;
   created_at?: string | null;
+};
+
+type MedicalDocumentViewRow = MedicalDocumentRow & {
+  preview_url?: string | null;
 };
 
 function isImageMime(mimeType?: string | null) {
@@ -47,18 +52,10 @@ function isPdfMime(mimeType?: string | null, fileName?: string | null) {
 }
 
 function formatFileSize(bytes?: number | null) {
-  const value = Number(bytes || 0);
-
-  if (!value) return "—";
-  if (value < 1024) return `${value} B`;
-  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
-  return `${(value / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function getDocumentIcon(doc: MedicalDocumentRow) {
-  if (isImageMime(doc.mime_type)) return "🖼️";
-  if (isPdfMime(doc.mime_type, doc.file_name)) return "📄";
-  return "📎";
+  if (!bytes) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function guessExtension(fileName?: string | null, mimeType?: string | null) {
@@ -68,7 +65,6 @@ function guessExtension(fileName?: string | null, mimeType?: string | null) {
   }
 
   const mime = String(mimeType || "").toLowerCase();
-
   if (mime === "image/jpeg") return "jpg";
   if (mime === "image/png") return "png";
   if (mime === "image/webp") return "webp";
@@ -82,6 +78,12 @@ async function uriToArrayBuffer(uri: string) {
   return await response.arrayBuffer();
 }
 
+function getDocumentEmoji(doc: MedicalDocumentRow) {
+  if (isImageMime(doc.mime_type)) return "🖼️";
+  if (isPdfMime(doc.mime_type, doc.file_name)) return "📄";
+  return "📎";
+}
+
 export default function CardScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -91,7 +93,8 @@ export default function CardScreen({ navigation }: any) {
   const [card, setCard] = useState<CardRow | null>(null);
   const [profile, setProfile] = useState<EmergencyCardRow | null>(null);
   const [formView, setFormView] = useState<ProfileFormValues | null>(null);
-  const [documents, setDocuments] = useState<MedicalDocumentRow[]>([]);
+  const [documents, setDocuments] = useState<MedicalDocumentViewRow[]>([]);
+  const [docsLoading, setDocsLoading] = useState(false);
 
   const loadDocuments = useCallback(async (publicId?: string | null) => {
     if (!publicId) {
@@ -99,17 +102,48 @@ export default function CardScreen({ navigation }: any) {
       return;
     }
 
-    const { data, error } = await supabase
-      .from("medical_documents")
-      .select("*")
-      .eq("public_id", publicId)
-      .order("created_at", { ascending: false });
+    try {
+      setDocsLoading(true);
 
-    if (error) {
-      throw new Error("Dokumente konnten nicht geladen werden: " + error.message);
+      const { data, error } = await supabase
+        .from("medical_documents")
+        .select("id, owner_id, public_id, file_name, file_path, mime_type, file_size, created_at")
+        .eq("public_id", publicId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        throw new Error("Dokumente konnten nicht geladen werden: " + error.message);
+      }
+
+      const rows = (data || []) as MedicalDocumentRow[];
+
+      const rowsWithPreview = await Promise.all(
+        rows.map(async (doc) => {
+          if (!isImageMime(doc.mime_type)) {
+            return { ...doc, preview_url: null };
+          }
+
+          const { data: signedData, error: signedError } = await supabase.storage
+            .from("medical-docs")
+            .createSignedUrl(doc.file_path, 60 * 10);
+
+          if (signedError || !signedData?.signedUrl) {
+            return { ...doc, preview_url: null };
+          }
+
+          return {
+            ...doc,
+            preview_url: signedData.signedUrl,
+          };
+        })
+      );
+
+      setDocuments(rowsWithPreview);
+    } catch (e: any) {
+      Alert.alert("Fehler", e?.message || "Dokumente konnten nicht geladen werden");
+    } finally {
+      setDocsLoading(false);
     }
-
-    setDocuments(data || []);
   }, []);
 
   const loadData = useCallback(async () => {
@@ -174,7 +208,7 @@ export default function CardScreen({ navigation }: any) {
     await Linking.openURL(url);
   };
 
-  const openDocument = async (doc: MedicalDocumentRow) => {
+  const openDocument = async (doc: MedicalDocumentViewRow) => {
     try {
       const { data, error } = await supabase.storage
         .from("medical-docs")
@@ -194,7 +228,7 @@ export default function CardScreen({ navigation }: any) {
     }
   };
 
-  const deleteDocument = async (doc: MedicalDocumentRow) => {
+  const deleteDocument = async (doc: MedicalDocumentViewRow) => {
     Alert.alert(
       "Dokument löschen",
       `Möchtest du "${doc.file_name || "Dokument"}" wirklich löschen?`,
@@ -348,8 +382,7 @@ export default function CardScreen({ navigation }: any) {
       const asset = result.assets?.[0];
       if (!asset?.uri) return;
 
-      const fileName =
-        asset.fileName || `camera-${Date.now()}.jpg`;
+      const fileName = asset.fileName || `camera-${Date.now()}.jpg`;
 
       await uploadFileToSupabase({
         uri: asset.uri,
@@ -528,7 +561,12 @@ export default function CardScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
-        {sortedDocuments.length === 0 ? (
+        {docsLoading ? (
+          <View style={styles.docsLoadingWrap}>
+            <ActivityIndicator color="#ffffff" />
+            <Text style={styles.docsLoadingText}>Dokumente werden geladen …</Text>
+          </View>
+        ) : sortedDocuments.length === 0 ? (
           <View style={styles.docEmptyBox}>
             <Text style={styles.docEmptyText}>
               Noch keine medizinischen Dokumente vorhanden.
@@ -536,43 +574,62 @@ export default function CardScreen({ navigation }: any) {
           </View>
         ) : (
           sortedDocuments.map((doc) => (
-            <View key={doc.id} style={styles.docItem}>
-              <View style={styles.docMeta}>
-                <Text style={styles.docName}>
-                  {getDocumentIcon(doc)} {lineValue(doc.file_name, "Dokument")}
+            <View key={doc.id} style={styles.docCard}>
+              <TouchableOpacity
+                style={styles.docPreviewWrap}
+                onPress={() => openDocument(doc)}
+                activeOpacity={0.85}
+              >
+                {isImageMime(doc.mime_type) && doc.preview_url ? (
+                  <Image
+                    source={{ uri: doc.preview_url }}
+                    style={styles.docPreviewImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={styles.docPreviewFallback}>
+                    <Text style={styles.docPreviewFallbackIcon}>
+                      {getDocumentEmoji(doc)}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              <View style={styles.docContent}>
+                <Text style={styles.docName} numberOfLines={2}>
+                  {doc.file_name || "Dokument"}
                 </Text>
 
-                <Text style={styles.docType}>
+                <Text style={styles.docMetaText}>
                   {isImageMime(doc.mime_type)
                     ? "Bild"
                     : isPdfMime(doc.mime_type, doc.file_name)
                     ? "PDF"
                     : "Dokument"}
-                  {" • "}
-                  {formatFileSize(doc.file_size)}
+                  {doc.file_size ? ` • ${formatFileSize(doc.file_size)}` : ""}
                 </Text>
 
-                <Text style={styles.docDate}>
+                <Text style={styles.docMetaText}>
                   {lineValue(
                     doc.created_at ? new Date(doc.created_at).toLocaleString() : ""
                   )}
                 </Text>
-              </View>
 
-              <View style={styles.docActions}>
-                <TouchableOpacity
-                  style={styles.docOpenButton}
-                  onPress={() => openDocument(doc)}
-                >
-                  <Text style={styles.docOpenButtonText}>Öffnen</Text>
-                </TouchableOpacity>
+                <View style={styles.docActions}>
+                  <TouchableOpacity
+                    style={styles.docOpenButton}
+                    onPress={() => openDocument(doc)}
+                  >
+                    <Text style={styles.docOpenButtonText}>Öffnen</Text>
+                  </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={styles.docDeleteButton}
-                  onPress={() => deleteDocument(doc)}
-                >
-                  <Text style={styles.docDeleteButtonText}>Löschen</Text>
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.docDeleteButton}
+                    onPress={() => deleteDocument(doc)}
+                  >
+                    <Text style={styles.docDeleteButtonText}>Löschen</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           ))
@@ -810,6 +867,15 @@ const styles = StyleSheet.create({
   buttonDisabled: {
     opacity: 0.65,
   },
+  docsLoadingWrap: {
+    paddingVertical: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  docsLoadingText: {
+    color: "#aeb6c4",
+    marginTop: 8,
+  },
   docEmptyBox: {
     borderRadius: 14,
     borderWidth: 1,
@@ -823,35 +889,58 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
-  docItem: {
+  docCard: {
     backgroundColor: "#151b28",
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.06)",
+    padding: 12,
+    marginBottom: 12,
+    flexDirection: "row",
+    gap: 12,
+  },
+  docPreviewWrap: {
+    width: 92,
+    height: 92,
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: "#0e1420",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.06)",
   },
-  docMeta: {
-    marginBottom: 12,
+  docPreviewImage: {
+    width: "100%",
+    height: "100%",
+  },
+  docPreviewFallback: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#1b2435",
+  },
+  docPreviewFallbackIcon: {
+    fontSize: 34,
+  },
+  docContent: {
+    flex: 1,
+    justifyContent: "space-between",
   },
   docName: {
     color: "#ffffff",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "800",
-    marginBottom: 4,
+    lineHeight: 20,
+    marginBottom: 6,
   },
-  docType: {
-    color: "#aeb6c4",
-    fontSize: 13,
-    marginBottom: 4,
-  },
-  docDate: {
-    color: "#7f8a9d",
+  docMetaText: {
+    color: "#8f98a8",
     fontSize: 12,
+    lineHeight: 18,
   },
   docActions: {
     flexDirection: "row",
     gap: 10,
+    marginTop: 10,
     flexWrap: "wrap",
   },
   docOpenButton: {
