@@ -15,7 +15,6 @@ import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import { Picker } from "@react-native-picker/picker";
 
-import { supabase } from "../lib/supabase";
 import {
   CardRow,
   EmergencyCardRow,
@@ -25,21 +24,20 @@ import {
   mapEmergencyDataToForm,
   saveCurrentUserCardProfile,
 } from "../services/profileService";
-
-type MedicalDocumentRow = {
-  id: string;
-  owner_id?: string | null;
-  public_id: string;
-  file_name: string;
-  file_path: string;
-  mime_type?: string | null;
-  file_size?: number | null;
-  created_at?: string | null;
-};
-
-type MedicalDocumentViewRow = MedicalDocumentRow & {
-  preview_url?: string | null;
-};
+import type { MedicalDocumentViewRow } from "../types/medicalDocuments";
+import {
+  loadMedicalDocuments,
+  uploadMedicalDocument,
+  deleteMedicalDocument,
+  getSignedMedicalDocumentUrl,
+} from "../services/medicalDocumentsService";
+import {
+  isImageMime,
+  isPdfMime,
+  formatFileSize,
+  getDocumentEmoji,
+  lineValue,
+} from "../utils/formatters";
 
 const BLOOD_OPTIONS = [
   "",
@@ -52,55 +50,6 @@ const BLOOD_OPTIONS = [
   "AB negative",
   "AB positive",
 ];
-
-function isImageMime(mimeType?: string | null) {
-  return String(mimeType || "").toLowerCase().startsWith("image/");
-}
-
-function isPdfMime(mimeType?: string | null, fileName?: string | null) {
-  const mime = String(mimeType || "").toLowerCase();
-  const name = String(fileName || "").toLowerCase();
-  return mime === "application/pdf" || name.endsWith(".pdf");
-}
-
-function formatFileSize(bytes?: number | null) {
-  if (!bytes) return "";
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function guessExtension(fileName?: string | null, mimeType?: string | null) {
-  const name = String(fileName || "").toLowerCase();
-
-  if (name.includes(".")) {
-    return name.split(".").pop() || "bin";
-  }
-
-  const mime = String(mimeType || "").toLowerCase();
-  if (mime === "image/jpeg") return "jpg";
-  if (mime === "image/png") return "png";
-  if (mime === "image/webp") return "webp";
-  if (mime === "application/pdf") return "pdf";
-
-  return "bin";
-}
-
-async function uriToArrayBuffer(uri: string) {
-  const response = await fetch(uri);
-  return await response.arrayBuffer();
-}
-
-function getDocumentEmoji(doc: MedicalDocumentRow) {
-  if (isImageMime(doc.mime_type)) return "🖼️";
-  if (isPdfMime(doc.mime_type, doc.file_name)) return "📄";
-  return "📎";
-}
-
-function lineValue(value?: string | null, fallback = "—") {
-  const text = String(value || "").trim();
-  return text || fallback;
-}
 
 export default function EditProfileScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
@@ -130,43 +79,8 @@ export default function EditProfileScreen({ navigation }: any) {
 
     try {
       setDocsLoading(true);
-
-      const { data, error } = await supabase
-        .from("medical_documents")
-        .select(
-          "id, owner_id, public_id, file_name, file_path, mime_type, file_size, created_at"
-        )
-        .eq("public_id", publicId)
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        throw new Error("Dokumente konnten nicht geladen werden: " + error.message);
-      }
-
-      const rows = (data || []) as MedicalDocumentRow[];
-
-      const rowsWithPreview = await Promise.all(
-        rows.map(async (doc) => {
-          if (!isImageMime(doc.mime_type)) {
-            return { ...doc, preview_url: null };
-          }
-
-          const { data: signedData, error: signedError } = await supabase.storage
-            .from("medical-docs")
-            .createSignedUrl(doc.file_path, 60 * 10);
-
-          if (signedError || !signedData?.signedUrl) {
-            return { ...doc, preview_url: null };
-          }
-
-          return {
-            ...doc,
-            preview_url: signedData.signedUrl,
-          };
-        })
-      );
-
-      setDocuments(rowsWithPreview);
+      const docs = await loadMedicalDocuments(publicId);
+      setDocuments(docs);
     } catch (e: any) {
       Alert.alert("Fehler", e?.message || "Dokumente konnten nicht geladen werden");
     } finally {
@@ -223,16 +137,10 @@ export default function EditProfileScreen({ navigation }: any) {
 
   const openDocument = async (doc: MedicalDocumentViewRow) => {
     try {
-      const { data, error } = await supabase.storage
-        .from("medical-docs")
-        .createSignedUrl(doc.file_path, 60 * 10);
-
-      if (error || !data?.signedUrl) {
-        throw new Error(error?.message || "Dokument konnte nicht geöffnet werden");
-      }
+      const signedUrl = await getSignedMedicalDocumentUrl(doc.file_path);
 
       navigation?.navigate?.("DocumentViewer", {
-        url: data.signedUrl,
+        url: signedUrl,
         fileName: doc.file_name || "Dokument",
         mimeType: doc.mime_type || "",
       });
@@ -241,7 +149,7 @@ export default function EditProfileScreen({ navigation }: any) {
     }
   };
 
-  const deleteDocument = async (doc: MedicalDocumentViewRow) => {
+  const handleDeleteDocument = async (doc: MedicalDocumentViewRow) => {
     Alert.alert(
       "Dokument löschen",
       `Möchtest du "${doc.file_name || "Dokument"}" wirklich löschen?`,
@@ -252,23 +160,7 @@ export default function EditProfileScreen({ navigation }: any) {
           style: "destructive",
           onPress: async () => {
             try {
-              const { error: storageError } = await supabase.storage
-                .from("medical-docs")
-                .remove([doc.file_path]);
-
-              if (storageError) {
-                throw new Error(storageError.message);
-              }
-
-              const { error: dbError } = await supabase
-                .from("medical_documents")
-                .delete()
-                .eq("id", doc.id);
-
-              if (dbError) {
-                throw new Error(dbError.message);
-              }
-
+              await deleteMedicalDocument(doc.id, doc.file_path, doc.public_id);
               await loadDocuments(card?.public_id || null);
             } catch (e: any) {
               Alert.alert(
@@ -280,53 +172,6 @@ export default function EditProfileScreen({ navigation }: any) {
         },
       ]
     );
-  };
-
-  const uploadFileToSupabase = async (params: {
-    uri: string;
-    fileName: string;
-    mimeType: string;
-    fileSize?: number | null;
-  }) => {
-    if (!card?.public_id || !userId) {
-      throw new Error("User oder Karte fehlt");
-    }
-
-    const ext = guessExtension(params.fileName, params.mimeType);
-    const uniqueName = `${Date.now()}-${Math.random()
-      .toString(36)
-      .slice(2)}.${ext}`;
-    const filePath = `${userId}/${card.public_id}/${uniqueName}`;
-
-    const arrayBuffer = await uriToArrayBuffer(params.uri);
-
-    const { error: uploadError } = await supabase.storage
-      .from("medical-docs")
-      .upload(filePath, arrayBuffer, {
-        contentType: params.mimeType || "application/octet-stream",
-        upsert: false,
-      });
-
-    if (uploadError) {
-      throw new Error("Upload fehlgeschlagen: " + uploadError.message);
-    }
-
-    const { error: insertError } = await supabase
-      .from("medical_documents")
-      .insert({
-        owner_id: userId,
-        public_id: card.public_id,
-        file_name: params.fileName,
-        file_path: filePath,
-        mime_type: params.mimeType || "application/octet-stream",
-        file_size: params.fileSize || null,
-      });
-
-    if (insertError) {
-      throw new Error("DB-Eintrag fehlgeschlagen: " + insertError.message);
-    }
-
-    await loadDocuments(card.public_id);
   };
 
   const handlePickDocument = async () => {
@@ -349,13 +194,16 @@ export default function EditProfileScreen({ navigation }: any) {
       const asset = result.assets?.[0];
       if (!asset?.uri) return;
 
-      await uploadFileToSupabase({
+      await uploadMedicalDocument({
+        userId,
+        publicId: card.public_id,
         uri: asset.uri,
         fileName: asset.name || "Dokument",
         mimeType: asset.mimeType || "application/octet-stream",
         fileSize: asset.size || null,
       });
 
+      await loadDocuments(card.public_id);
       Alert.alert("Erfolg", "Dokument wurde hochgeladen");
     } catch (e: any) {
       Alert.alert("Fehler", e?.message || "Dokument-Upload fehlgeschlagen");
@@ -390,15 +238,16 @@ export default function EditProfileScreen({ navigation }: any) {
       const asset = result.assets?.[0];
       if (!asset?.uri) return;
 
-      const fileName = asset.fileName || `camera-${Date.now()}.jpg`;
-
-      await uploadFileToSupabase({
+      await uploadMedicalDocument({
+        userId,
+        publicId: card.public_id,
         uri: asset.uri,
-        fileName,
+        fileName: asset.fileName || `camera-${Date.now()}.jpg`,
         mimeType: asset.mimeType || "image/jpeg",
         fileSize: asset.fileSize || null,
       });
 
+      await loadDocuments(card.public_id);
       Alert.alert("Erfolg", "Foto wurde hochgeladen");
     } catch (e: any) {
       Alert.alert("Fehler", e?.message || "Foto-Upload fehlgeschlagen");
@@ -460,7 +309,11 @@ export default function EditProfileScreen({ navigation }: any) {
       style={styles.screen}
       contentContainerStyle={styles.content}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1f6feb" />
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor="#1f6feb"
+        />
       }
     >
       <View style={styles.topbar}>
@@ -505,11 +358,7 @@ export default function EditProfileScreen({ navigation }: any) {
 
         <View style={styles.row2}>
           <FieldBox>
-            <FieldLabel
-              title="👤 Name"
-              chipText="Pflicht"
-              chipStyle="default"
-            />
+            <FieldLabel title="👤 Name" chipText="Pflicht" chipStyle="default" />
             <StyledInput
               value={form.name}
               onChangeText={(v) => setField("name", v)}
@@ -598,11 +447,7 @@ export default function EditProfileScreen({ navigation }: any) {
           </FieldBox>
 
           <FieldBox ok>
-            <FieldLabel
-              title="✅ Impfungen"
-              chipText="ok"
-              chipStyle="ok"
-            />
+            <FieldLabel title="✅ Impfungen" chipText="ok" chipStyle="ok" />
             <StyledInput
               value={form.vaccines}
               onChangeText={(v) => setField("vaccines", v)}
@@ -766,7 +611,7 @@ export default function EditProfileScreen({ navigation }: any) {
 
                   <TouchableOpacity
                     style={styles.inlineDangerBtn}
-                    onPress={() => deleteDocument(doc)}
+                    onPress={() => handleDeleteDocument(doc)}
                   >
                     <Text style={styles.inlineDangerBtnText}>Entfernen</Text>
                   </TouchableOpacity>
