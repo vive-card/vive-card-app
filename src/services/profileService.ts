@@ -36,7 +36,6 @@ export type EmergencyCardData = {
 };
 
 export type EmergencyCardRow = {
-  id?: string;
   public_id: string;
   owner_id?: string | null;
   data: EmergencyCardData | null;
@@ -265,10 +264,10 @@ export async function getEmergencyCardProfile(
   const cleanPid = normalizePid(publicId);
 
   const { data, error } = await supabase
-    .from("emergency_cards")
-    .select("id, public_id, owner_id, data, updated_at")
-    .eq("public_id", cleanPid)
-    .maybeSingle();
+  .from("emergency_cards")
+  .select("public_id, owner_id, data, updated_at")
+  .eq("public_id", cleanPid)
+  .maybeSingle();
 
   if (error) {
     throw new Error("Profil konnte nicht geladen werden: " + error.message);
