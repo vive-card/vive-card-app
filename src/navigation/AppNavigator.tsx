@@ -71,7 +71,7 @@ function Tabs() {
         name="Card"
         component={CardScreen}
         options={{
-          tabBarLabel: "Karte",
+          tabBarLabel: "Card",
           tabBarIcon: ({ focused, color }) => (
             <TabIcon label="■" focused={focused} color={color} />
           ),
