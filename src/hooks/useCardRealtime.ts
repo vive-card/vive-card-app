@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { supabase } from "../lib/supabase";
 
 type UseCardRealtimeParams = {
-  cardId?: string | null;
+  publicId?: string | null;
   ownerUserId?: string | null;
   enabled?: boolean;
   onChange: () => void | Promise<void>;
@@ -13,7 +13,7 @@ function buildUniqueId() {
 }
 
 export function useCardRealtime({
-  cardId,
+  publicId,
   ownerUserId,
   enabled = true,
   onChange,
@@ -22,7 +22,7 @@ export function useCardRealtime({
 
   useEffect(() => {
     if (!enabled) return;
-    if (!ownerUserId) return;
+    if (!ownerUserId && !publicId) return;
 
     let disposed = false;
     let timeoutRef: ReturnType<typeof setTimeout> | null = null;
@@ -40,43 +40,66 @@ export function useCardRealtime({
     };
 
     const instanceId = instanceIdRef.current;
+    const channels: any[] = [];
 
-    const cardsChannel = supabase.channel(
-      `cards-${ownerUserId}-${instanceId}`
-    );
-
-    cardsChannel.on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "cards",
-        filter: `owner_user_id=eq.${ownerUserId}`,
-      },
-      trigger
-    );
-
-    cardsChannel.subscribe();
-
-    let profileChannel: ReturnType<typeof supabase.channel> | null = null;
-
-    if (cardId) {
-      profileChannel = supabase.channel(
-        `profiles-${cardId}-${instanceId}`
+    if (ownerUserId) {
+      const cardsChannel = supabase.channel(
+        `cards-owner-${ownerUserId}-${instanceId}`
       );
 
-      profileChannel.on(
+      cardsChannel.on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
-          table: "card_profiles",
-          filter: `card_id=eq.${cardId}`,
+          table: "cards",
+          filter: `owner_user_id=eq.${ownerUserId}`,
         },
         trigger
       );
 
-      profileChannel.subscribe();
+      cardsChannel.subscribe();
+      channels.push(cardsChannel);
+    }
+
+    if (publicId) {
+      const cleanPublicId = String(publicId).trim().toUpperCase();
+
+      const emergencyCardsChannel = supabase.channel(
+        `emergency-cards-${cleanPublicId}-${instanceId}`
+      );
+
+      emergencyCardsChannel.on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "emergency_cards",
+          filter: public_id=eq.${cleanPublicId},
+        },
+        trigger
+      );
+
+      emergencyCardsChannel.subscribe();
+      channels.push(emergencyCardsChannel);
+
+      const cardsByPidChannel = supabase.channel(
+        `cards-pid-${cleanPublicId}-${instanceId}`
+      );
+
+      cardsByPidChannel.on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "cards",
+          filter: public_id=eq.${cleanPublicId},
+        },
+        trigger
+      );
+
+      cardsByPidChannel.subscribe();
+      channels.push(cardsByPidChannel);
     }
 
     return () => {
@@ -86,15 +109,11 @@ export function useCardRealtime({
         clearTimeout(timeoutRef);
       }
 
-      try {
-        supabase.removeChannel(cardsChannel);
-      } catch {}
-
-      if (profileChannel) {
+      channels.forEach((channel) => {
         try {
-          supabase.removeChannel(profileChannel);
+          supabase.removeChannel(channel);
         } catch {}
-      }
+      });
     };
-  }, [cardId, ownerUserId, enabled, onChange]);
+  }, [publicId, ownerUserId, enabled, onChange]);
 }
