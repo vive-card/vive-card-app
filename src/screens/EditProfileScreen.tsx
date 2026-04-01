@@ -193,71 +193,99 @@ export default function EditProfileScreen({ navigation }: any) {
     initialLoad();
   }, [initialLoad]);
 
-  const handleSave = async () => {
-    try {
-      if (!card?.id || !card?.public_id) {
-        Alert.alert("Fehler", "Keine Karte gefunden");
-        return;
-      }
-
-      setSaving(true);
-      setError("");
-
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError || !user) {
-        throw new Error(userError?.message || "Keine aktive Session");
-      }
-
-      const payload = {
-        card_id: card.id,
-        public_id: card.public_id,
-        owner_user_id: user.id,
-        first_name: form.first_name.trim(),
-        last_name: form.last_name.trim(),
-        birth_date: form.birth_date.trim() || null,
-        blood_type: form.blood_type.trim(),
-        allergies: form.allergies.trim(),
-        diagnoses: form.diagnoses.trim(),
-        medications: form.medications.trim(),
-        implants: form.implants.trim(),
-        language: form.language.trim() || "de",
-        emergency_contact_name: form.emergency_contact_name.trim(),
-        emergency_contact_relation: form.emergency_contact_relation.trim(),
-        emergency_contact_phone: form.emergency_contact_phone.trim(),
-        emergency_contact_notes: form.emergency_contact_notes.trim(),
-        updated_at: new Date().toISOString(),
-      };
-
-      const { error: saveError } = await supabase
-        .from("card_profiles")
-        .upsert(payload, { onConflict: "card_id" });
-
-      if (saveError) {
-        throw new Error("Speichern fehlgeschlagen: " + saveError.message);
-      }
-
-      Alert.alert("Erfolg", "Profil wurde gespeichert", [
-        {
-          text: "OK",
-          onPress: () => {
-            if (navigation?.goBack) {
-              navigation.goBack();
-            }
-          },
-        },
-      ]);
-    } catch (e: any) {
-      const message = e?.message || "Unbekannter Fehler";
-      setError(message);
-      Alert.alert("Fehler", message);
-    } finally {
-      setSaving(false);
+const handleSave = async () => {
+  try {
+    if (!card?.id || !card?.public_id) {
+      Alert.alert("Fehler", "Keine Karte gefunden");
+      return;
     }
-  };
+
+    setSaving(true);
+    setError("");
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      throw new Error(userError?.message || "Keine aktive Session");
+    }
+
+    // 👉 1. PROFILE PAYLOAD
+    const profilePayload = {
+      card_id: card.id,
+      public_id: card.public_id,
+      owner_user_id: user.id,
+      first_name: form.first_name.trim(),
+      last_name: form.last_name.trim(),
+      birth_date: form.birth_date.trim() || null,
+      blood_type: form.blood_type.trim(),
+      allergies: form.allergies.trim(),
+      diagnoses: form.diagnoses.trim(),
+      medications: form.medications.trim(),
+      implants: form.implants.trim(),
+      language: form.language.trim() || "de",
+      emergency_contact_name: form.emergency_contact_name.trim(),
+      emergency_contact_relation: form.emergency_contact_relation.trim(),
+      emergency_contact_phone: form.emergency_contact_phone.trim(),
+      emergency_contact_notes: form.emergency_contact_notes.trim(),
+      updated_at: new Date().toISOString(),
+    };
+
+    // 👉 2. SAVE card_profiles
+    const { error: profileError } = await supabase
+      .from("card_profiles")
+      .upsert(profilePayload, { onConflict: "card_id" });
+
+    if (profileError) {
+      throw new Error("Profil speichern fehlgeschlagen: " + profileError.message);
+    }
+
+    // 👉 3. MAPPING → cards (WICHTIG!)
+    const fullName = `${form.first_name}` ${form.last_name}.trim();
+
+    const cardPayload = {
+      full_name: fullName || null,
+      blood_type: form.blood_type.trim() || null,
+      allergies: form.allergies.trim() || null,
+      medications: form.medications.trim() || null,
+
+      // 👉 wichtig: das wird im Web als "Wichtiger Hinweis" angezeigt
+      emergency_note: form.implants.trim() || null,
+
+      emergency_contact_name: form.emergency_contact_name.trim() || null,
+      emergency_contact_phone: form.emergency_contact_phone.trim() || null,
+    };
+
+    // 👉 4. UPDATE cards
+    const { error: cardError } = await supabase
+      .from("cards")
+      .update(cardPayload)
+      .eq("id", card.id);
+
+    if (cardError) {
+      throw new Error("Card Sync fehlgeschlagen: " + cardError.message);
+    }
+
+    Alert.alert("Erfolg", "Profil wurde gespeichert & synchronisiert", [
+      {
+        text: "OK",
+        onPress: () => {
+          if (navigation?.goBack) {
+            navigation.goBack();
+          }
+        },
+      },
+    ]);
+  } catch (e: any) {
+    const message = e?.message || "Unbekannter Fehler";
+    setError(message);
+    Alert.alert("Fehler", message);
+  } finally {
+    setSaving(false);
+  }
+};
 
   if (loading) {
     return (
