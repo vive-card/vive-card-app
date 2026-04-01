@@ -12,12 +12,14 @@ import {
 } from "react-native";
 import {
   CardRow,
-  ProfileRow,
+  EmergencyCardRow,
   fullCardUrl,
   getCurrentUserCardProfile,
   getStatusColor,
   getStatusLabel,
   lineValue,
+  mapEmergencyDataToForm,
+  ProfileFormValues,
 } from "../services/profileService";
 import { useCardRealtime } from "../hooks/useCardRealtime";
 
@@ -28,7 +30,8 @@ export default function DashboardScreen({ navigation }: any) {
   const [userEmail, setUserEmail] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const [card, setCard] = useState<CardRow | null>(null);
-  const [profile, setProfile] = useState<ProfileRow | null>(null);
+  const [profile, setProfile] = useState<EmergencyCardRow | null>(null);
+  const [formView, setFormView] = useState<ProfileFormValues | null>(null);
 
   const loadData = useCallback(async () => {
     setError("");
@@ -39,6 +42,7 @@ export default function DashboardScreen({ navigation }: any) {
     setUserId(result.user?.id || null);
     setCard(result.card || null);
     setProfile(result.profile || null);
+    setFormView(mapEmergencyDataToForm(result.profile));
   }, []);
 
   const initialLoad = useCallback(async () => {
@@ -208,97 +212,122 @@ export default function DashboardScreen({ navigation }: any) {
 
           <View style={styles.cardBox}>
             <View style={styles.rowBetween}>
-              <Text style={styles.sectionTitle}>Persönliche Daten</Text>
+              <Text style={styles.sectionTitle}>Grunddaten</Text>
 
               <TouchableOpacity onPress={handleEditProfile}>
                 <Text style={styles.linkText}>Bearbeiten</Text>
               </TouchableOpacity>
             </View>
 
-            <View style={styles.infoRow}>
-              <View style={styles.infoCol}>
-                <Text style={styles.label}>Vorname</Text>
-                <Text style={styles.value}>{lineValue(profile?.first_name)}</Text>
-              </View>
-
-              <View style={styles.infoCol}>
-                <Text style={styles.label}>Nachname</Text>
-                <Text style={styles.value}>{lineValue(profile?.last_name)}</Text>
-              </View>
+            <View style={styles.infoBlock}>
+              <Text style={styles.label}>Name</Text>
+              <Text style={styles.value}>{lineValue(formView?.name)}</Text>
             </View>
 
             <View style={styles.infoRow}>
               <View style={styles.infoCol}>
                 <Text style={styles.label}>Geburtsdatum</Text>
-                <Text style={styles.value}>{lineValue(profile?.birth_date)}</Text>
+                <Text style={styles.value}>{lineValue(formView?.dob)}</Text>
               </View>
 
               <View style={styles.infoCol}>
                 <Text style={styles.label}>Blutgruppe</Text>
-                <Text style={styles.value}>{lineValue(profile?.blood_type)}</Text>
+                <Text style={styles.value}>{lineValue(formView?.blood)}</Text>
               </View>
-            </View>
-
-            <View style={styles.infoBlock}>
-              <Text style={styles.label}>Sprache</Text>
-              <Text style={styles.value}>{lineValue(profile?.language, "de")}</Text>
             </View>
           </View>
 
           <View style={styles.cardBox}>
-            <Text style={styles.sectionTitle}>Medizinische Informationen</Text>
+            <Text style={styles.sectionTitle}>Kritische Informationen</Text>
 
             <View style={styles.infoBlock}>
               <Text style={styles.label}>Allergien</Text>
-              <Text style={styles.value}>{lineValue(profile?.allergies)}</Text>
+              <Text style={styles.value}>{lineValue(formView?.allergies)}</Text>
             </View>
 
             <View style={styles.infoBlock}>
-              <Text style={styles.label}>Diagnosen</Text>
-              <Text style={styles.value}>{lineValue(profile?.diagnoses)}</Text>
-            </View>
-
-            <View style={styles.infoBlock}>
-              <Text style={styles.label}>Medikamente</Text>
-              <Text style={styles.value}>{lineValue(profile?.medications)}</Text>
-            </View>
-
-            <View style={styles.infoBlock}>
-              <Text style={styles.label}>Implantate / Hinweise</Text>
-              <Text style={styles.value}>{lineValue(profile?.implants)}</Text>
-            </View>
-          </View>
-
-          <View style={styles.cardBox}>
-            <Text style={styles.sectionTitle}>Notfallkontakt</Text>
-
-            <View style={styles.infoRow}>
-              <View style={styles.infoCol}>
-                <Text style={styles.label}>Name</Text>
-                <Text style={styles.value}>
-                  {lineValue(profile?.emergency_contact_name)}
-                </Text>
-              </View>
-
-              <View style={styles.infoCol}>
-                <Text style={styles.label}>Beziehung</Text>
-                <Text style={styles.value}>
-                  {lineValue(profile?.emergency_contact_relation)}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.infoBlock}>
-              <Text style={styles.label}>Telefon</Text>
+              <Text style={styles.label}>Blutverdünner</Text>
               <Text style={styles.value}>
-                {lineValue(profile?.emergency_contact_phone)}
+                {lineValue(formView?.bloodThinner)}
               </Text>
             </View>
 
             <View style={styles.infoBlock}>
-              <Text style={styles.label}>Zusatzinfo</Text>
+              <Text style={styles.label}>Medikamente</Text>
+              <Text style={styles.value}>{lineValue(formView?.meds)}</Text>
+            </View>
+          </View>
+
+          <View style={styles.cardBox}>
+            <Text style={styles.sectionTitle}>Weitere Informationen</Text>
+
+            <View style={styles.infoBlock}>
+              <Text style={styles.label}>Impfungen</Text>
+              <Text style={styles.value}>{lineValue(formView?.vaccines)}</Text>
+            </View>
+
+            <View style={styles.infoBlock}>
+              <Text style={styles.label}>Chronische Erkrankungen</Text>
+              <Text style={styles.value}>{lineValue(formView?.chronic)}</Text>
+            </View>
+
+            <View style={styles.infoBlock}>
+              <Text style={styles.label}>Organspende</Text>
+              <Text style={styles.value}>{lineValue(formView?.organ)}</Text>
+            </View>
+
+            <View style={styles.infoBlock}>
+              <Text style={styles.label}>Notizen / Hinweise</Text>
+              <Text style={styles.value}>{lineValue(formView?.notes)}</Text>
+            </View>
+          </View>
+
+          <View style={styles.cardBox}>
+            <Text style={styles.sectionTitle}>Notfallkontakte</Text>
+
+            <View style={styles.infoRow}>
+              <View style={styles.infoCol}>
+                <Text style={styles.label}>Kontakt 1 Name</Text>
+                <Text style={styles.value}>{lineValue(formView?.em1_name)}</Text>
+              </View>
+
+              <View style={styles.infoCol}>
+                <Text style={styles.label}>Kontakt 1 Telefon</Text>
+                <Text style={styles.value}>{lineValue(formView?.em1)}</Text>
+              </View>
+            </View>
+
+            <View style={styles.infoRow}>
+              <View style={styles.infoCol}>
+                <Text style={styles.label}>Kontakt 2 Name</Text>
+                <Text style={styles.value}>{lineValue(formView?.em2_name)}</Text>
+              </View>
+
+              <View style={styles.infoCol}>
+                <Text style={styles.label}>Kontakt 2 Telefon</Text>
+                <Text style={styles.value}>{lineValue(formView?.em2)}</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.cardBox}>
+            <Text style={styles.sectionTitle}>Technische Daten</Text>
+
+            <View style={styles.infoBlock}>
+              <Text style={styles.label}>Emergency Record</Text>
               <Text style={styles.value}>
-                {lineValue(profile?.emergency_contact_notes)}
+                {profile?.updated_at ? "Vorhanden" : "Noch nicht gespeichert"}
+              </Text>
+            </View>
+
+            <View style={styles.infoBlock}>
+              <Text style={styles.label}>Letztes Update</Text>
+              <Text style={styles.value}>
+                {lineValue(
+                  profile?.updated_at
+                    ? new Date(profile.updated_at).toLocaleString()
+                    : ""
+                )}
               </Text>
             </View>
           </View>
