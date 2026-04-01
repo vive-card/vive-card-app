@@ -6,65 +6,81 @@ export type CardRow = {
   status?: string | null;
   owner_user_id?: string | null;
   created_at?: string | null;
-};
+  activated?: boolean | null;
+  blocked_at?: string | null;
 
-export type ProfileRow = {
-  id?: string;
-  card_id: string;
-  public_id?: string | null;
-  owner_user_id?: string | null;
-  first_name?: string | null;
-  last_name?: string | null;
-  birth_date?: string | null;
+  full_name?: string | null;
   blood_type?: string | null;
   allergies?: string | null;
-  diagnoses?: string | null;
   medications?: string | null;
-  implants?: string | null;
-  language?: string | null;
+  emergency_note?: string | null;
   emergency_contact_name?: string | null;
-  emergency_contact_relation?: string | null;
   emergency_contact_phone?: string | null;
-  emergency_contact_notes?: string | null;
+};
+
+export type EmergencyCardData = {
+  name?: string;
+  dob?: string;
+  blood?: string;
+  allergies?: string;
+  bloodThinner?: string;
+  meds?: string;
+  vaccines?: string;
+  chronic?: string;
+  organ?: string;
+  notes?: string;
+  em1_name?: string;
+  em1?: string;
+  em2_name?: string;
+  em2?: string;
+};
+
+export type EmergencyCardRow = {
+  id?: string;
+  public_id: string;
+  owner_id?: string | null;
+  data: EmergencyCardData | null;
   updated_at?: string | null;
 };
 
 export type ProfileFormValues = {
-  first_name: string;
-  last_name: string;
-  birth_date: string;
-  blood_type: string;
+  name: string;
+  dob: string;
+  blood: string;
   allergies: string;
-  diagnoses: string;
-  medications: string;
-  implants: string;
-  language: string;
-  emergency_contact_name: string;
-  emergency_contact_relation: string;
-  emergency_contact_phone: string;
-  emergency_contact_notes: string;
+  bloodThinner: string;
+  meds: string;
+  vaccines: string;
+  chronic: string;
+  organ: string;
+  notes: string;
+  em1_name: string;
+  em1: string;
+  em2_name: string;
+  em2: string;
 };
 
 export type CurrentUserCardProfileResult = {
   user: any;
   card: CardRow | null;
-  profile: ProfileRow | null;
+  profile: EmergencyCardRow | null;
 };
 
 export const initialProfileForm: ProfileFormValues = {
-  first_name: "",
-  last_name: "",
-  birth_date: "",
-  blood_type: "",
+  name: "",
+  dob: "",
+  blood: "",
   allergies: "",
-  diagnoses: "",
-  medications: "",
-  implants: "",
-  language: "de",
-  emergency_contact_name: "",
-  emergency_contact_relation: "",
-  emergency_contact_phone: "",
-  emergency_contact_notes: "",
+  bloodThinner: "",
+  meds: "",
+  vaccines: "",
+  chronic: "",
+  organ: "",
+  notes: "",
+  em1_name: "",
+  em1: "",
+  em2_name: "",
+  em2: "",
 };
 
 export function normalizePid(value: string | null | undefined) {
@@ -92,23 +108,64 @@ export function normalizeDate(value: string | null | undefined) {
   return clean;
 }
 
-export function mapProfileToForm(
-  profile?: ProfileRow | null
+export function formatDateForWeb(value: string | null | undefined) {
+  const clean = normalizeDate(value);
+  if (!clean) return "";
+
+  const isoMatch = clean.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!isoMatch) return clean;
+
+  const [, yyyy, mm, dd] = isoMatch;
+  return ${dd}.`${mm}.${yyyy}`;
+}
+
+export function normalizePhone(value: string | null | undefined) {
+  return String(value || "")
+    .trim()
+    .replace(/[^0-9+]/g, "");
+}
+
+export function mapEmergencyDataToForm(
+  profile?: EmergencyCardRow | null
 ): ProfileFormValues {
+  const d = profile?.data || {};
+
   return {
-    first_name: profile?.first_name || "",
-    last_name: profile?.last_name || "",
-    birth_date: normalizeDate(profile?.birth_date || ""),
-    blood_type: profile?.blood_type || "",
-    allergies: profile?.allergies || "",
-    diagnoses: profile?.diagnoses || "",
-    medications: profile?.medications || "",
-    implants: profile?.implants || "",
-    language: profile?.language || "de",
-    emergency_contact_name: profile?.emergency_contact_name || "",
-    emergency_contact_relation: profile?.emergency_contact_relation || "",
-    emergency_contact_phone: profile?.emergency_contact_phone || "",
-    emergency_contact_notes: profile?.emergency_contact_notes || "",
+    name: d.name || "",
+    dob: normalizeDate(d.dob || ""),
+    blood: d.blood || "",
+    allergies: d.allergies || "",
+    bloodThinner: d.bloodThinner || "",
+    meds: d.meds || "",
+    vaccines: d.vaccines || "",
+    chronic: d.chronic || "",
+    organ: d.organ || "",
+    notes: d.notes || "",
+    em1_name: d.em1_name || "",
+    em1: d.em1 || "",
+    em2_name: d.em2_name || "",
+    em2: d.em2 || "",
+  };
+}
+
+export function mapFormToEmergencyData(
+  values: ProfileFormValues
+): EmergencyCardData {
+  return {
+    name: values.name.trim(),
+    dob: values.dob.trim() || "",
+    blood: values.blood.trim(),
+    allergies: values.allergies.trim(),
+    bloodThinner: values.bloodThinner.trim(),
+    meds: values.meds.trim(),
+    vaccines: values.vaccines.trim(),
+    chronic: values.chronic.trim(),
+    organ: values.organ.trim(),
+    notes: values.notes.trim(),
+    em1_name: values.em1_name.trim(),
+    em1: values.em1.trim(),
+    em2_name: values.em2_name.trim(),
+    em2: values.em2.trim(),
   };
 }
 
@@ -174,7 +231,22 @@ export async function getCurrentUserOrThrow() {
 export async function getLatestOwnedCard(userId: string): Promise<CardRow | null> {
   const { data, error } = await supabase
     .from("cards")
-    .select("id, public_id, status, owner_user_id, created_at")
+    .select(`
+      id,
+      public_id,
+      status,
+      owner_user_id,
+      created_at,
+      activated,
+      blocked_at,
+      full_name,
+      blood_type,
+      allergies,
+      medications,
+      emergency_note,
+      emergency_contact_name,
+      emergency_contact_phone
+    `)
     .eq("owner_user_id", userId)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -187,11 +259,15 @@ export async function getLatestOwnedCard(userId: string): Promise<CardRow | null
   return data || null;
 }
 
-export async function getCardProfile(cardId: string): Promise<ProfileRow | null> {
+export async function getEmergencyCardProfile(
+  publicId: string
+): Promise<EmergencyCardRow | null> {
+  const cleanPid = normalizePid(publicId);
+
   const { data, error } = await supabase
-    .from("card_profiles")
-    .select("*")
-    .eq("card_id", cardId)
+    .from("emergency_cards")
+    .select("id, public_id, owner_id, data, updated_at")
+    .eq("public_id", cleanPid)
     .maybeSingle();
 
   if (error) {
@@ -213,7 +289,7 @@ export async function getCurrentUserCardProfile(): Promise<CurrentUserCardProfil
     };
   }
 
-  const profile = await getCardProfile(card.id);
+  const profile = await getEmergencyCardProfile(card.public_id);
 
   return {
     user,
@@ -227,35 +303,45 @@ export async function saveCurrentUserCardProfile(
   userId: string,
   values: ProfileFormValues
 ) {
-  const payload = {
-    card_id: card.id,
+  const emergencyData = mapFormToEmergencyData(values);
+
+  const emergencyPayload = {
     public_id: card.public_id,
-    owner_user_id: userId,
-    first_name: values.first_name.trim(),
-    last_name: values.last_name.trim(),
-    birth_date: values.birth_date.trim() || null,
-    blood_type: values.blood_type.trim(),
-    allergies: values.allergies.trim(),
-    diagnoses: values.diagnoses.trim(),
-    medications: values.medications.trim(),
-    implants: values.implants.trim(),
-    language: values.language.trim() || "de",
-    emergency_contact_name: values.emergency_contact_name.trim(),
-    emergency_contact_relation: values.emergency_contact_relation.trim(),
-    emergency_contact_phone: values.emergency_contact_phone.trim(),
-    emergency_contact_notes: values.emergency_contact_notes.trim(),
+    owner_id: userId,
+    data: emergencyData,
     updated_at: new Date().toISOString(),
   };
 
-  const { data, error } = await supabase
-    .from("card_profiles")
-    .upsert(payload, { onConflict: "card_id" })
+  const { data: emergencyRow, error: emergencyError } = await supabase
+    .from("emergency_cards")
+    .upsert(emergencyPayload, { onConflict: "public_id" })
     .select()
     .single();
 
-  if (error) {
-    throw new Error("Speichern fehlgeschlagen: " + error.message);
+  if (emergencyError) {
+    throw new Error(
+      "Speichern in emergency_cards fehlgeschlagen: " + emergencyError.message
+    );
   }
 
-  return data;
+  const cardPayload = {
+    full_name: values.name.trim() || null,
+    blood_type: values.blood.trim() || null,
+    allergies: values.allergies.trim() || null,
+    medications: values.meds.trim() || null,
+    emergency_note: values.notes.trim() || null,
+    emergency_contact_name: values.em1_name.trim() || null,
+    emergency_contact_phone: values.em1.trim() || null,
+  };
+
+  const { error: cardError } = await supabase
+    .from("cards")
+    .update(cardPayload)
+    .eq("id", card.id);
+
+  if (cardError) {
+    throw new Error("Cards Sync fehlgeschlagen: " + cardError.message);
+  }
+
+  return emergencyRow;
 }
