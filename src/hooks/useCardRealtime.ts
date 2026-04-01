@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { supabase } from "../lib/supabase";
 
 type UseCardRealtimeParams = {
@@ -8,30 +8,42 @@ type UseCardRealtimeParams = {
   onChange: () => void | Promise<void>;
 };
 
+function buildUniqueId() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 export function useCardRealtime({
   cardId,
   ownerUserId,
   enabled = true,
   onChange,
 }: UseCardRealtimeParams) {
+  const instanceIdRef = useRef(buildUniqueId());
+
   useEffect(() => {
     if (!enabled) return;
     if (!ownerUserId) return;
 
-    let timeoutRef: any = null;
+    let disposed = false;
+    let timeoutRef: ReturnType<typeof setTimeout> | null = null;
 
     const trigger = () => {
-      if (timeoutRef) clearTimeout(timeoutRef);
+      if (disposed) return;
+
+      if (timeoutRef) {
+        clearTimeout(timeoutRef);
+      }
 
       timeoutRef = setTimeout(() => {
         Promise.resolve(onChange()).catch(() => {});
-      }, 200);
+      }, 250);
     };
 
-    const channels: any[] = [];
+    const instanceId = instanceIdRef.current;
 
-    // ✅ Cards Channel
-    const cardsChannel = supabase.channel(`cards-${ownerUserId}`);
+    const cardsChannel = supabase.channel(
+      `cards-${ownerUserId}-${instanceId}`
+    );
 
     cardsChannel.on(
       "postgres_changes",
@@ -45,11 +57,13 @@ export function useCardRealtime({
     );
 
     cardsChannel.subscribe();
-    channels.push(cardsChannel);
 
-    // ✅ Profile Channel
+    let profileChannel: ReturnType<typeof supabase.channel> | null = null;
+
     if (cardId) {
-      const profileChannel = supabase.channel(`profiles-${cardId}`);
+      profileChannel = supabase.channel(
+        `profiles-${cardId}-${instanceId}`
+      );
 
       profileChannel.on(
         "postgres_changes",
@@ -63,17 +77,24 @@ export function useCardRealtime({
       );
 
       profileChannel.subscribe();
-      channels.push(profileChannel);
     }
 
     return () => {
-      if (timeoutRef) clearTimeout(timeoutRef);
+      disposed = true;
 
-      channels.forEach((ch) => {
+      if (timeoutRef) {
+        clearTimeout(timeoutRef);
+      }
+
+      try {
+        supabase.removeChannel(cardsChannel);
+      } catch {}
+
+      if (profileChannel) {
         try {
-          supabase.removeChannel(ch);
+          supabase.removeChannel(profileChannel);
         } catch {}
-      });
+      }
     };
   }, [cardId, ownerUserId, enabled, onChange]);
 }
