@@ -10,89 +10,15 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { supabase } from "../lib/supabase";
-
-type CardRow = {
-  id: string;
-  public_id: string;
-  status: string | null;
-  owner_user_id: string | null;
-  created_at?: string | null;
-};
-
-type ProfileRow = {
-  id?: string;
-  card_id: string;
-  public_id?: string | null;
-  owner_user_id?: string | null;
-  first_name?: string | null;
-  last_name?: string | null;
-  birth_date?: string | null;
-  blood_type?: string | null;
-  allergies?: string | null;
-  diagnoses?: string | null;
-  medications?: string | null;
-  implants?: string | null;
-  language?: string | null;
-  emergency_contact_name?: string | null;
-  emergency_contact_relation?: string | null;
-  emergency_contact_phone?: string | null;
-  emergency_contact_notes?: string | null;
-  updated_at?: string | null;
-};
-
-function normalizePid(value: string | null | undefined) {
-  return String(value || "")
-    .trim()
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "");
-}
-
-function buildCardUrl(pid: string) {
-  const cleanPid = normalizePid(pid);
-  const returnPath = `/card?pid=${encodeURIComponent(cleanPid)}&edit=1`;
-  return `/p/${encodeURIComponent(
-    cleanPid
-  )}?emergency=1&return=${encodeURIComponent(returnPath)}`;
-}
-
-function fullCardUrl(pid: string) {
-  return `https://vive-card.com${buildCardUrl(pid)}`;
-}
-
-function getStatusLabel(status?: string | null) {
-  const value = String(status || "").trim();
-
-  if (!value) return "Unbekannt";
-  if (value === "claimed") return "Aktiv";
-  if (value === "print_ready") return "Print Ready";
-  if (value === "in_stock") return "Auf Lager";
-  if (value === "printed") return "Gedruckt";
-  if (value === "shipped") return "Versendet";
-  if (value === "blocked") return "Gesperrt";
-  if (value === "reserved") return "Reserviert";
-
-  return value;
-}
-
-function getStatusColor(status?: string | null) {
-  const value = String(status || "").trim();
-
-  if (value === "claimed") return "#24c26a";
-  if (value === "blocked") return "#ff6b6b";
-  if (value === "print_ready") return "#ffb020";
-  if (value === "printed") return "#3da5ff";
-  if (value === "shipped") return "#7c92ff";
-  if (value === "reserved") return "#ffb020";
-  if (value === "in_stock") return "#8c98a8";
-
-  return "#8c98a8";
-}
-
-function lineValue(value?: string | null, fallback = "—") {
-  const text = String(value || "").trim();
-  return text || fallback;
-}
+import {
+  CardRow,
+  ProfileRow,
+  fullCardUrl,
+  getCurrentUserCardProfile,
+  getStatusColor,
+  getStatusLabel,
+  lineValue,
+} from "../services/profileService";
 
 export default function DashboardScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
@@ -105,49 +31,11 @@ export default function DashboardScreen({ navigation }: any) {
   const loadData = useCallback(async () => {
     setError("");
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+    const result = await getCurrentUserCardProfile();
 
-    if (userError || !user) {
-      throw new Error(userError?.message || "Keine aktive Session");
-    }
-
-    setUserEmail(user.email || "");
-
-    const { data: ownedCard, error: cardError } = await supabase
-      .from("cards")
-      .select("id, public_id, status, owner_user_id, created_at")
-      .eq("owner_user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (cardError) {
-      throw new Error("Karte konnte nicht geladen werden: " + cardError.message);
-    }
-
-    setCard(ownedCard || null);
-
-    if (!ownedCard) {
-      setProfile(null);
-      return;
-    }
-
-    const { data: profileRow, error: profileError } = await supabase
-      .from("card_profiles")
-      .select("*")
-      .eq("card_id", ownedCard.id)
-      .maybeSingle();
-
-    if (profileError) {
-      throw new Error(
-        "Profil konnte nicht geladen werden: " + profileError.message
-      );
-    }
-
-    setProfile(profileRow || null);
+    setUserEmail(result.user?.email || "");
+    setCard(result.card || null);
+    setProfile(result.profile || null);
   }, []);
 
   const initialLoad = useCallback(async () => {
@@ -175,6 +63,14 @@ export default function DashboardScreen({ navigation }: any) {
   useEffect(() => {
     initialLoad();
   }, [initialLoad]);
+
+  useEffect(() => {
+    const unsubscribe = navigation?.addListener?.("focus", () => {
+      loadData().catch(() => {});
+    });
+
+    return unsubscribe;
+  }, [navigation, loadData]);
 
   const handleOpenCard = async () => {
     if (!card?.public_id) {
@@ -312,9 +208,7 @@ export default function DashboardScreen({ navigation }: any) {
             <View style={styles.infoRow}>
               <View style={styles.infoCol}>
                 <Text style={styles.label}>Vorname</Text>
-                <Text style={styles.value}>
-                  {lineValue(profile?.first_name)}
-                </Text>
+                <Text style={styles.value}>{lineValue(profile?.first_name)}</Text>
               </View>
 
               <View style={styles.infoCol}>
@@ -326,16 +220,12 @@ export default function DashboardScreen({ navigation }: any) {
             <View style={styles.infoRow}>
               <View style={styles.infoCol}>
                 <Text style={styles.label}>Geburtsdatum</Text>
-                <Text style={styles.value}>
-                  {lineValue(profile?.birth_date)}
-                </Text>
+                <Text style={styles.value}>{lineValue(profile?.birth_date)}</Text>
               </View>
 
               <View style={styles.infoCol}>
                 <Text style={styles.label}>Blutgruppe</Text>
-                <Text style={styles.value}>
-                  {lineValue(profile?.blood_type)}
-                </Text>
+                <Text style={styles.value}>{lineValue(profile?.blood_type)}</Text>
               </View>
             </View>
 
