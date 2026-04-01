@@ -119,7 +119,7 @@ export default function DashboardScreen({ navigation }: any) {
 
   const handleOpenCardTab = () => {
     if (navigation?.navigate) {
-      navigation.navigate("Karte");
+      navigation.navigate("Card");
       return;
     }
 
