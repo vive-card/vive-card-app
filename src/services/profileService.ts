@@ -116,7 +116,7 @@ export function formatDateForWeb(value: string | null | undefined) {
   if (!isoMatch) return clean;
 
   const [, yyyy, mm, dd] = isoMatch;
-  return ${dd}.`${mm}.${yyyy}`;
+  return `${dd}.${mm}.${yyyy}`;
 }
 
 export function normalizePhone(value: string | null | undefined) {
