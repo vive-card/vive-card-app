@@ -75,7 +75,7 @@ export function useCardRealtime({
           event: "*",
           schema: "public",
           table: "emergency_cards",
-          filter: public_id=eq.${cleanPublicId},
+          filter: `public_id=eq.${cleanPublicId}`,
         },
         trigger
       );
