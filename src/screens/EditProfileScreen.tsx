@@ -243,7 +243,7 @@ const handleSave = async () => {
     }
 
     // 👉 3. MAPPING → cards (WICHTIG!)
-    const fullName = `${form.first_name}` ${form.last_name}.trim();
+    const fullName = `${form.first_name} ${form.last_name}`.trim();
 
     const cardPayload = {
       full_name: fullName || null,
