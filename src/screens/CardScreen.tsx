@@ -8,25 +8,14 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { supabase } from "../lib/supabase";
 
-type CardRow = {
-  id: string;
-  public_id: string;
-  status: string | null;
-};
-
-type ProfileRow = {
-  first_name?: string | null;
-  last_name?: string | null;
-  blood_type?: string | null;
-  emergency_contact_name?: string | null;
-  emergency_contact_phone?: string | null;
-};
-
-function buildCardUrl(pid: string) {
-  return `https://vive-card.com/p/${pid}?emergency=1`;
-}
+import {
+  CardRow,
+  ProfileRow,
+  fullCardUrl,
+  getCurrentUserCardProfile,
+  lineValue,
+} from "../services/profileService";
 
 export default function CardScreen() {
   const [loading, setLoading] = useState(true);
@@ -39,30 +28,10 @@ export default function CardScreen() {
 
   const loadData = async () => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const result = await getCurrentUserCardProfile();
 
-      if (!user) throw new Error("Kein User");
-
-      const { data: cardData } = await supabase
-        .from("cards")
-        .select("id, public_id, status")
-        .eq("owner_user_id", user.id)
-        .limit(1)
-        .maybeSingle();
-
-      setCard(cardData || null);
-
-      if (cardData) {
-        const { data: profileData } = await supabase
-          .from("card_profiles")
-          .select("*")
-          .eq("card_id", cardData.id)
-          .maybeSingle();
-
-        setProfile(profileData || null);
-      }
+      setCard(result.card || null);
+      setProfile(result.profile || null);
     } catch (e: any) {
       Alert.alert("Fehler", e.message);
     } finally {
@@ -73,7 +42,7 @@ export default function CardScreen() {
   const handleOpenCard = async () => {
     if (!card?.public_id) return;
 
-    const url = buildCardUrl(card.public_id);
+    const url = fullCardUrl(card.public_id);
     await Linking.openURL(url);
   };
 
@@ -104,13 +73,12 @@ export default function CardScreen() {
         <View style={styles.spacer} />
 
         <Text style={styles.name}>
-          {(profile?.first_name || "—") +
-            " " +
-            (profile?.last_name || "")}
+          {lineValue(profile?.first_name)}{" "}
+          {lineValue(profile?.last_name, "")}
         </Text>
 
         <Text style={styles.blood}>
-          Blutgruppe: {profile?.blood_type || "—"}
+          Blutgruppe: {lineValue(profile?.blood_type)}
         </Text>
 
         <View style={styles.spacer} />
@@ -118,14 +86,14 @@ export default function CardScreen() {
         <Text style={styles.pid}>{card.public_id}</Text>
 
         <View style={styles.footer}>
-          <Text style={styles.emergency}>
-            Notfallkontakt:
-          </Text>
+          <Text style={styles.emergency}>Notfallkontakt:</Text>
+
           <Text style={styles.emergencyValue}>
-            {profile?.emergency_contact_name || "—"}
+            {lineValue(profile?.emergency_contact_name)}
           </Text>
+
           <Text style={styles.emergencyValue}>
-            {profile?.emergency_contact_phone || ""}
+            {lineValue(profile?.emergency_contact_phone, "")}
           </Text>
         </View>
       </View>
@@ -145,12 +113,14 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: "center",
   },
+
   loadingWrap: {
     flex: 1,
     backgroundColor: "#06080d",
     justifyContent: "center",
     alignItems: "center",
   },
+
   title: {
     color: "#fff",
     fontSize: 28,
