@@ -11,10 +11,15 @@ import EditProfileScreen from "../screens/EditProfileScreen";
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-function DashboardTabIcon({
+/**
+ * SIMPLE ICONS (kannst du später durch echte Icons ersetzen)
+ */
+function TabIcon({
+  label,
   focused,
   color,
 }: {
+  label: string;
   focused: boolean;
   color: string;
 }) {
@@ -22,75 +27,40 @@ function DashboardTabIcon({
     <Text
       style={{
         color,
-        fontSize: 20,
-        fontWeight: focused ? "900" : "700",
+        fontSize: 18,
+        fontWeight: focused ? "900" : "600",
         marginBottom: -2,
       }}
     >
-      ▼
+      {label}
     </Text>
   );
 }
 
-function CardTabIcon({
-  focused,
-  color,
-}: {
-  focused: boolean;
-  color: string;
-}) {
-  return (
-    <Text
-      style={{
-        color,
-        fontSize: 20,
-        fontWeight: focused ? "900" : "700",
-        marginBottom: -2,
-      }}
-    >
-      ▼
-    </Text>
-  );
-}
-
-function SettingsTabIcon({
-  focused,
-  color,
-}: {
-  focused: boolean;
-  color: string;
-}) {
-  return (
-    <Text
-      style={{
-        color,
-        fontSize: 20,
-        fontWeight: focused ? "900" : "700",
-        marginBottom: -2,
-      }}
-    >
-      ▼
-    </Text>
-  );
-}
-
+/**
+ * ===================== TABS =====================
+ */
 function Tabs() {
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
+
         tabBarStyle: {
-          backgroundColor: "#f2f2f2",
-          borderTopColor: "#d9d9d9",
+          backgroundColor: "#0b0f17",
+          borderTopColor: "rgba(255,255,255,0.08)",
           height: 84,
           paddingTop: 8,
           paddingBottom: 18,
         },
-        tabBarActiveTintColor: "#1677ff",
+
+        tabBarActiveTintColor: "#e10600",
         tabBarInactiveTintColor: "#8c8c8c",
+
         tabBarLabelStyle: {
           fontSize: 12,
           marginTop: 4,
+          fontWeight: "600",
         },
       }}
     >
@@ -100,18 +70,18 @@ function Tabs() {
         options={{
           tabBarLabel: "Dashboard",
           tabBarIcon: ({ focused, color }) => (
-            <DashboardTabIcon focused={focused} color={color} />
+            <TabIcon label="●" focused={focused} color={color} />
           ),
         }}
       />
 
       <Tab.Screen
-        name="Karte"
+        name="Card"
         component={CardScreen}
         options={{
           tabBarLabel: "Karte",
           tabBarIcon: ({ focused, color }) => (
-            <CardTabIcon focused={focused} color={color} />
+            <TabIcon label="■" focused={focused} color={color} />
           ),
         }}
       />
@@ -122,7 +92,7 @@ function Tabs() {
         options={{
           tabBarLabel: "Settings",
           tabBarIcon: ({ focused, color }) => (
-            <SettingsTabIcon focused={focused} color={color} />
+            <TabIcon label="⚙" focused={focused} color={color} />
           ),
         }}
       />
@@ -130,6 +100,9 @@ function Tabs() {
   );
 }
 
+/**
+ * ===================== STACK =====================
+ */
 export default function AppNavigator() {
   return (
     <Stack.Navigator
@@ -146,12 +119,14 @@ export default function AppNavigator() {
         },
       }}
     >
+      {/* MAIN APP */}
       <Stack.Screen
         name="MainTabs"
         component={Tabs}
         options={{ headerShown: false }}
       />
 
+      {/* EDIT PROFILE (arbeitet jetzt mit emergency_cards!) */}
       <Stack.Screen
         name="EditProfile"
         component={EditProfileScreen}
