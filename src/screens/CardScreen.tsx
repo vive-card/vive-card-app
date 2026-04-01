@@ -11,6 +11,8 @@ import {
   View,
 } from "react-native";
 
+import { supabase } from "../lib/supabase";
+
 import {
   CardRow,
   EmergencyCardRow,
@@ -20,15 +22,52 @@ import {
   lineValue,
   mapEmergencyDataToForm,
 } from "../services/profileService";
+
 import { useCardRealtime } from "../hooks/useCardRealtime";
+
+type MedicalDocumentRow = {
+  id: string;
+  public_id: string;
+  file_name: string;
+  file_path: string;
+  mime_type?: string | null;
+  file_size?: number | null;
+  created_at?: string | null;
+};
 
 export default function CardScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
   const [userId, setUserId] = useState<string | null>(null);
   const [card, setCard] = useState<CardRow | null>(null);
   const [profile, setProfile] = useState<EmergencyCardRow | null>(null);
   const [formView, setFormView] = useState<ProfileFormValues | null>(null);
+
+  const [documents, setDocuments] = useState<MedicalDocumentRow[]>([]);
+  const [docsLoading, setDocsLoading] = useState(false);
+
+  /* ================= LOAD ================= */
+
+  const loadDocuments = async (publicId: string) => {
+    try {
+      setDocsLoading(true);
+
+      const { data, error } = await supabase
+        .from("medical_documents")
+        .select("*")
+        .eq("public_id", publicId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      setDocuments(data || []);
+    } catch (e: any) {
+      console.log("Docs error:", e.message);
+    } finally {
+      setDocsLoading(false);
+    }
+  };
 
   const loadData = useCallback(async () => {
     const result = await getCurrentUserCardProfile();
@@ -37,6 +76,10 @@ export default function CardScreen() {
     setCard(result.card || null);
     setProfile(result.profile || null);
     setFormView(mapEmergencyDataToForm(result.profile));
+
+    if (result.card?.public_id) {
+      await loadDocuments(result.card.public_id);
+    }
   }, []);
 
   useEffect(() => {
@@ -69,22 +112,30 @@ export default function CardScreen() {
     onChange: loadData,
   });
 
+  /* ================= ACTIONS ================= */
+
   const handleOpenCard = async () => {
-    if (!card?.public_id) {
-      Alert.alert("Hinweis", "Keine Karte gefunden");
-      return;
-    }
+    if (!card?.public_id) return;
 
     const url = fullCardUrl(card.public_id);
-    const supported = await Linking.canOpenURL(url);
-
-    if (!supported) {
-      Alert.alert("Fehler", "Kartenlink konnte nicht geöffnet werden");
-      return;
-    }
-
     await Linking.openURL(url);
   };
+
+  const handleOpenDocument = async (doc: MedicalDocumentRow) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from("medical-docs")
+        .createSignedUrl(doc.file_path, 60 * 10);
+
+      if (error || !data?.signedUrl) throw error;
+
+      await Linking.openURL(data.signedUrl);
+    } catch (e: any) {
+      Alert.alert("Fehler", "Dokument konnte nicht geöffnet werden");
+    }
+  };
+
+  /* ================= STATES ================= */
 
   if (loading) {
     return (
@@ -100,11 +151,13 @@ export default function CardScreen() {
       <View style={styles.emptyWrap}>
         <Text style={styles.emptyTitle}>Keine Karte gefunden</Text>
         <Text style={styles.emptyText}>
-          Für diesen Account wurde aktuell keine VIVE CARD gefunden.
+          Für diesen Account wurde keine VIVE CARD gefunden.
         </Text>
       </View>
     );
   }
+
+  /* ================= UI ================= */
 
   return (
     <ScrollView
@@ -115,117 +168,39 @@ export default function CardScreen() {
       }
     >
       <Text style={styles.title}>Deine Karte</Text>
-      <Text style={styles.subtitle}>
-        Vorschau basierend auf dem Web-Schema
-      </Text>
 
       <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <View>
-            <Text style={styles.brand}>VIVE CARD</Text>
-            <Text style={styles.cardSub}>Medical Emergency Profile</Text>
-          </View>
+        <Text style={styles.pid}>{card.public_id}</Text>
 
-          <View style={styles.pidBox}>
-            <Text style={styles.pidLabel}>PUBLIC_ID</Text>
-            <Text style={styles.pid}>{lineValue(card.public_id)}</Text>
-          </View>
-        </View>
+        <Text style={styles.sectionTitle}>Grunddaten</Text>
+        <Text style={styles.valueLarge}>{lineValue(formView?.name)}</Text>
+        <Text style={styles.value}>{lineValue(formView?.dob)}</Text>
+        <Text style={styles.value}>{lineValue(formView?.blood)}</Text>
 
-        <View style={styles.separator} />
+        <Text style={styles.sectionTitle}>Kritisch</Text>
+        <Text style={styles.value}>{lineValue(formView?.allergies)}</Text>
+        <Text style={styles.value}>{lineValue(formView?.bloodThinner)}</Text>
 
-        <View style={styles.infoBlock}>
-          <Text style={styles.label}>Name</Text>
-          <Text style={styles.valueLarge}>{lineValue(formView?.name)}</Text>
-        </View>
+        <Text style={styles.sectionTitle}>Medizinische Dokumente</Text>
 
-        <View style={styles.row}>
-          <View style={styles.col}>
-            <Text style={styles.label}>Geburtsdatum</Text>
-            <Text style={styles.value}>{lineValue(formView?.dob)}</Text>
-          </View>
-
-          <View style={styles.col}>
-            <Text style={styles.label}>Blutgruppe</Text>
-            <Text style={styles.value}>{lineValue(formView?.blood)}</Text>
-          </View>
-        </View>
-
-        <View style={styles.separator} />
-
-        <Text style={styles.sectionTitle}>Kritische Informationen</Text>
-
-        <View style={styles.alertBox}>
-          <Text style={styles.alertLabel}>Allergien</Text>
-          <Text style={styles.alertValue}>{lineValue(formView?.allergies)}</Text>
-        </View>
-
-        <View style={styles.alertBox}>
-          <Text style={styles.alertLabel}>Blutverdünner</Text>
-          <Text style={styles.alertValue}>
-            {lineValue(formView?.bloodThinner)}
-          </Text>
-        </View>
-
-        <View style={styles.infoBlock}>
-          <Text style={styles.label}>Medikamente</Text>
-          <Text style={styles.value}>{lineValue(formView?.meds)}</Text>
-        </View>
-
-        <View style={styles.separator} />
-
-        <Text style={styles.sectionTitle}>Weitere Informationen</Text>
-
-        <View style={styles.infoBlock}>
-          <Text style={styles.label}>Impfungen</Text>
-          <Text style={styles.value}>{lineValue(formView?.vaccines)}</Text>
-        </View>
-
-        <View style={styles.infoBlock}>
-          <Text style={styles.label}>Chronische Erkrankungen</Text>
-          <Text style={styles.value}>{lineValue(formView?.chronic)}</Text>
-        </View>
-
-        <View style={styles.infoBlock}>
-          <Text style={styles.label}>Organspende</Text>
-          <Text style={styles.value}>{lineValue(formView?.organ)}</Text>
-        </View>
-
-        <View style={styles.infoBlock}>
-          <Text style={styles.label}>Notizen / Hinweise</Text>
-          <Text style={styles.value}>{lineValue(formView?.notes)}</Text>
-        </View>
-
-        <View style={styles.separator} />
-
-        <Text style={styles.sectionTitle}>Notfallkontakte</Text>
-
-        <View style={styles.contactBox}>
-          <Text style={styles.contactTitle}>
-            {lineValue(formView?.em1_name, "Kontakt 1")}
-          </Text>
-          <Text style={styles.contactValue}>{lineValue(formView?.em1)}</Text>
-        </View>
-
-        <View style={styles.contactBox}>
-          <Text style={styles.contactTitle}>
-            {lineValue(formView?.em2_name, "Kontakt 2")}
-          </Text>
-          <Text style={styles.contactValue}>{lineValue(formView?.em2)}</Text>
-        </View>
-
-        <View style={styles.separator} />
-
-        <View style={styles.infoBlock}>
-          <Text style={styles.label}>Letztes Update</Text>
-          <Text style={styles.value}>
-            {lineValue(
-              profile?.updated_at
-                ? new Date(profile.updated_at).toLocaleString()
-                : ""
-            )}
-          </Text>
-        </View>
+        {docsLoading ? (
+          <ActivityIndicator />
+        ) : documents.length === 0 ? (
+          <Text style={styles.emptyText}>Keine Dokumente vorhanden</Text>
+        ) : (
+          documents.map((doc) => (
+            <TouchableOpacity
+              key={doc.id}
+              style={styles.docItem}
+              onPress={() => handleOpenDocument(doc)}
+            >
+              <Text style={styles.docName}>{doc.file_name}</Text>
+              <Text style={styles.docMeta}>
+                {doc.mime_type?.includes("image") ? "Bild" : "PDF"}
+              </Text>
+            </TouchableOpacity>
+          ))
+        )}
       </View>
 
       <TouchableOpacity style={styles.button} onPress={handleOpenCard}>
@@ -235,188 +210,65 @@ export default function CardScreen() {
   );
 }
 
+/* ================= STYLES ================= */
+
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: "#06080d",
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-  },
+  screen: { flex: 1, backgroundColor: "#06080d" },
+  content: { padding: 20 },
+
   loadingWrap: {
     flex: 1,
-    backgroundColor: "#06080d",
     justifyContent: "center",
     alignItems: "center",
-    padding: 24,
   },
-  loadingText: {
-    marginTop: 12,
-    color: "#aeb6c4",
-    fontSize: 15,
-  },
+
+  loadingText: { color: "#aaa", marginTop: 10 },
+
   emptyWrap: {
     flex: 1,
-    backgroundColor: "#06080d",
     justifyContent: "center",
     alignItems: "center",
-    padding: 24,
   },
-  emptyTitle: {
-    color: "#ffffff",
-    fontSize: 28,
-    fontWeight: "900",
+
+  emptyTitle: { color: "#fff", fontSize: 24 },
+  emptyText: { color: "#888" },
+
+  title: { color: "#fff", fontSize: 28, marginBottom: 10 },
+
+  card: {
+    backgroundColor: "#10141f",
+    padding: 16,
+    borderRadius: 16,
+  },
+
+  pid: { color: "#fff", fontWeight: "bold", marginBottom: 10 },
+
+  sectionTitle: {
+    color: "#ff3b30",
+    marginTop: 16,
+    marginBottom: 6,
+  },
+
+  value: { color: "#fff" },
+  valueLarge: { color: "#fff", fontSize: 20 },
+
+  docItem: {
+    backgroundColor: "#1a2232",
+    padding: 12,
+    borderRadius: 10,
     marginBottom: 8,
   },
-  emptyText: {
-    color: "#aeb6c4",
-    fontSize: 15,
-    textAlign: "center",
-    lineHeight: 22,
-  },
-  title: {
-    color: "#ffffff",
-    fontSize: 34,
-    fontWeight: "900",
-    marginTop: 8,
-  },
-  subtitle: {
-    color: "#98a2b3",
-    fontSize: 17,
-    marginTop: 4,
-    marginBottom: 18,
-  },
-  card: {
-    width: "100%",
-    borderRadius: 22,
-    padding: 18,
-    backgroundColor: "#10141f",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    marginBottom: 18,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  brand: {
-    color: "#ffffff",
-    fontSize: 20,
-    fontWeight: "900",
-    letterSpacing: 0.5,
-  },
-  cardSub: {
-    color: "#98a2b3",
-    fontSize: 13,
-    marginTop: 4,
-  },
-  pidBox: {
-    alignItems: "flex-end",
-  },
-  pidLabel: {
-    color: "#8f98a8",
-    fontSize: 11,
-    fontWeight: "700",
-    marginBottom: 4,
-  },
-  pid: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "900",
-    letterSpacing: 1,
-  },
-  separator: {
-    height: 1,
-    backgroundColor: "rgba(255,255,255,0.08)",
-    marginVertical: 16,
-  },
-  sectionTitle: {
-    color: "#ffffff",
-    fontSize: 18,
-    fontWeight: "800",
-    marginBottom: 12,
-  },
-  infoBlock: {
-    marginBottom: 14,
-  },
-  row: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  col: {
-    flex: 1,
-  },
-  label: {
-    color: "#8f98a8",
-    fontSize: 12,
-    fontWeight: "700",
-    marginBottom: 6,
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
-  },
-  value: {
-    color: "#ffffff",
-    fontSize: 16,
-    lineHeight: 22,
-  },
-  valueLarge: {
-    color: "#ffffff",
-    fontSize: 22,
-    fontWeight: "800",
-    lineHeight: 28,
-  },
-  alertBox: {
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "rgba(255,107,107,0.25)",
-    backgroundColor: "rgba(255,107,107,0.08)",
-    padding: 12,
-    marginBottom: 12,
-  },
-  alertLabel: {
-    color: "#ffb3b3",
-    fontSize: 12,
-    fontWeight: "800",
-    textTransform: "uppercase",
-    marginBottom: 6,
-    letterSpacing: 0.4,
-  },
-  alertValue: {
-    color: "#ffffff",
-    fontSize: 16,
-    lineHeight: 22,
-  },
-  contactBox: {
-    backgroundColor: "#151b28",
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
-  },
-  contactTitle: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "800",
-    marginBottom: 6,
-  },
-  contactValue: {
-    color: "#d7dce5",
-    fontSize: 15,
-    lineHeight: 21,
-  },
+
+  docName: { color: "#fff", fontWeight: "bold" },
+  docMeta: { color: "#aaa", fontSize: 12 },
+
   button: {
+    marginTop: 20,
     backgroundColor: "#e10600",
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 14,
+    padding: 16,
+    borderRadius: 12,
     alignItems: "center",
   },
-  buttonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "800",
-  },
+
+  buttonText: { color: "#fff", fontWeight: "bold" },
 });
