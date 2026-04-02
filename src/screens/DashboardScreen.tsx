@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -10,23 +10,51 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import {
+
+import { getCurrentUserCardProfile } from "../services/profileService";
+import { useCardRealtime } from "../hooks/useCardRealtime";
+import type {
   CardRow,
   EmergencyCardRow,
-  fullCardUrl,
-  getCurrentUserCardProfile,
-  getStatusColor,
-  getStatusLabel,
-  lineValue,
-  mapEmergencyDataToForm,
   ProfileFormValues,
-} from "../services/profileService";
-import { useCardRealtime } from "../hooks/useCardRealtime";
+} from "../types";
+import { mapEmergencyDataToForm } from "../utils";
+
+function getStatusColor(status?: string | null) {
+  const value = String(status || "").toLowerCase();
+
+  if (value === "active") return "#1e8a4a";
+  if (value === "blocked") return "#b01818";
+  if (value === "pending") return "#d39b22";
+
+  return "#5b6472";
+}
+
+function getStatusLabel(status?: string | null) {
+  const value = String(status || "").toLowerCase();
+
+  if (value === "active") return "Aktiv";
+  if (value === "blocked") return "Gesperrt";
+  if (value === "pending") return "Pending";
+
+  return "Unbekannt";
+}
+
+function fullCardUrl(publicId?: string | null) {
+  if (!publicId) return "";
+  return `https://vive-card.com/${publicId}`;
+}
+
+function lineValue(value?: string | null, fallback = "—") {
+  const clean = String(value || "").trim();
+  return clean || fallback;
+}
 
 export default function DashboardScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
+
   const [userEmail, setUserEmail] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const [card, setCard] = useState<CardRow | null>(null);
@@ -80,11 +108,13 @@ export default function DashboardScreen({ navigation }: any) {
   }, [navigation, loadData]);
 
   useCardRealtime({
-    cardId: card?.id || null,
+    publicId: card?.public_id || null,
     ownerUserId: userId,
     enabled: !loading,
     onChange: loadData,
   });
+
+  const cardUrl = useMemo(() => fullCardUrl(card?.public_id), [card?.public_id]);
 
   const handleOpenCard = async () => {
     if (!card?.public_id) {
@@ -92,29 +122,28 @@ export default function DashboardScreen({ navigation }: any) {
       return;
     }
 
-    const url = fullCardUrl(card.public_id);
-    const supported = await Linking.canOpenURL(url);
+    const supported = await Linking.canOpenURL(cardUrl);
 
     if (!supported) {
       Alert.alert("Fehler", "Kartenlink konnte nicht geöffnet werden");
       return;
     }
 
-    await Linking.openURL(url);
+    await Linking.openURL(cardUrl);
   };
 
   const handleEditProfile = () => {
-    if (!card?.id) {
+    if (!card?.public_id) {
       Alert.alert("Hinweis", "Keine Karte gefunden");
       return;
     }
 
     if (navigation?.navigate) {
-      navigation.navigate("EditProfile");
+      navigation.navigate("Card");
       return;
     }
 
-    Alert.alert("Hinweis", "EditProfile Screen ist noch nicht verbunden");
+    Alert.alert("Hinweis", "Card Screen ist noch nicht verbunden");
   };
 
   const handleOpenCardTab = () => {
@@ -123,7 +152,7 @@ export default function DashboardScreen({ navigation }: any) {
       return;
     }
 
-    Alert.alert("Hinweis", "Karte Screen ist noch nicht verbunden");
+    Alert.alert("Hinweis", "Card Screen ist noch nicht verbunden");
   };
 
   if (loading) {
@@ -190,7 +219,7 @@ export default function DashboardScreen({ navigation }: any) {
 
             <View style={styles.infoBlock}>
               <Text style={styles.label}>Kartenlink</Text>
-              <Text style={styles.valueSmall}>{fullCardUrl(card.public_id)}</Text>
+              <Text style={styles.valueSmall}>{lineValue(cardUrl)}</Text>
             </View>
 
             <View style={styles.buttonRow}>
