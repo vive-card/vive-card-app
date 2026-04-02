@@ -1689,4 +1689,498 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginRight: 8,
   },
-  headerBtnDanger
+  headerBtnDanger: {
+    backgroundColor: "#b01818",
+  },
+  headerBtnDangerText: {
+    color: "#ffffff",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  headerBtnSoft: {
+    backgroundColor: "#eef2f7",
+  },
+  headerBtnSoftText: {
+    color: "#101318",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  headerBtnWhite: {
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#e7ebf0",
+  },
+  headerBtnWhiteText: {
+    color: "#101318",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+
+  readonlyBanner: {
+    backgroundColor: "#fff3cd",
+    padding: 10,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+  readonlyBannerText: {
+    color: "#856404",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+
+  cardWrap: {
+    backgroundColor: "#ffffff",
+    borderRadius: 14,
+    padding: 16,
+  },
+
+  headline: {
+    flexDirection: "row",
+    marginBottom: 14,
+  },
+  headlineTitle: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: "#101318",
+  },
+  headlineSub: {
+    fontSize: 13,
+    color: "#5b6472",
+    marginTop: 4,
+  },
+
+  pidBox: {
+    alignItems: "flex-end",
+  },
+  pidLabel: {
+    fontSize: 10,
+    color: "#5b6472",
+  },
+  pidValue: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#101318",
+  },
+
+  disclaimerBox: {
+    backgroundColor: "#f4f6f8",
+    padding: 10,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+  disclaimerText: {
+    fontSize: 12,
+    color: "#5b6472",
+  },
+
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: "900",
+    color: "#101318",
+    marginTop: 16,
+    marginBottom: 6,
+  },
+
+  field: {
+    marginBottom: 10,
+  },
+  fieldHalf: {
+    flex: 1,
+    marginRight: 6,
+  },
+  fieldCrit: {
+    backgroundColor: "#ffe5e5",
+    padding: 8,
+    borderRadius: 10,
+  },
+  fieldWarn: {
+    backgroundColor: "#fff3cd",
+    padding: 8,
+    borderRadius: 10,
+  },
+  fieldOk: {
+    backgroundColor: "#e6f4ea",
+    padding: 8,
+    borderRadius: 10,
+  },
+
+  row2: {
+    flexDirection: "row",
+  },
+  grid2: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  labelText: {
+    fontSize: 12,
+    color: "#101318",
+    fontWeight: "700",
+    marginRight: 6,
+  },
+
+  chip: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  chipText: {
+    fontSize: 10,
+    fontWeight: "800",
+  },
+  chipCrit: {
+    backgroundColor: "#ff4d4f",
+  },
+  chipWarn: {
+    backgroundColor: "#faad14",
+  },
+  chipOk: {
+    backgroundColor: "#52c41a",
+  },
+  chipTextCrit: {
+    color: "#fff",
+  },
+  chipTextWarn: {
+    color: "#000",
+  },
+  chipTextOk: {
+    color: "#fff",
+  },
+
+  input: {
+    backgroundColor: "#f4f6f8",
+    padding: 10,
+    borderRadius: 8,
+    fontSize: 14,
+    color: "#101318",
+  },
+  textarea: {
+    minHeight: 70,
+    textAlignVertical: "top",
+  },
+  inputDisabled: {
+    opacity: 0.6,
+  },
+
+  selectLike: {
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: "#f4f6f8",
+  },
+  selectLikeText: {
+    color: "#101318",
+  },
+
+  contactsWrap: {
+    marginTop: 8,
+  },
+  inputSpacing: {
+    marginTop: 6,
+  },
+  callBtn: {
+    backgroundColor: "#2a3a57",
+    padding: 8,
+    borderRadius: 8,
+    marginTop: 6,
+    alignItems: "center",
+  },
+  callBtnText: {
+    color: "#fff",
+    fontWeight: "800",
+  },
+
+  docsGrid: {
+    marginTop: 10,
+  },
+  docToolbar: {
+    flexDirection: "row",
+    marginBottom: 10,
+  },
+
+  docItem: {
+    marginBottom: 10,
+  },
+  docMainRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  docLeft: {
+    flexDirection: "row",
+    flex: 1,
+  },
+  docThumb: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    overflow: "hidden",
+    marginRight: 10,
+  },
+  docThumbImage: {
+    width: "100%",
+    height: "100%",
+  },
+  docThumbFallback: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#e7ebf0",
+  },
+  docThumbFallbackText: {
+    fontSize: 20,
+  },
+  docMeta: {
+    flex: 1,
+  },
+  docName: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  docType: {
+    fontSize: 11,
+    color: "#5b6472",
+  },
+
+  docActions: {
+    justifyContent: "center",
+  },
+  docActionBtn: {
+    padding: 6,
+  },
+  docActionBtnText: {
+    color: "#2a3a57",
+    fontWeight: "700",
+  },
+  docActionBtnDanger: {
+    padding: 6,
+  },
+  docActionBtnDangerText: {
+    color: "#b01818",
+    fontWeight: "700",
+  },
+
+  footer: {
+    marginTop: 16,
+  },
+  footerLeft: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  footerBtn: {
+    backgroundColor: "#eef2f7",
+    padding: 10,
+    borderRadius: 8,
+  },
+  footerBtnText: {
+    fontWeight: "800",
+    color: "#101318",
+  },
+  footerBtnPrimary: {
+    backgroundColor: "#1f6feb",
+    padding: 10,
+    borderRadius: 8,
+  },
+  footerBtnPrimaryText: {
+    color: "#fff",
+    fontWeight: "800",
+  },
+  footerBtnDanger: {
+    backgroundColor: "#b01818",
+    padding: 10,
+    borderRadius: 8,
+  },
+  footerBtnDangerText: {
+    color: "#fff",
+    fontWeight: "800",
+  },
+
+  footerStatusWrap: {
+    marginTop: 10,
+  },
+  lastUpdateText: {
+    fontSize: 11,
+    color: "#5b6472",
+  },
+  lastUpdateValue: {
+    fontWeight: "700",
+  },
+  statusText: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+  statusOk: {
+    color: "#52c41a",
+  },
+  statusWarn: {
+    color: "#faad14",
+  },
+  statusErr: {
+    color: "#ff4d4f",
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    padding: 20,
+  },
+  modalCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: "900",
+    marginBottom: 10,
+  },
+  modalOption: {
+    padding: 10,
+  },
+  modalOptionText: {
+    fontSize: 14,
+  },
+
+  emergencyScreen: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  emergencyTop: {
+    flexDirection: "row",
+    padding: 16,
+  },
+  emergencyTitle: {
+    fontSize: 18,
+    fontWeight: "900",
+  },
+  emergencySub: {
+    fontSize: 12,
+    color: "#5b6472",
+  },
+  emergencyPidWrap: {
+    alignItems: "flex-end",
+  },
+  emergencyPidLabel: {
+    fontSize: 10,
+    color: "#5b6472",
+  },
+  emergencyPidValue: {
+    fontSize: 12,
+    fontWeight: "800",
+  },
+
+  emergencyCloseBtn: {
+    padding: 10,
+    alignItems: "center",
+  },
+  emergencyCloseBtnText: {
+    fontWeight: "900",
+  },
+
+  emergencyActions: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginVertical: 10,
+  },
+  emergencyActionBtn: {
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: "#eef2f7",
+  },
+  emergencyActionBtnPrimary: {
+    backgroundColor: "#b01818",
+  },
+  emergencyActionBtnText: {
+    fontWeight: "900",
+    color: "#101318",
+  },
+
+  emergencyDocsAlert: {
+    padding: 12,
+    backgroundColor: "#fff3cd",
+    margin: 12,
+    borderRadius: 10,
+  },
+  emergencyDocsHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  emergencyDocsTitle: {
+    fontWeight: "900",
+  },
+  emergencyDocsBadge: {
+    backgroundColor: "#b01818",
+    borderRadius: 10,
+    paddingHorizontal: 8,
+  },
+  emergencyDocsBadgeText: {
+    color: "#fff",
+  },
+  emergencyDocsText: {
+    marginTop: 6,
+  },
+
+  emergencyDocRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 6,
+  },
+  emergencyDocRowText: {
+    fontSize: 13,
+  },
+  emergencyDocRowOpen: {
+    color: "#1f6feb",
+  },
+
+  emergencyGrid: {
+    padding: 12,
+  },
+  emergencyCard: {
+    marginBottom: 10,
+  },
+  emergencyCardCritical: {
+    backgroundColor: "#ffe5e5",
+    padding: 8,
+    borderRadius: 8,
+  },
+  emergencyCardLabel: {
+    fontSize: 11,
+    color: "#5b6472",
+  },
+  emergencyCardValue: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+
+  emergencyContact: {
+    flexDirection: "row",
+    padding: 12,
+  },
+  emergencyContactName: {
+    fontWeight: "800",
+  },
+  emergencyContactPhone: {
+    color: "#5b6472",
+  },
+  emergencyContactBtn: {
+    backgroundColor: "#1f6feb",
+    padding: 8,
+    borderRadius: 8,
+  },
+  emergencyContactBtnText: {
+    color: "#fff",
+  },
+
+  emergencyHint: {
+    fontSize: 12,
+    color: "#5b6472",
+    marginTop: 10,
+    paddingHorizontal: 12,
+  },
+});
+  
