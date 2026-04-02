@@ -1018,8 +1018,7 @@ const callNumber = async (number?: string | null) => {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.actionsRow}
           >
-            {(["de", "it", "fr", "es", "en"] as LangKey[]).map((item) => (
-              <TouchableOpacity
+            <TouchableOpacity
   style={styles.langDropdown}
   onPress={() => setLangPickerVisible(true)}
 >
@@ -1027,8 +1026,6 @@ const callNumber = async (number?: string | null) => {
     {lang.toUpperCase()}
   </Text>
 </TouchableOpacity>
-            ))}
-
             <TouchableOpacity
               style={[styles.headerBtn, styles.headerBtnDanger]}
               onPress={() => setEmergencyVisible(true)}
@@ -1474,7 +1471,7 @@ const callNumber = async (number?: string | null) => {
     <View style={styles.modalCard}>
       {(["de", "it", "fr", "es", "en"] as LangKey[]).map((item) => (
         <TouchableOpacity
-          key={item}
+          key={`lang-${item}`}
           style={styles.modalOption}
           onPress={() => {
             setLang(item);
