@@ -491,7 +491,8 @@ export default function CardScreen({ navigation }: any) {
   const [profile, setProfile] = useState<EmergencyCardRow | null>(null);
   const [form, setForm] = useState<ProfileFormValues>(initialProfileForm);
   const [documents, setDocuments] = useState<MedicalDocumentViewRow[]>([]);
-
+  const [langPickerVisible, setLangPickerVisible] = useState(false);
+  
   const setStatus = useCallback(
     (text: string, kind: "ok" | "warn" | "err" | "" = "") => {
       setStatusText(text);
@@ -1019,19 +1020,13 @@ const callNumber = async (number?: string | null) => {
           >
             {(["de", "it", "fr", "es", "en"] as LangKey[]).map((item) => (
               <TouchableOpacity
-                key={item}
-                style={[styles.langChip, lang === item && styles.langChipActive]}
-                onPress={() => setLang(item)}
-              >
-                <Text
-                  style={[
-                    styles.langChipText,
-                    lang === item && styles.langChipTextActive,
-                  ]}
-                >
-                  {item.toUpperCase()}
-                </Text>
-              </TouchableOpacity>
+  style={styles.langDropdown}
+  onPress={() => setLangPickerVisible(true)}
+>
+  <Text style={styles.langDropdownText}>
+    {lang.toUpperCase()}
+  </Text>
+</TouchableOpacity>
             ))}
 
             <TouchableOpacity
@@ -1469,6 +1464,32 @@ const callNumber = async (number?: string | null) => {
         </View>
       </Modal>
 
+      <Modal
+  visible={langPickerVisible}
+  transparent
+  animationType="fade"
+  onRequestClose={() => setLangPickerVisible(false)}
+>
+  <View style={styles.modalOverlay}>
+    <View style={styles.modalCard}>
+      {(["de", "it", "fr", "es", "en"] as LangKey[]).map((item) => (
+        <TouchableOpacity
+          key={item}
+          style={styles.modalOption}
+          onPress={() => {
+            setLang(item);
+            setLangPickerVisible(false);
+          }}
+        >
+          <Text style={styles.modalOptionText}>
+            {item.toUpperCase()}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  </View>
+</Modal>
+      
       <Modal
         visible={emergencyVisible}
         animationType="slide"
@@ -2250,7 +2271,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
   },
+langDropdown: {
+  borderWidth: 1,
+  borderColor: "#e7ebf0",
+  borderRadius: 10,
+  paddingHorizontal: 14,
+  paddingVertical: 10,
+  backgroundColor: "#fff",
+  marginRight: 8,
+},
 
+langDropdownText: {
+  fontSize: 14,
+  fontWeight: "900",
+  color: "#101318",
+},
   emergencyScreen: {
     flex: 1,
     backgroundColor: "#8c1414",
