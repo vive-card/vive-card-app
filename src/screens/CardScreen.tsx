@@ -950,40 +950,6 @@ export default function CardScreen({ navigation }: any) {
     await loadDocuments(card.public_id);
   };
 
- const handlePickDocument = async () => {
-  try {
-    if (!editable) {
-      setStatus(T("status_docs_edit_only"), "warn");
-      return;
-    }
-
-    setUploading(true);
-    setStatus(T("status_uploading"), "warn");
-    const result = await DocumentPicker.getDocumentAsync({
-      type: ["image/*", "application/pdf"],
-      multiple: false,
-      copyToCacheDirectory: true,
-    });
-
-    if (result.canceled) return;
-
-    const asset = result.assets?.[0];
-    if (!asset?.uri) return;
-
-    await uploadFileToSupabase({
-      uri: asset.uri,
-      fileName: asset.name || T("document_default_name"),
-      mimeType: asset.mimeType || "application/octet-stream",
-      fileSize: asset.size || null,
-    });
-
-    setStatus(T("status_doc_saved"), "ok");
-  } catch (e: any) {
-    setStatus(e?.message || T("status_upload_failed"), "err");
-  } finally {
-    setUploading(false);
-  }
-};
   const handleTakePhoto = async () => {
     try {
       if (!editable) {
