@@ -1,9 +1,20 @@
 import { supabase } from "../lib/supabase";
-import type {
-  MedicalDocumentRow,
-  MedicalDocumentViewRow,
-} from "../types/medicalDocuments";
-import { isImageMime } from "../utils/formatters";
+import { isImageMime } from "../utils/medicalDocuments";
+
+export type MedicalDocumentRow = {
+  id: string;
+  owner_id?: string | null;
+  public_id: string;
+  file_name: string;
+  file_path: string;
+  mime_type?: string | null;
+  file_size?: number | null;
+  created_at?: string | null;
+};
+
+export type MedicalDocumentViewRow = MedicalDocumentRow & {
+  preview_url?: string | null;
+};
 
 function guessExtension(fileName?: string | null, mimeType?: string | null) {
   const name = String(fileName || "").toLowerCase();
@@ -26,13 +37,13 @@ async function uriToArrayBuffer(uri: string) {
   return await response.arrayBuffer();
 }
 
-export async function getSignedMedicalDocumentUrl(filePath: string) {
+export async function getSignedDocumentUrl(filePath: string) {
   const { data, error } = await supabase.storage
     .from("medical-docs")
     .createSignedUrl(filePath, 60 * 10);
 
   if (error || !data?.signedUrl) {
-    throw new Error(error?.message || "Signed URL konnte nicht erstellt werden");
+    throw new Error(error?.message || "Dokument konnte nicht geöffnet werden");
   }
 
   return data.signedUrl;
@@ -58,12 +69,14 @@ export async function loadMedicalDocuments(
   const rowsWithPreview = await Promise.all(
     rows.map(async (doc) => {
       if (!isImageMime(doc.mime_type)) {
-        return { ...doc, preview_url: null };
+        return {
+          ...doc,
+          preview_url: null,
+        };
       }
 
       try {
-        const previewUrl = await getSignedMedicalDocumentUrl(doc.file_path);
-
+        const previewUrl = await getSignedDocumentUrl(doc.file_path);
         return {
           ...doc,
           preview_url: previewUrl,
@@ -81,31 +94,25 @@ export async function loadMedicalDocuments(
 }
 
 export async function uploadMedicalDocument(params: {
-  userId: string;
-  publicId: string;
   uri: string;
   fileName: string;
   mimeType: string;
   fileSize?: number | null;
+  userId: string;
+  publicId: string;
 }) {
-  const { userId, publicId, uri, fileName, mimeType, fileSize } = params;
-
-  if (!userId || !publicId) {
-    throw new Error("User oder Karte fehlt");
-  }
-
-  const ext = guessExtension(fileName, mimeType);
+  const ext = guessExtension(params.fileName, params.mimeType);
   const uniqueName = `${Date.now()}-${Math.random()
     .toString(36)
     .slice(2)}.${ext}`;
-  const filePath = `${userId}/${publicId}/${uniqueName}`;
+  const filePath = `${params.userId}/${params.publicId}/${uniqueName}`;
 
-  const arrayBuffer = await uriToArrayBuffer(uri);
+  const arrayBuffer = await uriToArrayBuffer(params.uri);
 
   const { error: uploadError } = await supabase.storage
     .from("medical-docs")
     .upload(filePath, arrayBuffer, {
-      contentType: mimeType || "application/octet-stream",
+      contentType: params.mimeType || "application/octet-stream",
       upsert: false,
     });
 
@@ -113,50 +120,35 @@ export async function uploadMedicalDocument(params: {
     throw new Error("Upload fehlgeschlagen: " + uploadError.message);
   }
 
-  const { error: insertError } = await supabase
-    .from("medical_documents")
-    .insert({
-      owner_id: userId,
-      public_id: publicId,
-      file_name: fileName,
-      file_path: filePath,
-      mime_type: mimeType || "application/octet-stream",
-      file_size: fileSize || null,
-    });
+  const { error: insertError } = await supabase.from("medical_documents").insert({
+    owner_id: params.userId,
+    public_id: params.publicId,
+    file_name: params.fileName,
+    file_path: filePath,
+    mime_type: params.mimeType || "application/octet-stream",
+    file_size: params.fileSize || null,
+  });
 
   if (insertError) {
     throw new Error("DB-Eintrag fehlgeschlagen: " + insertError.message);
   }
-
-  return {
-    file_path: filePath,
-  };
 }
 
-export async function deleteMedicalDocument(
-  documentId: string,
-  filePath: string,
-  publicId?: string
-) {
+export async function deleteMedicalDocument(docId: string, filePath: string) {
   const { error: storageError } = await supabase.storage
     .from("medical-docs")
     .remove([filePath]);
 
   if (storageError) {
-    throw new Error("Storage-Löschen fehlgeschlagen: " + storageError.message);
+    throw new Error(storageError.message);
   }
 
-  let query = supabase.from("medical_documents").delete().eq("id", documentId);
-
-  if (publicId) {
-    query = query.eq("public_id", publicId);
-  }
-
-  const { error: dbError } = await query;
+  const { error: dbError } = await supabase
+    .from("medical_documents")
+    .delete()
+    .eq("id", docId);
 
   if (dbError) {
-    throw new Error("DB-Löschen fehlgeschlagen: " + dbError.message);
+    throw new Error(dbError.message);
   }
-
-  return true;
 }
