@@ -150,6 +150,7 @@ ok_chip: "ok",
 emergency_contact_fallback_1: "☎️ Notfallkontakt 1",
 emergency_contact_fallback_2: "☎️ Notfallkontakt 2",
 document_default_name: "Dokument",
+  check_ok: "OK",
   },
   it: {
     brand: "VIVE CARD",
@@ -243,6 +244,7 @@ ok_chip: "ok",
 emergency_contact_fallback_1: "☎️ Contatto d’emergenza 1",
 emergency_contact_fallback_2: "☎️ Contatto d’emergenza 2",
 document_default_name: "Documento",
+    check_ok: "OK",
   },
   fr: {
     brand: "VIVE CARD",
@@ -337,6 +339,7 @@ ok_chip: "ok",
 emergency_contact_fallback_1: "☎️ Contact d’urgence 1",
 emergency_contact_fallback_2: "☎️ Contact d’urgence 2",
 document_default_name: "Document",
+    check_ok: "OK",
   },
   es: {
     brand: "VIVE CARD",
@@ -431,6 +434,7 @@ ok_chip: "ok",
 emergency_contact_fallback_1: "☎️ Contacto de emergencia 1",
 emergency_contact_fallback_2: "☎️ Contacto de emergencia 2",
 document_default_name: "Documento",
+    check_ok: "OK",
   },
   en: {
     brand: "VIVE CARD",
@@ -525,6 +529,7 @@ ok_chip: "ok",
 emergency_contact_fallback_1: "☎️ Emergency contact 1",
 emergency_contact_fallback_2: "☎️ Emergency contact 2",
 document_default_name: "Document",
+    check_ok: "OK",
   },
 };
 
@@ -861,7 +866,7 @@ export default function CardScreen({ navigation }: any) {
   const deleteDocument = async (doc: MedicalDocumentViewRow) => {
     Alert.alert(
   T("remove"),
-  ${doc.file_name || T("document_default_name")}?,
+  `${doc.file_name || T("document_default_name")}?`,
       [
         { text: T("cancel"), style: "cancel" },
         {
@@ -1012,7 +1017,7 @@ export default function CardScreen({ navigation }: any) {
         fileSize: asset.fileSize || null,
       });
 
-      setStatus(T("status_saved"), "ok");
+      setStatus(T("status_doc_saved"), "ok");
     } catch (e: any) {
       setStatus(e?.message || T("status_error"), "err");
     } finally {
@@ -1053,7 +1058,7 @@ const handlePickFromLibrary = async () => {
       fileSize: asset.fileSize || null,
     });
 
-    setStatus(T("status_saved"), "ok");
+    setStatus(T("status_doc_saved"), "ok");
   } catch (e: any) {
     setStatus(e?.message || T("status_error"), "err");
   } finally {
@@ -1547,7 +1552,7 @@ const callNumber = async (number?: string | null) => {
             <Text style={styles.modalTitle}>{T("select_blood")}</Text>
 
             <ScrollView style={{ maxHeight: 320 }}>
-              {BLOOD_OPTIONS.map((option) => (
+              {BLOOD_OPTIONS[lang].map((option) => (
                 <TouchableOpacity
                   key={option || "empty"}
                   style={styles.modalOption}
