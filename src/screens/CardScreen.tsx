@@ -631,7 +631,7 @@ export default function CardScreen({ navigation }: any) {
         .maybeSingle();
 
       if (error) {
-        throw new Error("Kartenstatus konnte nicht geprüft werden: " + error.message);
+        throw new Error(`${T("status_card_check_error")} ${error.message}`);
       }
 
       return String(data?.status || "") === "blocked" || !!data?.blocked_at;
@@ -656,7 +656,7 @@ export default function CardScreen({ navigation }: any) {
           .order("created_at", { ascending: false });
 
         if (error) {
-          throw new Error("Dokumente konnten nicht geladen werden: " + error.message);
+          throw new Error(`${T("status_docs_load_error")} ${error.message}`);
         }
 
         const rows = (data || []) as MedicalDocumentRow[];
@@ -849,12 +849,12 @@ export default function CardScreen({ navigation }: any) {
         .createSignedUrl(doc.file_path, 60 * 10);
 
       if (error || !data?.signedUrl) {
-        throw new Error("Dokument konnte nicht geöffnet werden");
+        throw new Error(T("status_doc_open_error"));
       }
 
       navigation?.navigate?.("DocumentViewer", {
         url: data.signedUrl,
-        fileName: doc.file_name || "Dokument",
+        fileName: doc.file_name || T("document_default_name"),
         mimeType: doc.mime_type || "",
       });
     } catch (e: any) {
@@ -909,7 +909,7 @@ export default function CardScreen({ navigation }: any) {
 }) => {
   
     if (!card?.public_id || !userId) {
-      throw new Error("User oder Karte fehlt");
+      throw new Error(T("status_missing_user_or_card"));
     }
 
     const ext = guessExtension(params.fileName, params.mimeType);
@@ -928,7 +928,7 @@ export default function CardScreen({ navigation }: any) {
       });
 
     if (uploadError) {
-      throw new Error("Upload fehlgeschlagen: " + uploadError.message);
+      throw new Error(`${T("status_upload_failed")} ${uploadError.message}`);
     }
 
     const { error: insertError } = await supabase
@@ -943,7 +943,7 @@ export default function CardScreen({ navigation }: any) {
       });
 
     if (insertError) {
-      throw new Error("DB-Eintrag fehlgeschlagen: " + insertError.message);
+      throw new Error(`${T("status_db_insert_failed")} ${insertError.message}`);
     }
 
     await loadDocuments(card.public_id);
@@ -952,13 +952,12 @@ export default function CardScreen({ navigation }: any) {
  const handlePickDocument = async () => {
   try {
     if (!editable) {
-      setStatus("Dokumente können nur im Bearbeitungsmodus hochgeladen werden.", "warn");
+      setStatus(T("status_docs_edit_only"), "warn");
       return;
     }
 
     setUploading(true);
-    setStatus("Dokument wird hochgeladen…", "warn");
-
+    setStatus(T("status_uploading"), "warn");
     const result = await DocumentPicker.getDocumentAsync({
       type: ["image/*", "application/pdf"],
       multiple: false,
@@ -972,14 +971,14 @@ export default function CardScreen({ navigation }: any) {
 
     await uploadFileToSupabase({
       uri: asset.uri,
-      fileName: asset.name || "Dokument",
+      fileName: asset.name || T("document_default_name"),
       mimeType: asset.mimeType || "application/octet-stream",
       fileSize: asset.size || null,
     });
 
-    setStatus("Dokument gespeichert.", "ok");
+    setStatus(T("status_doc_saved"), "ok");
   } catch (e: any) {
-    setStatus(e?.message || "Upload fehlgeschlagen.", "err");
+    setStatus(e?.message || T("status_upload_failed"), "err");
   } finally {
     setUploading(false);
   }
@@ -993,7 +992,7 @@ export default function CardScreen({ navigation }: any) {
 
       const permission = await ImagePicker.requestCameraPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert("Kamera", "Bitte Kamera-Zugriff erlauben.");
+        Alert.alert(T("camera_title"), T("camera_permission_needed"));
         return;
       }
 
@@ -1033,7 +1032,7 @@ const handlePickFromLibrary = async () => {
 
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert("Mediathek", "Bitte Zugriff auf deine Fotos erlauben.");
+      Alert.alert(T("library_title"), T("library_permission_needed"));
       return;
     }
 
@@ -1076,21 +1075,21 @@ const handlePickFromLibrary = async () => {
       return;
     }
 
-    Alert.alert(T("btn_check"), `Fehlend:\n${missing.join("\n")}`);
+    Alert.alert(T("btn_check"), `${T("missing_fields")}\n${missing.join("\n")}`);
   };
 
 const callNumber = async (number?: string | null) => {
   const clean = normalizeTel(number);
 
   if (!clean) {
-    Alert.alert("Hinweis", "Keine Telefonnummer vorhanden.");
+    Alert.alert(T("notice_title"), T("no_phone_available"));
     return;
   }
 
   try {
     await Linking.openURL(`tel:${clean}`);
   } catch (e) {
-    Alert.alert("Fehler", `Nummer konnte nicht gewählt werden: ${clean}`);
+    Alert.alert(T("error_title"), `${T("call_failed")} ${clean}`);
   }
 };
 
@@ -1247,7 +1246,7 @@ const callNumber = async (number?: string | null) => {
 
           <View style={styles.grid2}>
             <FieldBox variant="crit">
-              <FieldLabel title={T("allergies")} chip="kritisch" chipVariant="crit" />
+              <FieldLabel title={T("allergies")} chip={T("critical_chip")} chipVariant="crit" />
               <TextInput
                 style={[styles.input, styles.textarea]}
                 value={form.allergies}
@@ -1259,7 +1258,7 @@ const callNumber = async (number?: string | null) => {
             </FieldBox>
 
             <FieldBox variant="crit">
-              <FieldLabel title={T("thinner")} chip="kritisch" chipVariant="crit" />
+              <FieldLabel title={T("thinner")} chip={T("critical_chip")} chipVariant="crit" />
               <TextInput
                 style={[styles.input, styles.textarea]}
                 value={form.bloodThinner}
@@ -1271,7 +1270,7 @@ const callNumber = async (number?: string | null) => {
             </FieldBox>
 
             <FieldBox variant="warn">
-              <FieldLabel title={T("meds")} chip="wichtig" chipVariant="warn" />
+              <FieldLabel title={T("meds")} chip={T("important_chip")} chipVariant="warn" />
               <TextInput
                 style={[styles.input, styles.textarea]}
                 value={form.meds}
@@ -1283,7 +1282,7 @@ const callNumber = async (number?: string | null) => {
             </FieldBox>
 
             <FieldBox variant="ok">
-              <FieldLabel title={T("vaccines")} chip="ok" chipVariant="ok" />
+              <FieldLabel title={T("vaccines")} chip={T("ok_chip")} chipVariant="ok" />
               <TextInput
                 style={[styles.input, styles.textarea]}
                 value={form.vaccines}
@@ -1702,7 +1701,7 @@ const callNumber = async (number?: string | null) => {
               <View style={styles.emergencyContact}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.emergencyContactName}>
-                    {lineValue(form.em1_name, "☎️ Notfallkontakt 1")}
+                    {lineValue(form.em1_name, T("emergency_contact_fallback_1"))}
                   </Text>
                   <Text style={styles.emergencyContactPhone}>
                     {lineValue(form.em1)}
@@ -1721,7 +1720,7 @@ const callNumber = async (number?: string | null) => {
               <View style={styles.emergencyContact}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.emergencyContactName}>
-                    {lineValue(form.em2_name, "☎️ Notfallkontakt 2")}
+                    {lineValue(form.em2_name, T("emergency_contact_fallback_2"))}
                   </Text>
                   <Text style={styles.emergencyContactPhone}>
                     {lineValue(form.em2)}
