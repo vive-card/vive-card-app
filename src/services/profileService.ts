@@ -60,7 +60,7 @@ export async function getEmergencyCardProfile(
 
   const { data, error } = await supabase
     .from("emergency_cards")
-    .select("id, public_id, owner_id, data, updated_at")
+    .select("public_id, owner_id, data, updated_at")
     .eq("public_id", cleanPid)
     .maybeSingle();
 
@@ -68,7 +68,7 @@ export async function getEmergencyCardProfile(
     throw new Error("Profil konnte nicht geladen werden: " + error.message);
   }
 
-  return data || null;
+  return (data as EmergencyCardRow | null) || null;
 }
 
 export async function getCurrentUserCardProfile(): Promise<CurrentUserCardProfileResult> {
@@ -109,7 +109,7 @@ export async function saveCurrentUserCardProfile(
   const { data: emergencyRow, error: emergencyError } = await supabase
     .from("emergency_cards")
     .upsert(emergencyPayload, { onConflict: "public_id" })
-    .select()
+    .select("public_id, owner_id, data, updated_at")
     .single();
 
   if (emergencyError) {
