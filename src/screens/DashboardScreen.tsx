@@ -42,7 +42,7 @@ function getStatusLabel(status?: string | null) {
 
 function fullCardUrl(publicId?: string | null) {
   if (!publicId) return "";
-  return `https://vive-card.com/${publicId}`;
+  return `https://www.vive-card.com/card?pid=${encodeURIComponent(publicId)}&edit=1`;
 }
 
 function lineValue(value?: string | null, fallback = "—") {
