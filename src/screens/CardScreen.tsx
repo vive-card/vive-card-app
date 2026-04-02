@@ -581,31 +581,33 @@ export default function CardScreen({ navigation }: any) {
     [T, setStatus]
   );
 
-  const loadData = useCallback(async () => {
-    setStatus(T("status_loading"), "");
+ const loadData = useCallback(async () => {
+  setStatus(T("status_loading"), "");
 
-    const result = await getCurrentUserCardProfile();
+  const result = await getCurrentUserCardProfile();
 
-    setUserId(result.user?.id || null);
-    setCard(result.card || null);
-    setProfile(result.profile || null);
-    setForm(mapEmergencyDataToForm(result.profile));
+  setUserId(result.user?.id || null);
+  setCard(result.card || null);
+  setProfile(result.profile || null);
 
-    if (result.card?.public_id) {
-      const blocked = await checkCardBlocked(result.card.public_id);
-      if (blocked) {
-        setEditable(false);
-        setStatus(T("status_blocked"), "err");
-      } else {
-        setStatus(T("status_ready"), "");
-      }
+  const mappedForm = mapEmergencyDataToForm(result.profile);
+  setForm(mappedForm ?? initialProfileForm);
 
-      await loadDocuments(result.card.public_id);
+  if (result.card?.public_id) {
+    const blocked = await checkCardBlocked(result.card.public_id);
+    if (blocked) {
+      setEditable(false);
+      setStatus(T("status_blocked"), "err");
     } else {
-      setDocuments([]);
+      setStatus(T("status_ready"), "");
     }
-  }, [T, checkCardBlocked, loadDocuments, setStatus]);
 
+    await loadDocuments(result.card.public_id);
+  } else {
+    setDocuments([]);
+  }
+}, [T, checkCardBlocked, loadDocuments, setStatus]);
+  
   useEffect(() => {
     (async () => {
       try {
