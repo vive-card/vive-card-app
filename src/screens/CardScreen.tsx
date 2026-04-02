@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ActionSheetIOS,
   ActivityIndicator,
   Alert,
   Image,
   Linking,
   Modal,
+  Platform,
   RefreshControl,
   SafeAreaView,
   ScrollView,
@@ -142,6 +144,12 @@ const I18N: Record<LangKey, Record<string, string>> = {
     ok_chip: "ok",
     camera_permission_title: "Kamera",
     camera_permission_text: "Bitte Kamera-Zugriff erlauben.",
+library: "🖼 Fotomediathek",
+take_photo: "📸 Foto aufnehmen",
+choose_file: "📂 Datei auswählen",
+upload_menu_title: "Dokument hinzufügen",
+upload_menu_message: "Wähle eine Quelle",
+invalid_file_type: "Nur Bilder oder PDF-Dateien sind erlaubt.",
   },
   it: {
     brand: "VIVE CARD",
