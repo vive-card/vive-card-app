@@ -908,7 +908,47 @@ export default function CardScreen({ navigation }: any) {
       setUploading(false);
     }
   };
+const handlePickFromLibrary = async () => {
+  try {
+    if (!editable) {
+      setStatus(T("need_login"), "warn");
+      return;
+    }
 
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert("Mediathek", "Bitte Zugriff auf deine Fotos erlauben.");
+      return;
+    }
+
+    setUploading(true);
+    setStatus(T("status_uploading"), "warn");
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
+      quality: 0.85,
+    });
+
+    if (result.canceled) return;
+
+    const asset = result.assets?.[0];
+    if (!asset?.uri) return;
+
+    await uploadFileToSupabase({
+      uri: asset.uri,
+      fileName: asset.fileName || `library-${Date.now()}.jpg`,
+      mimeType: asset.mimeType || "image/jpeg",
+      fileSize: asset.fileSize || null,
+    });
+
+    setStatus(T("status_saved"), "ok");
+  } catch (e: any) {
+    setStatus(e?.message || T("status_error"), "err");
+  } finally {
+    setUploading(false);
+  }
+};
   const handleCheck = () => {
     const missing: string[] = [];
     if (!String(form.name || "").trim()) missing.push(T("name"));
@@ -1240,19 +1280,17 @@ export default function CardScreen({ navigation }: any) {
 
           <SectionTitle title={T("docs_title")} />
 
-          <View style={styles.docsGrid}>
-            <View style={styles.docToolbar}>
-              <TouchableOpacity
-                style={[
-                  styles.footerBtnPrimary,
-                  !editable && styles.buttonDisabled,
-                  uploading && styles.buttonDisabled,
-                ]}
-                onPress={handleTakePhoto}
-                disabled={!editable || uploading}
-              >
-                <Text style={styles.footerBtnPrimaryText}>{T("camera")}</Text>
-              </TouchableOpacity>
+<TouchableOpacity
+  style={[
+    styles.footerBtn,
+    !editable && styles.buttonDisabled,
+    uploading && styles.buttonDisabled,
+  ]}
+  onPress={handlePickDocument}
+  disabled={!editable || uploading}
+>
+  <Text style={styles.footerBtnText}>{T("upload")}</Text>
+</TouchableOpacity>
 
               <TouchableOpacity
                 style={[
