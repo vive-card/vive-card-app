@@ -1278,98 +1278,100 @@ const handlePickFromLibrary = async () => {
             </FieldBox>
           </View>
 
-          <SectionTitle title={T("docs_title")} />
+<SectionTitle title={T("docs_title")} />
 
-<TouchableOpacity
-  style={[
-    styles.footerBtn,
-    !editable && styles.buttonDisabled,
-    uploading && styles.buttonDisabled,
-  ]}
-  onPress={handlePickDocument}
-  disabled={!editable || uploading}
->
-  <Text style={styles.footerBtnText}>{T("upload")}</Text>
-</TouchableOpacity>
+<View style={styles.docsGrid}>
+  <View style={styles.docToolbar}>
+    <TouchableOpacity
+      style={[
+        styles.footerBtnPrimary,
+        !editable && styles.buttonDisabled,
+        uploading && styles.buttonDisabled,
+      ]}
+      onPress={handleTakePhoto}
+      disabled={!editable || uploading}
+    >
+      <Text style={styles.footerBtnPrimaryText}>{T("camera")}</Text>
+    </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[
-                  styles.footerBtn,
-                  !editable && styles.buttonDisabled,
-                  uploading && styles.buttonDisabled,
-                ]}
-                onPress={handlePickDocument}
-                disabled={!editable || uploading}
-              >
-                <Text style={styles.footerBtnText}>{T("upload")}</Text>
-              </TouchableOpacity>
-            </View>
+    <TouchableOpacity
+      style={[
+        styles.footerBtn,
+        !editable && styles.buttonDisabled,
+        uploading && styles.buttonDisabled,
+      ]}
+      onPress={handlePickFromLibrary}
+      disabled={!editable || uploading}
+    >
+      <Text style={styles.footerBtnText}>{T("upload")}</Text>
+    </TouchableOpacity>
+  </View>
 
-            {docsLoading ? (
-              <View style={styles.docsLoading}>
-                <ActivityIndicator color="#2a3340" />
-              </View>
-            ) : sortedDocuments.length === 0 ? (
-              <View style={styles.docEmpty}>
-                <Text style={styles.docEmptyText}>{T("docs_empty")}</Text>
-              </View>
+  {docsLoading ? (
+    <View style={styles.docsLoading}>
+      <ActivityIndicator color="#2a3340" />
+    </View>
+  ) : sortedDocuments.length === 0 ? (
+    <View style={styles.docEmpty}>
+      <Text style={styles.docEmptyText}>{T("docs_empty")}</Text>
+    </View>
+  ) : (
+    sortedDocuments.map((doc) => (
+      <View key={doc.id} style={styles.docItem}>
+        <View style={styles.docLeft}>
+          <TouchableOpacity
+            style={styles.docThumb}
+            onPress={() => openDocument(doc)}
+          >
+            {isImageMime(doc.mime_type) && doc.preview_url ? (
+              <Image
+                source={{ uri: doc.preview_url }}
+                style={styles.docThumbImage}
+                resizeMode="cover"
+              />
             ) : (
-              sortedDocuments.map((doc) => (
-                <View key={doc.id} style={styles.docItem}>
-                  <View style={styles.docLeft}>
-                    <TouchableOpacity
-                      style={styles.docThumb}
-                      onPress={() => openDocument(doc)}
-                    >
-                      {isImageMime(doc.mime_type) && doc.preview_url ? (
-                        <Image
-                          source={{ uri: doc.preview_url }}
-                          style={styles.docThumbImage}
-                          resizeMode="cover"
-                        />
-                      ) : (
-                        <View style={styles.docThumbFallback}>
-                          <Text style={styles.docThumbFallbackText}>
-                            {getDocumentEmoji(doc)}
-                          </Text>
-                        </View>
-                      )}
-                    </TouchableOpacity>
-
-                    <View style={styles.docMeta}>
-                      <Text style={styles.docName} numberOfLines={2}>
-                        {doc.file_name || T("file")}
-                      </Text>
-                      <Text style={styles.docType}>
-                        {isImageMime(doc.mime_type) ? T("image") : T("file")}
-                        {doc.file_size ? ` • ${formatFileSize(doc.file_size)}` : ""}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.docActions}>
-                    <TouchableOpacity
-                      style={styles.docActionBtn}
-                      onPress={() => openDocument(doc)}
-                    >
-                      <Text style={styles.docActionBtnText}>{T("open")}</Text>
-                    </TouchableOpacity>
-
-                    {editable ? (
-                      <TouchableOpacity
-                        style={styles.docActionBtnDanger}
-                        onPress={() => deleteDocument(doc)}
-                      >
-                        <Text style={styles.docActionBtnDangerText}>
-                          {T("remove")}
-                        </Text>
-                      </TouchableOpacity>
-                    ) : null}
-                  </View>
-                </View>
-              ))
+              <View style={styles.docThumbFallback}>
+                <Text style={styles.docThumbFallbackText}>
+                  {getDocumentEmoji(doc)}
+                </Text>
+              </View>
             )}
+          </TouchableOpacity>
+
+          <View style={styles.docMeta}>
+            <Text style={styles.docName} numberOfLines={2}>
+              {doc.file_name || T("file")}
+            </Text>
+            <Text style={styles.docType}>
+              {isImageMime(doc.mime_type) ? T("image") : T("file")}
+              {doc.file_size ? ` • ${formatFileSize(doc.file_size)}` : ""}
+            </Text>
           </View>
+        </View>
+
+        <View style={styles.docActions}>
+          <TouchableOpacity
+            style={styles.docActionBtn}
+            onPress={() => openDocument(doc)}
+          >
+            <Text style={styles.docActionBtnText}>{T("open")}</Text>
+          </TouchableOpacity>
+
+          {editable ? (
+            <TouchableOpacity
+              style={styles.docActionBtnDanger}
+              onPress={() => deleteDocument(doc)}
+            >
+              <Text style={styles.docActionBtnDangerText}>
+                {T("remove")}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      </View>
+    ))
+  )}
+</View>
 
           <View style={styles.footer}>
             <View style={styles.footerLeft}>
