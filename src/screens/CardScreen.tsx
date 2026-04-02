@@ -791,64 +791,7 @@ export default function CardScreen({ navigation }: any) {
   mimeType: string;
   fileSize?: number | null;
 }) => {
-  if (!card?.public_id || !userId) {
-    throw new Error("User oder Karte fehlt");
-  }
-
-  const MAX_FILE_SIZE = 10 * 1024 * 1024;
-  const allowedTypes = [
-    "image/jpeg",
-    "image/png",
-    "image/webp",
-    "application/pdf",
-  ];
-
-  const mime = String(params.mimeType || "").toLowerCase();
-
-  if (!allowedTypes.includes(mime)) {
-    throw new Error("Nur Bilder oder PDF-Dateien sind erlaubt.");
-  }
-
-  if ((params.fileSize || 0) > MAX_FILE_SIZE) {
-    throw new Error("Datei ist zu groß. Maximum: 10 MB.");
-  }
-
-  const ext = guessExtension(params.fileName, params.mimeType);
-  const uniqueName = `${Date.now()}-${Math.random()
-    .toString(36)
-    .slice(2)}.${ext}`;
-  const filePath = `${userId}/${card.public_id}/${uniqueName}`;
-
-  const arrayBuffer = await uriToArrayBuffer(params.uri);
-
-  const { error: uploadError } = await supabase.storage
-    .from("medical-docs")
-    .upload(filePath, arrayBuffer, {
-      contentType: params.mimeType || "application/octet-stream",
-      upsert: false,
-    });
-
-  if (uploadError) {
-    throw new Error("Upload fehlgeschlagen: " + uploadError.message);
-  }
-
-  const { error: insertError } = await supabase
-    .from("medical_documents")
-    .insert({
-      owner_id: userId,
-      public_id: card.public_id,
-      file_name: params.fileName || "Dokument",
-      file_path: filePath,
-      mime_type: params.mimeType || "application/octet-stream",
-      file_size: params.fileSize || null,
-    });
-
-  if (insertError) {
-    throw new Error("Datei hochgeladen, aber DB-Speicherung fehlgeschlagen: " + insertError.message);
-  }
-
-  await loadDocuments(card.public_id);
-};
+  
     if (!card?.public_id || !userId) {
       throw new Error("User oder Karte fehlt");
     }
