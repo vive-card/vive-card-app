@@ -7,6 +7,46 @@ import type {
 } from "../types";
 import { normalizePid, mapFormToEmergencyData } from "../utils";
 
+export const initialProfileForm: ProfileFormValues = {
+  name: "",
+  dob: "",
+  blood: "",
+  allergies: "",
+  bloodThinner: "",
+  meds: "",
+  vaccines: "",
+  chronic: "",
+  organ: "",
+  notes: "",
+  em1_name: "",
+  em1: "",
+  em2_name: "",
+  em2: "",
+};
+
+export function mapEmergencyDataToForm(
+  profile: EmergencyCardRow | null | undefined
+): ProfileFormValues {
+  const data = profile?.data ?? {};
+
+  return {
+    name: String(data.name ?? ""),
+    dob: String(data.dob ?? ""),
+    blood: String(data.blood ?? ""),
+    allergies: String(data.allergies ?? ""),
+    bloodThinner: String(data.bloodThinner ?? ""),
+    meds: String(data.meds ?? ""),
+    vaccines: String(data.vaccines ?? ""),
+    chronic: String(data.chronic ?? ""),
+    organ: String(data.organ ?? ""),
+    notes: String(data.notes ?? ""),
+    em1_name: String(data.em1_name ?? ""),
+    em1: String(data.em1 ?? ""),
+    em2_name: String(data.em2_name ?? ""),
+    em2: String(data.em2 ?? ""),
+  };
+}
+
 export async function getCurrentUserOrThrow() {
   const {
     data: { user },
@@ -50,7 +90,7 @@ export async function getLatestOwnedCard(
     throw new Error("Karte konnte nicht geladen werden: " + error.message);
   }
 
-  return data || null;
+  return (data as CardRow | null) || null;
 }
 
 export async function getEmergencyCardProfile(
@@ -137,5 +177,5 @@ export async function saveCurrentUserCardProfile(
     throw new Error("Cards Sync fehlgeschlagen: " + cardError.message);
   }
 
-  return emergencyRow;
+  return emergencyRow as EmergencyCardRow;
 }
