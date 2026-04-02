@@ -19,23 +19,25 @@ import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 
 import { supabase } from "../lib/supabase";
-import type { CardRow, EmergencyCardRow, ProfileFormValues } from "../types";
 import {
+  CardRow,
+  EmergencyCardRow,
+  ProfileFormValues,
   getCurrentUserCardProfile,
   initialProfileForm,
   mapEmergencyDataToForm,
   saveCurrentUserCardProfile,
 } from "../services/profileService";
-import type { MedicalDocumentViewRow } from "../services/medicalDocumentsService";
 import {
+  MedicalDocumentViewRow,
   deleteMedicalDocument,
   getSignedDocumentUrl,
   loadMedicalDocuments,
   uploadMedicalDocument,
 } from "../services/medicalDocumentsService";
 import { useCardRealtime } from "../hooks/useCardRealtime";
-import { getDocumentEmoji, isImageMime } from "../utils/medicalDocuments";
 import { formatFileSize, lineValue, normalizeTel } from "../utils/formatters";
+import { getDocumentEmoji, isImageMime } from "../utils/medicalDocuments";
 
 type LangKey = "de" | "it" | "fr" | "es" | "en";
 type StatusKind = "" | "ok" | "warn" | "err";
@@ -437,11 +439,6 @@ const I18N: Record<LangKey, Record<string, string>> = {
 
 export default function CardScreen({ navigation }: any) {
   const [lang, setLang] = useState<LangKey>("de");
-  const t = useCallback(
-    (key: string) => I18N[lang]?.[key] || I18N.en[key] || key,
-    [lang]
-  );
-
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -449,8 +446,8 @@ export default function CardScreen({ navigation }: any) {
   const [docsLoading, setDocsLoading] = useState(false);
 
   const [editable, setEditable] = useState(false);
-  const [bloodPickerVisible, setBloodPickerVisible] = useState(false);
   const [emergencyVisible, setEmergencyVisible] = useState(false);
+  const [bloodPickerVisible, setBloodPickerVisible] = useState(false);
 
   const [statusText, setStatusText] = useState("");
   const [statusKind, setStatusKind] = useState<StatusKind>("");
@@ -460,6 +457,11 @@ export default function CardScreen({ navigation }: any) {
   const [profile, setProfile] = useState<EmergencyCardRow | null>(null);
   const [form, setForm] = useState<ProfileFormValues>(initialProfileForm);
   const [documents, setDocuments] = useState<MedicalDocumentViewRow[]>([]);
+
+  const T = useCallback(
+    (key: string) => I18N[lang]?.[key] || I18N.en[key] || key,
+    [lang]
+  );
 
   const setStatus = useCallback((text: string, kind: StatusKind = "") => {
     setStatusText(text);
@@ -475,7 +477,7 @@ export default function CardScreen({ navigation }: any) {
 
     const { data, error } = await supabase
       .from("cards")
-      .select("id, public_id, status, blocked_at")
+      .select("status, blocked_at")
       .eq("public_id", publicId)
       .maybeSingle();
 
@@ -495,18 +497,26 @@ export default function CardScreen({ navigation }: any) {
 
       try {
         setDocsLoading(true);
-        const docs = await loadMedicalDocuments(publicId);
-        setDocuments(docs);
+        const nextDocuments = await loadMedicalDocuments(publicId);
+        setDocuments(nextDocuments);
+
+        if (nextDocuments.length > 0) {
+          setStatus(T("status_docs_loaded"), "ok");
+        } else {
+          setStatus(T("status_docs_empty"));
+        }
       } catch (e: any) {
-        setStatus(e?.message || t("status_error"), "err");
+        setStatus(e?.message || T("status_error"), "err");
       } finally {
         setDocsLoading(false);
       }
     },
-    [setStatus, t]
+    [T, setStatus]
   );
 
   const loadData = useCallback(async () => {
+    setStatus(T("status_loading"));
+
     const result = await getCurrentUserCardProfile();
 
     setUserId(result.user?.id || null);
@@ -523,40 +533,36 @@ export default function CardScreen({ navigation }: any) {
 
     if (blocked) {
       setEditable(false);
-      setStatus(t("status_blocked"), "err");
+      setStatus(T("status_blocked"), "err");
     } else {
-      setStatus(t("status_ready"), "");
+      setStatus(T("status_ready"));
     }
 
     await loadDocuments(result.card.public_id);
-  }, [checkCardBlocked, loadDocuments, setStatus, t]);
+  }, [T, checkCardBlocked, loadDocuments, setStatus]);
 
-  const initialLoad = useCallback(async () => {
-    try {
-      setLoading(true);
-      setStatus(t("status_loading"), "");
-      await loadData();
-    } catch (e: any) {
-      setStatus(e?.message || t("status_error"), "err");
-    } finally {
-      setLoading(false);
-    }
-  }, [loadData, setStatus, t]);
+  useEffect(() => {
+    (async () => {
+      try {
+        await loadData();
+      } catch (e: any) {
+        setStatus(e?.message || T("status_error"), "err");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [loadData, T, setStatus]);
 
   const onRefresh = useCallback(async () => {
     try {
       setRefreshing(true);
       await loadData();
     } catch (e: any) {
-      setStatus(e?.message || t("status_error"), "err");
+      setStatus(e?.message || T("status_error"), "err");
     } finally {
       setRefreshing(false);
     }
-  }, [loadData, setStatus, t]);
-
-  useEffect(() => {
-    initialLoad();
-  }, [initialLoad]);
+  }, [loadData, T, setStatus]);
 
   useCardRealtime({
     publicId: card?.public_id || null,
@@ -567,17 +573,17 @@ export default function CardScreen({ navigation }: any) {
 
   const sortedDocuments = useMemo(() => {
     return [...documents].sort((a, b) => {
-      const aTime = new Date(a.created_at || 0).getTime();
-      const bTime = new Date(b.created_at || 0).getTime();
-      return bTime - aTime;
+      const aDate = new Date(a.created_at || 0).getTime();
+      const bDate = new Date(b.created_at || 0).getTime();
+      return bDate - aDate;
     });
   }, [documents]);
 
   const docsNotice = useMemo(() => {
     return sortedDocuments.length === 1
-      ? t("docs_notice_single")
-      : t("docs_notice_multi").replace("{count}", String(sortedDocuments.length));
-  }, [sortedDocuments.length, t]);
+      ? T("docs_notice_single")
+      : T("docs_notice_multi").replace("{count}", String(sortedDocuments.length));
+  }, [sortedDocuments.length, T]);
 
   const toggleEdit = async () => {
     if (!card?.public_id) return;
@@ -587,15 +593,14 @@ export default function CardScreen({ navigation }: any) {
 
       if (blocked) {
         setEditable(false);
-        setStatus(t("status_blocked"), "err");
+        setStatus(T("status_blocked"), "err");
         return;
       }
 
-      const next = !editable;
-      setEditable(next);
-      setStatus(next ? t("edit_active") : t("status_ready"), next ? "warn" : "");
+      setEditable((prev) => !prev);
+      setStatus(!editable ? T("edit_active") : T("status_ready"), !editable ? "warn" : "");
     } catch (e: any) {
-      setStatus(e?.message || t("status_error"), "err");
+      setStatus(e?.message || T("status_error"), "err");
     }
   };
 
@@ -606,7 +611,7 @@ export default function CardScreen({ navigation }: any) {
       const blocked = await checkCardBlocked(card.public_id);
       if (blocked) {
         setEditable(false);
-        setStatus(t("status_blocked"), "err");
+        setStatus(T("status_blocked"), "err");
         return;
       }
 
@@ -614,19 +619,19 @@ export default function CardScreen({ navigation }: any) {
       await saveCurrentUserCardProfile(card, userId, form);
       setEditable(false);
       await loadData();
-      setStatus(t("status_saved"), "ok");
+      setStatus(T("status_saved"), "ok");
     } catch (e: any) {
-      setStatus(e?.message || t("status_error"), "err");
+      setStatus(e?.message || T("status_error"), "err");
     } finally {
       setSaving(false);
     }
   };
 
-  const clearAll = async () => {
-    Alert.alert(t("clear"), t("confirm_clear"), [
-      { text: t("cancel"), style: "cancel" },
+  const clearAll = () => {
+    Alert.alert(T("clear"), T("confirm_clear"), [
+      { text: T("cancel"), style: "cancel" },
       {
-        text: t("clear"),
+        text: T("clear"),
         style: "destructive",
         onPress: async () => {
           try {
@@ -635,7 +640,7 @@ export default function CardScreen({ navigation }: any) {
             const blocked = await checkCardBlocked(card.public_id);
             if (blocked) {
               setEditable(false);
-              setStatus(t("status_blocked"), "err");
+              setStatus(T("status_blocked"), "err");
               return;
             }
 
@@ -644,9 +649,9 @@ export default function CardScreen({ navigation }: any) {
             setForm(initialProfileForm);
             setEditable(false);
             await loadData();
-            setStatus(t("status_cleared"), "ok");
+            setStatus(T("status_cleared"), "ok");
           } catch (e: any) {
-            setStatus(e?.message || t("status_error"), "err");
+            setStatus(e?.message || T("status_error"), "err");
           } finally {
             setSaving(false);
           }
@@ -671,22 +676,22 @@ export default function CardScreen({ navigation }: any) {
         mimeType: doc.mime_type || "",
       });
     } catch (e: any) {
-      setStatus(e?.message || t("status_error"), "err");
+      setStatus(e?.message || T("status_error"), "err");
     }
   };
 
-  const removeDocument = async (doc: MedicalDocumentViewRow) => {
-    Alert.alert(t("remove"), `${doc.file_name || "Dokument"}?`, [
-      { text: t("cancel"), style: "cancel" },
+  const deleteDocumentHandler = (doc: MedicalDocumentViewRow) => {
+    Alert.alert(T("remove"), `${doc.file_name || "Dokument"}?`, [
+      { text: T("cancel"), style: "cancel" },
       {
-        text: t("remove"),
+        text: T("remove"),
         style: "destructive",
         onPress: async () => {
           try {
             await deleteMedicalDocument(doc.id, doc.file_path);
             await loadDocuments(card?.public_id || null);
           } catch (e: any) {
-            setStatus(e?.message || t("status_error"), "err");
+            setStatus(e?.message || T("status_error"), "err");
           }
         },
       },
@@ -696,12 +701,12 @@ export default function CardScreen({ navigation }: any) {
   const handlePickDocument = async () => {
     try {
       if (!editable || !card?.public_id || !userId) {
-        setStatus(t("need_login"), "warn");
+        setStatus(T("need_login"), "warn");
         return;
       }
 
       setUploading(true);
-      setStatus(t("status_uploading"), "warn");
+      setStatus(T("status_uploading"), "warn");
 
       const result = await DocumentPicker.getDocumentAsync({
         type: ["image/*", "application/pdf"],
@@ -724,9 +729,9 @@ export default function CardScreen({ navigation }: any) {
       });
 
       await loadDocuments(card.public_id);
-      setStatus(t("status_saved"), "ok");
+      setStatus(T("status_saved"), "ok");
     } catch (e: any) {
-      setStatus(e?.message || t("status_error"), "err");
+      setStatus(e?.message || T("status_error"), "err");
     } finally {
       setUploading(false);
     }
@@ -735,18 +740,18 @@ export default function CardScreen({ navigation }: any) {
   const handleTakePhoto = async () => {
     try {
       if (!editable || !card?.public_id || !userId) {
-        setStatus(t("need_login"), "warn");
+        setStatus(T("need_login"), "warn");
         return;
       }
 
       const permission = await ImagePicker.requestCameraPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert(t("camera_permission_title"), t("camera_permission_text"));
+        Alert.alert(T("camera_permission_title"), T("camera_permission_text"));
         return;
       }
 
       setUploading(true);
-      setStatus(t("status_uploading"), "warn");
+      setStatus(T("status_uploading"), "warn");
 
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -768,9 +773,9 @@ export default function CardScreen({ navigation }: any) {
       });
 
       await loadDocuments(card.public_id);
-      setStatus(t("status_saved"), "ok");
+      setStatus(T("status_saved"), "ok");
     } catch (e: any) {
-      setStatus(e?.message || t("status_error"), "err");
+      setStatus(e?.message || T("status_error"), "err");
     } finally {
       setUploading(false);
     }
@@ -779,16 +784,16 @@ export default function CardScreen({ navigation }: any) {
   const handleCheck = () => {
     const missing: string[] = [];
 
-    if (!String(form.name || "").trim()) missing.push(t("name"));
-    if (!String(form.dob || "").trim()) missing.push(t("dob"));
-    if (!String(form.blood || "").trim()) missing.push(t("blood"));
+    if (!String(form.name || "").trim()) missing.push(T("name"));
+    if (!String(form.dob || "").trim()) missing.push(T("dob"));
+    if (!String(form.blood || "").trim()) missing.push(T("blood"));
 
     if (missing.length === 0) {
-      Alert.alert(t("btn_check"), "OK");
+      Alert.alert(T("btn_check"), "OK");
       return;
     }
 
-    Alert.alert(t("btn_check"), `Fehlend:\n${missing.join("\n")}`);
+    Alert.alert(T("btn_check"), `Fehlend:\n${missing.join("\n")}`);
   };
 
   const callNumber = async (number?: string | null) => {
@@ -807,7 +812,7 @@ export default function CardScreen({ navigation }: any) {
     return (
       <View style={styles.loadingWrap}>
         <ActivityIndicator size="large" color="#e10600" />
-        <Text style={styles.loadingText}>{t("status_loading")}</Text>
+        <Text style={styles.loadingText}>{T("status_loading")}</Text>
       </View>
     );
   }
@@ -815,70 +820,67 @@ export default function CardScreen({ navigation }: any) {
   if (!card) {
     return (
       <View style={styles.emptyWrap}>
-        <Text style={styles.emptyTitle}>{t("no_card_title")}</Text>
-        <Text style={styles.emptyText}>{t("no_card_text")}</Text>
+        <Text style={styles.emptyTitle}>{T("no_card_title")}</Text>
+        <Text style={styles.emptyText}>{T("no_card_text")}</Text>
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f4f6f8" />
+    <SafeAreaView style={styles.screenSafe}>
+      <StatusBar barStyle="dark-content" backgroundColor="#f6f8fb" />
 
-      <View style={styles.topbar}>
-        <View style={styles.topbarInner}>
-          <View style={styles.brandRow}>
-            <View style={styles.dot} />
-            <Text style={styles.brandText}>{t("brand")}</Text>
+      <View style={styles.header}>
+        <View style={styles.headerTop}>
+          <View style={styles.brandWrap}>
+            <View style={styles.brandDot} />
+            <Text style={styles.brandText}>{T("brand")}</Text>
           </View>
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.actionsRow}
-          >
-            {LANG_OPTIONS.map((item) => {
-              const active = item === lang;
-              return (
-                <TouchableOpacity
-                  key={item}
-                  style={[styles.langChip, active && styles.langChipActive]}
-                  onPress={() => setLang(item)}
-                >
-                  <Text
-                    style={[
-                      styles.langChipText,
-                      active && styles.langChipTextActive,
-                    ]}
-                  >
-                    {item.toUpperCase()}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-
-            <TouchableOpacity
-              style={[styles.headerBtn, styles.headerBtnDanger]}
-              onPress={() => setEmergencyVisible(true)}
-            >
-              <Text style={styles.headerBtnDangerText}>{t("btn_emergency")}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.headerBtn, styles.headerBtnSoft]}
-              onPress={handleCheck}
-            >
-              <Text style={styles.headerBtnSoftText}>{t("btn_check")}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.headerBtn, styles.headerBtnWhite]}
-              onPress={logout}
-            >
-              <Text style={styles.headerBtnWhiteText}>{t("btn_logout")}</Text>
-            </TouchableOpacity>
-          </ScrollView>
         </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.headerActions}
+        >
+          {LANG_OPTIONS.map((item) => {
+            const active = item === lang;
+            return (
+              <TouchableOpacity
+                key={item}
+                style={[styles.langChip, active && styles.langChipActive]}
+                onPress={() => setLang(item)}
+              >
+                <Text
+                  style={[styles.langChipText, active && styles.langChipTextActive]}
+                >
+                  {item.toUpperCase()}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+
+          <TouchableOpacity
+            style={[styles.headerButton, styles.headerButtonDanger]}
+            onPress={() => setEmergencyVisible(true)}
+          >
+            <Text style={styles.headerButtonDangerText}>{T("btn_emergency")}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.headerButton, styles.headerButtonSoft]}
+            onPress={handleCheck}
+          >
+            <Text style={styles.headerButtonSoftText}>{T("btn_check")}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.headerButton, styles.headerButtonWhite]}
+            onPress={logout}
+          >
+            <Text style={styles.headerButtonWhiteText}>{T("btn_logout")}</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </View>
 
       <ScrollView
@@ -888,59 +890,57 @@ export default function CardScreen({ navigation }: any) {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {!editable && (
-          <View style={styles.infoBanner}>
-            <Text style={styles.infoBannerText}>{t("readonly")}</Text>
+        {!editable ? (
+          <View style={styles.readonlyBanner}>
+            <Text style={styles.readonlyBannerText}>{T("readonly")}</Text>
           </View>
-        )}
+        ) : null}
 
         <View style={styles.cardBox}>
-          <View style={styles.headline}>
-            <View style={styles.headlineLeft}>
-              <Text style={styles.title}>{t("title")}</Text>
-              <Text style={styles.subtitle}>{t("subtitle")}</Text>
+          <View style={styles.cardHeader}>
+            <View style={styles.cardHeaderContent}>
+              <Text style={styles.title}>{T("title")}</Text>
+              <Text style={styles.subtitle}>{T("subtitle")}</Text>
             </View>
 
             <View style={styles.pidBox}>
-              <Text style={styles.pidLabel}>{t("profile_id")}</Text>
+              <Text style={styles.pidLabel}>{T("profile_id")}</Text>
               <Text style={styles.pidValue}>{card.public_id}</Text>
             </View>
           </View>
 
-          <View style={styles.disclaimerBox}>
-            <Text style={styles.disclaimerText}>{t("disclaimer")}</Text>
+          <View style={styles.noticeBox}>
+            <Text style={styles.noticeText}>{T("disclaimer")}</Text>
           </View>
 
-          <SectionTitle title={t("critical_title")} />
-
-          <View style={styles.formRow}>
+          <View style={styles.twoColRow}>
             <FieldBox half>
-              <FieldLabel title={t("name")} chip={t("required")} />
+              <FieldLabel title={T("name")} chip={T("required")} />
               <TextInput
                 style={[styles.input, !editable && styles.inputDisabled]}
                 value={form.name}
                 onChangeText={(value) => setField("name", value)}
                 editable={editable}
-                placeholderTextColor="#95a0b0"
+                placeholderTextColor="#8b96a8"
               />
             </FieldBox>
 
-            <FieldBox half>
-              <FieldLabel title={t("dob")} chip={t("required")} />
+            <FieldBox half lastHalf>
+              <FieldLabel title={T("dob")} chip={T("required")} />
               <TextInput
                 style={[styles.input, !editable && styles.inputDisabled]}
                 value={form.dob}
                 onChangeText={(value) => setField("dob", value)}
                 editable={editable}
-                placeholderTextColor="#95a0b0"
+                placeholderTextColor="#8b96a8"
               />
             </FieldBox>
           </View>
 
           <FieldBox variant="warn">
-            <FieldLabel title={t("blood")} chip={t("prio1")} chipVariant="warn" />
+            <FieldLabel title={T("blood")} chip={T("prio1")} chipVariant="warn" />
             <TouchableOpacity
-              activeOpacity={editable ? 0.8 : 1}
+              activeOpacity={editable ? 0.85 : 1}
               onPress={() => editable && setBloodPickerVisible(true)}
               style={[styles.selectLike, !editable && styles.inputDisabled]}
             >
@@ -948,11 +948,13 @@ export default function CardScreen({ navigation }: any) {
             </TouchableOpacity>
           </FieldBox>
 
-          <View style={styles.formRow}>
+          <SectionTitle title={T("critical_title")} />
+
+          <View style={styles.twoColGrid}>
             <FieldBox half variant="crit">
               <FieldLabel
-                title={t("allergies")}
-                chip={t("critical_chip")}
+                title={T("allergies")}
+                chip={T("critical_chip")}
                 chipVariant="crit"
               />
               <TextInput
@@ -961,14 +963,14 @@ export default function CardScreen({ navigation }: any) {
                 onChangeText={(value) => setField("allergies", value)}
                 editable={editable}
                 multiline
-                placeholderTextColor="#95a0b0"
+                placeholderTextColor="#8b96a8"
               />
             </FieldBox>
 
-            <FieldBox half variant="crit">
+            <FieldBox half lastHalf variant="crit">
               <FieldLabel
-                title={t("thinner")}
-                chip={t("critical_chip")}
+                title={T("thinner")}
+                chip={T("critical_chip")}
                 chipVariant="crit"
               />
               <TextInput
@@ -977,16 +979,14 @@ export default function CardScreen({ navigation }: any) {
                 onChangeText={(value) => setField("bloodThinner", value)}
                 editable={editable}
                 multiline
-                placeholderTextColor="#95a0b0"
+                placeholderTextColor="#8b96a8"
               />
             </FieldBox>
-          </View>
 
-          <View style={styles.formRow}>
             <FieldBox half variant="warn">
               <FieldLabel
-                title={t("meds")}
-                chip={t("important_chip")}
+                title={T("meds")}
+                chip={T("important_chip")}
                 chipVariant="warn"
               />
               <TextInput
@@ -995,217 +995,241 @@ export default function CardScreen({ navigation }: any) {
                 onChangeText={(value) => setField("meds", value)}
                 editable={editable}
                 multiline
-                placeholderTextColor="#95a0b0"
+                placeholderTextColor="#8b96a8"
               />
             </FieldBox>
 
-            <FieldBox half variant="ok">
-              <FieldLabel
-                title={t("vaccines")}
-                chip={t("ok_chip")}
-                chipVariant="ok"
-              />
+            <FieldBox half lastHalf variant="ok">
+              <FieldLabel title={T("vaccines")} chip={T("ok_chip")} chipVariant="ok" />
               <TextInput
                 style={[styles.input, styles.textarea, !editable && styles.inputDisabled]}
                 value={form.vaccines}
                 onChangeText={(value) => setField("vaccines", value)}
                 editable={editable}
                 multiline
-                placeholderTextColor="#95a0b0"
+                placeholderTextColor="#8b96a8"
               />
             </FieldBox>
           </View>
 
-          <SectionTitle title={t("info_title")} />
+          <SectionTitle title={T("info_title")} />
 
-          <View style={styles.formRow}>
+          <View style={styles.twoColGrid}>
             <FieldBox half>
-              <FieldLabel title={t("chronic")} />
+              <FieldLabel title={T("chronic")} />
               <TextInput
                 style={[styles.input, styles.textarea, !editable && styles.inputDisabled]}
                 value={form.chronic}
                 onChangeText={(value) => setField("chronic", value)}
                 editable={editable}
                 multiline
-                placeholderTextColor="#95a0b0"
+                placeholderTextColor="#8b96a8"
               />
             </FieldBox>
 
-            <FieldBox half>
-              <FieldLabel title={t("organ")} />
+            <FieldBox half lastHalf>
+              <FieldLabel title={T("organ")} />
               <TextInput
                 style={[styles.input, styles.textarea, !editable && styles.inputDisabled]}
                 value={form.organ}
                 onChangeText={(value) => setField("organ", value)}
                 editable={editable}
                 multiline
-                placeholderTextColor="#95a0b0"
+                placeholderTextColor="#8b96a8"
               />
             </FieldBox>
           </View>
 
           <FieldBox>
-            <FieldLabel title={t("notes")} />
+            <FieldLabel title={T("notes")} />
             <TextInput
               style={[styles.input, styles.textarea, !editable && styles.inputDisabled]}
               value={form.notes}
               onChangeText={(value) => setField("notes", value)}
               editable={editable}
               multiline
-              placeholderTextColor="#95a0b0"
+              placeholderTextColor="#8b96a8"
             />
           </FieldBox>
 
-          <SectionTitle title={t("contacts_title")} />
+          <SectionTitle title={T("contacts_title")} />
 
-          <FieldBox>
-            <FieldLabel title={t("ec1")} />
-            <TextInput
-              style={[styles.input, styles.inputSpacing, !editable && styles.inputDisabled]}
-              value={form.em1_name}
-              onChangeText={(value) => setField("em1_name", value)}
-              editable={editable}
-              placeholderTextColor="#95a0b0"
-            />
-            <TextInput
-              style={[styles.input, styles.inputSpacing, !editable && styles.inputDisabled]}
-              value={form.em1}
-              onChangeText={(value) => setField("em1", value)}
-              editable={editable}
-              keyboardType="phone-pad"
-              placeholderTextColor="#95a0b0"
-            />
-            <TouchableOpacity style={styles.secondaryButton} onPress={() => callNumber(form.em1)}>
-              <Text style={styles.secondaryButtonText}>{t("call")}</Text>
-            </TouchableOpacity>
-          </FieldBox>
+          <View style={styles.contactSection}>
+            <FieldBox>
+              <FieldLabel title={T("ec1")} />
+              <TextInput
+                style={[styles.input, styles.inputSpaced, !editable && styles.inputDisabled]}
+                value={form.em1_name}
+                onChangeText={(value) => setField("em1_name", value)}
+                editable={editable}
+                placeholderTextColor="#8b96a8"
+              />
+              <TextInput
+                style={[styles.input, styles.inputSpaced, !editable && styles.inputDisabled]}
+                value={form.em1}
+                onChangeText={(value) => setField("em1", value)}
+                editable={editable}
+                keyboardType="phone-pad"
+                placeholderTextColor="#8b96a8"
+              />
+              <TouchableOpacity style={styles.callButton} onPress={() => callNumber(form.em1)}>
+                <Text style={styles.callButtonText}>{T("call")}</Text>
+              </TouchableOpacity>
+            </FieldBox>
 
-          <FieldBox>
-            <FieldLabel title={t("ec2")} />
-            <TextInput
-              style={[styles.input, styles.inputSpacing, !editable && styles.inputDisabled]}
-              value={form.em2_name}
-              onChangeText={(value) => setField("em2_name", value)}
-              editable={editable}
-              placeholderTextColor="#95a0b0"
-            />
-            <TextInput
-              style={[styles.input, styles.inputSpacing, !editable && styles.inputDisabled]}
-              value={form.em2}
-              onChangeText={(value) => setField("em2", value)}
-              editable={editable}
-              keyboardType="phone-pad"
-              placeholderTextColor="#95a0b0"
-            />
-            <TouchableOpacity style={styles.secondaryButton} onPress={() => callNumber(form.em2)}>
-              <Text style={styles.secondaryButtonText}>{t("call")}</Text>
-            </TouchableOpacity>
-          </FieldBox>
-
-          <SectionTitle title={t("docs_title")} />
-
-          <View style={styles.buttonRow}>
-            <TouchableOpacity
-              style={[styles.primaryButton, (!editable || uploading) && styles.buttonDisabled]}
-              onPress={handleTakePhoto}
-              disabled={!editable || uploading}
-            >
-              <Text style={styles.primaryButtonText}>{t("camera")}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.secondaryButtonWide, (!editable || uploading) && styles.buttonDisabled]}
-              onPress={handlePickDocument}
-              disabled={!editable || uploading}
-            >
-              <Text style={styles.secondaryButtonText}>{t("upload")}</Text>
-            </TouchableOpacity>
+            <FieldBox>
+              <FieldLabel title={T("ec2")} />
+              <TextInput
+                style={[styles.input, styles.inputSpaced, !editable && styles.inputDisabled]}
+                value={form.em2_name}
+                onChangeText={(value) => setField("em2_name", value)}
+                editable={editable}
+                placeholderTextColor="#8b96a8"
+              />
+              <TextInput
+                style={[styles.input, styles.inputSpaced, !editable && styles.inputDisabled]}
+                value={form.em2}
+                onChangeText={(value) => setField("em2", value)}
+                editable={editable}
+                keyboardType="phone-pad"
+                placeholderTextColor="#8b96a8"
+              />
+              <TouchableOpacity style={styles.callButton} onPress={() => callNumber(form.em2)}>
+                <Text style={styles.callButtonText}>{T("call")}</Text>
+              </TouchableOpacity>
+            </FieldBox>
           </View>
 
-          {docsLoading ? (
-            <View style={styles.docsLoading}>
-              <ActivityIndicator size="small" color="#e10600" />
-            </View>
-          ) : sortedDocuments.length === 0 ? (
-            <View style={styles.emptyDocsBox}>
-              <Text style={styles.emptyDocsText}>{t("docs_empty")}</Text>
-            </View>
-          ) : (
-            sortedDocuments.map((doc) => (
-              <View key={doc.id} style={styles.docCard}>
-                <View style={styles.docRow}>
-                  <TouchableOpacity style={styles.docThumb} onPress={() => openDocument(doc)}>
-                    {isImageMime(doc.mime_type) && doc.preview_url ? (
-                      <Image
-                        source={{ uri: doc.preview_url }}
-                        style={styles.docThumbImage}
-                        resizeMode="cover"
-                      />
-                    ) : (
-                      <View style={styles.docThumbFallback}>
-                        <Text style={styles.docThumbFallbackText}>{getDocumentEmoji(doc)}</Text>
-                      </View>
-                    )}
-                  </TouchableOpacity>
+          <SectionTitle title={T("docs_title")} />
 
-                  <View style={styles.docMeta}>
-                    <Text style={styles.docName} numberOfLines={2}>
-                      {doc.file_name || t("file")}
-                    </Text>
-                    <Text style={styles.docInfo}>
-                      {isImageMime(doc.mime_type) ? t("image") : t("file")}
-                      {doc.file_size ? ` • ${formatFileSize(doc.file_size)}` : ""}
-                    </Text>
+          <View style={styles.documentsSection}>
+            <View style={styles.documentToolbar}>
+              <TouchableOpacity
+                style={[
+                  styles.primaryActionButton,
+                  (!editable || uploading) && styles.buttonDisabled,
+                ]}
+                onPress={handleTakePhoto}
+                disabled={!editable || uploading}
+              >
+                <Text style={styles.primaryActionButtonText}>{T("camera")}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.secondaryActionButton,
+                  (!editable || uploading) && styles.buttonDisabled,
+                ]}
+                onPress={handlePickDocument}
+                disabled={!editable || uploading}
+              >
+                <Text style={styles.secondaryActionButtonText}>{T("upload")}</Text>
+              </TouchableOpacity>
+            </View>
+
+            {docsLoading ? (
+              <View style={styles.docsLoading}>
+                <ActivityIndicator color="#e10600" />
+              </View>
+            ) : sortedDocuments.length === 0 ? (
+              <View style={styles.emptyDocumentBox}>
+                <Text style={styles.emptyDocumentText}>{T("docs_empty")}</Text>
+              </View>
+            ) : (
+              sortedDocuments.map((doc) => (
+                <View key={doc.id} style={styles.documentItem}>
+                  <View style={styles.documentRow}>
+                    <View style={styles.documentLeft}>
+                      <TouchableOpacity
+                        style={styles.documentThumb}
+                        onPress={() => openDocument(doc)}
+                      >
+                        {isImageMime(doc.mime_type) && doc.preview_url ? (
+                          <Image
+                            source={{ uri: doc.preview_url }}
+                            style={styles.documentThumbImage}
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <View style={styles.documentThumbFallback}>
+                            <Text style={styles.documentThumbFallbackText}>
+                              {getDocumentEmoji(doc)}
+                            </Text>
+                          </View>
+                        )}
+                      </TouchableOpacity>
+
+                      <View style={styles.documentMeta}>
+                        <Text style={styles.documentName} numberOfLines={2}>
+                          {doc.file_name || T("file")}
+                        </Text>
+                        <Text style={styles.documentType}>
+                          {isImageMime(doc.mime_type) ? T("image") : T("file")}
+                          {doc.file_size ? ` • ${formatFileSize(doc.file_size)}` : ""}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.documentActions}>
+                      <TouchableOpacity
+                        style={styles.linkButton}
+                        onPress={() => openDocument(doc)}
+                      >
+                        <Text style={styles.linkButtonText}>{T("open")}</Text>
+                      </TouchableOpacity>
+
+                      {editable ? (
+                        <TouchableOpacity
+                          style={styles.linkDangerButton}
+                          onPress={() => deleteDocumentHandler(doc)}
+                        >
+                          <Text style={styles.linkDangerButtonText}>{T("remove")}</Text>
+                        </TouchableOpacity>
+                      ) : null}
+                    </View>
                   </View>
                 </View>
+              ))
+            )}
+          </View>
 
-                <View style={styles.docButtonRow}>
-                  <TouchableOpacity style={styles.secondaryButtonWide} onPress={() => openDocument(doc)}>
-                    <Text style={styles.secondaryButtonText}>{t("open")}</Text>
-                  </TouchableOpacity>
-
-                  {editable && (
-                    <TouchableOpacity
-                      style={styles.dangerButton}
-                      onPress={() => removeDocument(doc)}
-                    >
-                      <Text style={styles.dangerButtonText}>{t("remove")}</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              </View>
-            ))
-          )}
-
-          <View style={styles.footerArea}>
-            <View style={styles.buttonRow}>
-              <TouchableOpacity style={styles.secondaryButtonWide} onPress={toggleEdit}>
-                <Text style={styles.secondaryButtonText}>
-                  {editable ? t("edit_active") : t("edit")}
+          <View style={styles.footer}>
+            <View style={styles.footerButtonRow}>
+              <TouchableOpacity style={styles.secondaryActionButton} onPress={toggleEdit}>
+                <Text style={styles.secondaryActionButtonText}>
+                  {editable ? T("edit_active") : T("edit")}
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.primaryButton, (!editable || saving) && styles.buttonDisabled]}
+                style={[
+                  styles.primaryActionButton,
+                  (!editable || saving) && styles.buttonDisabled,
+                ]}
                 onPress={saveProfile}
                 disabled={!editable || saving}
               >
-                <Text style={styles.primaryButtonText}>{saving ? "..." : t("save")}</Text>
+                <Text style={styles.primaryActionButtonText}>
+                  {saving ? "..." : T("save")}
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.dangerButton, (!editable || saving) && styles.buttonDisabled]}
+                style={[
+                  styles.dangerActionButton,
+                  (!editable || saving) && styles.buttonDisabled,
+                ]}
                 onPress={clearAll}
                 disabled={!editable || saving}
               >
-                <Text style={styles.dangerButtonText}>{t("clear")}</Text>
+                <Text style={styles.dangerActionButtonText}>{T("clear")}</Text>
               </TouchableOpacity>
             </View>
 
             <View style={styles.statusBox}>
-              <Text style={styles.statusMeta}>
-                {t("last_update")}{" "}
-                <Text style={styles.statusMetaStrong}>
+              <Text style={styles.lastUpdateText}>
+                {T("last_update")}{" "}
+                <Text style={styles.lastUpdateValue}>
                   {profile?.updated_at
                     ? new Date(profile.updated_at).toLocaleString()
                     : "—"}
@@ -1220,7 +1244,7 @@ export default function CardScreen({ navigation }: any) {
                   statusKind === "err" && styles.statusErr,
                 ]}
               >
-                {statusText || t("status_ready")}
+                {statusText || T("status_ready")}
               </Text>
             </View>
           </View>
@@ -1235,9 +1259,9 @@ export default function CardScreen({ navigation }: any) {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>{t("select_blood")}</Text>
+            <Text style={styles.modalTitle}>{T("select_blood")}</Text>
 
-            <ScrollView style={styles.modalOptionsWrap}>
+            <ScrollView style={styles.modalScroll}>
               {BLOOD_OPTIONS.map((option) => (
                 <TouchableOpacity
                   key={option || "empty"}
@@ -1253,10 +1277,10 @@ export default function CardScreen({ navigation }: any) {
             </ScrollView>
 
             <TouchableOpacity
-              style={styles.secondaryButtonWide}
+              style={styles.secondaryActionButton}
               onPress={() => setBloodPickerVisible(false)}
             >
-              <Text style={styles.secondaryButtonText}>{t("cancel")}</Text>
+              <Text style={styles.secondaryActionButtonText}>{T("cancel")}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1271,15 +1295,15 @@ export default function CardScreen({ navigation }: any) {
         <SafeAreaView style={styles.emergencyScreen}>
           <View style={styles.emergencyHeader}>
             <View style={styles.emergencyHeaderLeft}>
-              <Text style={styles.emergencyTitle}>🆘 {t("emergency_mode_title")}</Text>
-              <Text style={styles.emergencySubtitle}>{t("emergency_mode_sub")}</Text>
+              <Text style={styles.emergencyTitle}>🆘 {T("emergency_mode_title")}</Text>
+              <Text style={styles.emergencySubtitle}>{T("emergency_mode_sub")}</Text>
             </View>
 
             <View style={styles.emergencyHeaderRight}>
-              <Text style={styles.emergencyPidLabel}>{t("profile_id")}</Text>
+              <Text style={styles.emergencyPidLabel}>{T("profile_id")}</Text>
               <Text style={styles.emergencyPidValue}>{card.public_id}</Text>
-              <Text style={[styles.emergencyPidLabel, styles.emergencyPidLabelSpacing]}>
-                {t("last_update")}
+              <Text style={[styles.emergencyPidLabel, styles.emergencyPidLabelSpaced]}>
+                {T("last_update")}
               </Text>
               <Text style={styles.emergencyPidValue}>
                 {profile?.updated_at
@@ -1290,81 +1314,105 @@ export default function CardScreen({ navigation }: any) {
           </View>
 
           <TouchableOpacity
-            style={styles.secondaryButtonWide}
+            style={styles.emergencyCloseButton}
             onPress={() => setEmergencyVisible(false)}
           >
-            <Text style={styles.secondaryButtonText}>{t("close")}</Text>
+            <Text style={styles.emergencyCloseButtonText}>{T("close")}</Text>
           </TouchableOpacity>
 
-          <View style={styles.buttonRow}>
+          <View style={styles.emergencyActionRow}>
             <TouchableOpacity
-              style={[styles.primaryButton, styles.emergencyButton]}
+              style={[styles.emergencyActionButton, styles.emergencyActionButtonPrimary]}
               onPress={() => callNumber("112")}
             >
-              <Text style={styles.primaryButtonText}>{t("call112")}</Text>
+              <Text style={styles.emergencyActionButtonText}>{T("call112")}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.secondaryButtonWide, styles.emergencyButton]}
+              style={styles.emergencyActionButton}
               onPress={() => callNumber("144")}
             >
-              <Text style={styles.secondaryButtonText}>{t("call144")}</Text>
+              <Text style={styles.emergencyActionButtonText}>{T("call144")}</Text>
             </TouchableOpacity>
           </View>
 
-          {sortedDocuments.length > 0 && (
+          {sortedDocuments.length > 0 ? (
             <View style={styles.emergencyDocsBox}>
               <View style={styles.emergencyDocsHeader}>
-                <Text style={styles.sectionTitle}>{t("docs_overlay_title")}</Text>
-                <View style={styles.docsBadge}>
-                  <Text style={styles.docsBadgeText}>{sortedDocuments.length}</Text>
+                <Text style={styles.emergencyDocsTitle}>{T("docs_overlay_title")}</Text>
+                <View style={styles.emergencyDocsBadge}>
+                  <Text style={styles.emergencyDocsBadgeText}>
+                    {sortedDocuments.length}
+                  </Text>
                 </View>
               </View>
 
               <Text style={styles.emergencyDocsText}>{docsNotice}</Text>
 
-              {sortedDocuments.map((doc) => (
-                <TouchableOpacity
-                  key={doc.id}
-                  style={styles.emergencyDocRow}
-                  onPress={() => openDocument(doc)}
-                >
-                  <Text style={styles.emergencyDocText}>📂 {doc.file_name || t("file")}</Text>
-                  <Text style={styles.emergencyDocOpen}>{t("open")}</Text>
-                </TouchableOpacity>
-              ))}
+              <View style={styles.emergencyDocsList}>
+                {sortedDocuments.map((doc) => (
+                  <TouchableOpacity
+                    key={doc.id}
+                    style={styles.emergencyDocRow}
+                    onPress={() => openDocument(doc)}
+                  >
+                    <Text style={styles.emergencyDocRowText}>
+                      📂 {doc.file_name || T("file")}
+                    </Text>
+                    <Text style={styles.emergencyDocRowOpen}>{T("open")}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
-          )}
+          ) : null}
 
           <ScrollView contentContainerStyle={styles.emergencyContent}>
-            <EmergencyCard title={t("name")} value={form.name} />
-            <EmergencyCard title={t("dob")} value={form.dob} />
-            <EmergencyCard title={t("blood")} value={form.blood} />
-            <EmergencyCard title={t("allergies")} value={form.allergies} critical />
-            <EmergencyCard title={t("thinner")} value={form.bloodThinner} critical />
-            <EmergencyCard title={t("meds")} value={form.meds} />
-            <EmergencyCard title={t("chronic")} value={form.chronic} />
-            <EmergencyCard title={t("notes")} value={form.notes} />
+            <View style={styles.emergencyGrid}>
+              <EmergencyCard title={T("name")} value={form.name} />
+              <EmergencyCard title={T("dob")} value={form.dob} />
+              <EmergencyCard title={T("blood")} value={form.blood} />
+              <EmergencyCard title={T("allergies")} value={form.allergies} critical />
+              <EmergencyCard title={T("thinner")} value={form.bloodThinner} critical />
+              <EmergencyCard title={T("meds")} value={form.meds} />
+              <EmergencyCard title={T("chronic")} value={form.chronic} />
+              <EmergencyCard title={T("notes")} value={form.notes} />
+            </View>
 
             {normalizeTel(form.em1) ? (
-              <EmergencyContact
-                title={lineValue(form.em1_name, t("ec1"))}
-                phone={lineValue(form.em1)}
-                onCall={() => callNumber(form.em1)}
-                buttonLabel={t("call")}
-              />
+              <View style={styles.emergencyContact}>
+                <View style={styles.emergencyContactMeta}>
+                  <Text style={styles.emergencyContactName}>
+                    {lineValue(form.em1_name, T("ec1"))}
+                  </Text>
+                  <Text style={styles.emergencyContactPhone}>{lineValue(form.em1)}</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.emergencyContactButton}
+                  onPress={() => callNumber(form.em1)}
+                >
+                  <Text style={styles.emergencyContactButtonText}>{T("call")}</Text>
+                </TouchableOpacity>
+              </View>
             ) : null}
 
             {normalizeTel(form.em2) ? (
-              <EmergencyContact
-                title={lineValue(form.em2_name, t("ec2"))}
-                phone={lineValue(form.em2)}
-                onCall={() => callNumber(form.em2)}
-                buttonLabel={t("call")}
-              />
+              <View style={styles.emergencyContact}>
+                <View style={styles.emergencyContactMeta}>
+                  <Text style={styles.emergencyContactName}>
+                    {lineValue(form.em2_name, T("ec2"))}
+                  </Text>
+                  <Text style={styles.emergencyContactPhone}>{lineValue(form.em2)}</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.emergencyContactButton}
+                  onPress={() => callNumber(form.em2)}
+                >
+                  <Text style={styles.emergencyContactButtonText}>{T("call")}</Text>
+                </TouchableOpacity>
+              </View>
             ) : null}
 
-            <Text style={styles.emergencyHint}>{t("emergency_hint")}</Text>
+            <Text style={styles.emergencyHint}>{T("emergency_hint")}</Text>
           </ScrollView>
         </SafeAreaView>
       </Modal>
@@ -1379,18 +1427,21 @@ function SectionTitle({ title }: { title: string }) {
 function FieldBox({
   children,
   variant,
-  half = false,
+  half,
+  lastHalf,
 }: {
   children: React.ReactNode;
   variant?: "crit" | "warn" | "ok";
   half?: boolean;
+  lastHalf?: boolean;
 }) {
   return (
     <View
       style={[
         styles.fieldBox,
         half && styles.fieldBoxHalf,
-        variant === "crit" && styles.fieldBoxCrit,
+        half && lastHalf && styles.fieldBoxHalfLast,
+        variant === "crit" && styles.fieldBoxCritical,
         variant === "warn" && styles.fieldBoxWarn,
         variant === "ok" && styles.fieldBoxOk,
       ]}
@@ -1411,21 +1462,22 @@ function FieldLabel({
 }) {
   return (
     <View style={styles.fieldLabelRow}>
-      <Text style={styles.fieldLabel}>{title}</Text>
+      <Text style={styles.fieldLabelText}>{title}</Text>
       {chip ? (
         <View
           style={[
-            styles.chip,
-            chipVariant === "crit" && styles.chipCrit,
-            chipVariant === "warn" && styles.chipWarn,
-            chipVariant === "ok" && styles.chipOk,
+            styles.fieldChip,
+            chipVariant === "crit" && styles.fieldChipCritical,
+            chipVariant === "warn" && styles.fieldChipWarn,
+            chipVariant === "ok" && styles.fieldChipOk,
           ]}
         >
           <Text
             style={[
-              styles.chipText,
-              chipVariant === "crit" && styles.chipTextLight,
-              chipVariant === "ok" && styles.chipTextLight,
+              styles.fieldChipText,
+              chipVariant === "crit" && styles.fieldChipTextCritical,
+              chipVariant === "warn" && styles.fieldChipTextWarn,
+              chipVariant === "ok" && styles.fieldChipTextOk,
             ]}
           >
             {chip}
@@ -1446,72 +1498,48 @@ function EmergencyCard({
   critical?: boolean;
 }) {
   return (
-    <View style={[styles.emergencyCard, critical && styles.emergencyCardCritical]}>
-      <Text style={styles.emergencyCardTitle}>{title}</Text>
-      <Text style={styles.emergencyCardValue}>{lineValue(value)}</Text>
-    </View>
-  );
-}
-
-function EmergencyContact({
-  title,
-  phone,
-  buttonLabel,
-  onCall,
-}: {
-  title: string;
-  phone: string;
-  buttonLabel: string;
-  onCall: () => void;
-}) {
-  return (
-    <View style={styles.emergencyContact}>
-      <View style={styles.emergencyContactMeta}>
-        <Text style={styles.emergencyContactName}>{title}</Text>
-        <Text style={styles.emergencyContactPhone}>{phone}</Text>
-      </View>
-
-      <TouchableOpacity style={styles.primaryButton} onPress={onCall}>
-        <Text style={styles.primaryButtonText}>{buttonLabel}</Text>
-      </TouchableOpacity>
+    <View style={[styles.emergencyInfoCard, critical && styles.emergencyInfoCardCritical]}>
+      <Text style={styles.emergencyInfoCardLabel}>{title}</Text>
+      <Text style={styles.emergencyInfoCardValue}>{lineValue(value)}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screenSafe: {
+    flex: 1,
+    backgroundColor: "#f6f8fb",
+  },
   screen: {
     flex: 1,
-    backgroundColor: "#f4f6f8",
+    backgroundColor: "#f6f8fb",
   },
-
   content: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 36,
   },
 
   loadingWrap: {
     flex: 1,
-    backgroundColor: "#f4f6f8",
+    backgroundColor: "#f6f8fb",
     justifyContent: "center",
     alignItems: "center",
     padding: 24,
   },
-
   loadingText: {
     marginTop: 12,
-    color: "#5b6472",
+    color: "#6b7483",
     fontSize: 15,
     fontWeight: "700",
   },
 
   emptyWrap: {
     flex: 1,
-    backgroundColor: "#f4f6f8",
+    backgroundColor: "#f6f8fb",
     justifyContent: "center",
     alignItems: "center",
     padding: 24,
   },
-
   emptyTitle: {
     color: "#101318",
     fontSize: 28,
@@ -1519,159 +1547,140 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textAlign: "center",
   },
-
   emptyText: {
-    color: "#5b6472",
+    color: "#6b7483",
     fontSize: 15,
-    textAlign: "center",
     lineHeight: 22,
+    textAlign: "center",
   },
 
-  topbar: {
-    backgroundColor: "rgba(255,255,255,0.96)",
+  header: {
+    backgroundColor: "#ffffff",
     borderBottomWidth: 1,
-    borderBottomColor: "#e7ebf0",
-  },
-
-  topbarInner: {
+    borderBottomColor: "rgba(16,19,24,0.08)",
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingTop: 14,
+    paddingBottom: 14,
   },
-
-  brandRow: {
-    flexDirection: "row",
-    alignItems: "center",
+  headerTop: {
     marginBottom: 12,
   },
-
-  dot: {
+  brandWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  brandDot: {
     width: 10,
     height: 10,
-    borderRadius: 5,
+    borderRadius: 999,
     backgroundColor: "#1f6feb",
     marginRight: 10,
   },
-
   brandText: {
     color: "#101318",
     fontSize: 18,
     fontWeight: "900",
     letterSpacing: 1,
   },
-
-  actionsRow: {
+  headerActions: {
     alignItems: "center",
     paddingRight: 8,
   },
 
   langChip: {
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#dde3ec",
+    borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "#e7ebf0",
-    backgroundColor: "#ffffff",
     marginRight: 8,
   },
-
   langChipActive: {
-    backgroundColor: "#2a3a57",
-    borderColor: "#2a3a57",
+    backgroundColor: "#23324d",
+    borderColor: "#23324d",
   },
-
   langChipText: {
+    color: "#101318",
     fontSize: 13,
     fontWeight: "800",
-    color: "#101318",
   },
-
   langChipTextActive: {
     color: "#ffffff",
   },
 
-  headerBtn: {
+  headerButton: {
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 10,
     marginRight: 8,
   },
-
-  headerBtnDanger: {
-    backgroundColor: "#e10600",
+  headerButtonDanger: {
+    backgroundColor: "#b01818",
   },
-
-  headerBtnDangerText: {
+  headerButtonDangerText: {
     color: "#ffffff",
     fontSize: 13,
     fontWeight: "900",
   },
-
-  headerBtnSoft: {
+  headerButtonSoft: {
     backgroundColor: "#eef2f7",
   },
-
-  headerBtnSoftText: {
+  headerButtonSoftText: {
     color: "#101318",
     fontSize: 13,
     fontWeight: "900",
   },
-
-  headerBtnWhite: {
+  headerButtonWhite: {
     backgroundColor: "#ffffff",
     borderWidth: 1,
-    borderColor: "#e7ebf0",
+    borderColor: "#dde3ec",
   },
-
-  headerBtnWhiteText: {
+  headerButtonWhiteText: {
     color: "#101318",
     fontSize: 13,
     fontWeight: "800",
   },
 
-  infoBanner: {
+  readonlyBanner: {
     backgroundColor: "rgba(31,111,235,0.08)",
     borderWidth: 1,
-    borderColor: "rgba(31,111,235,0.2)",
+    borderColor: "rgba(31,111,235,0.18)",
     borderRadius: 14,
     padding: 12,
-    marginBottom: 14,
+    marginBottom: 12,
   },
-
-  infoBannerText: {
-    color: "#1b4f9b",
+  readonlyBannerText: {
+    color: "#1d5aa8",
     fontSize: 13,
-    fontWeight: "700",
     lineHeight: 19,
+    fontWeight: "800",
   },
 
   cardBox: {
     backgroundColor: "#ffffff",
     borderWidth: 1,
-    borderColor: "#e7ebf0",
-    borderRadius: 18,
+    borderColor: "rgba(16,19,24,0.06)",
+    borderRadius: 20,
     padding: 16,
   },
 
-  headline: {
+  cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 12,
-    gap: 12,
+    marginBottom: 14,
   },
-
-  headlineLeft: {
+  cardHeaderContent: {
     flex: 1,
+    paddingRight: 12,
   },
-
   title: {
     color: "#101318",
     fontSize: 24,
     fontWeight: "900",
   },
-
   subtitle: {
-    color: "#5b6472",
+    color: "#6b7483",
     fontSize: 14,
     lineHeight: 20,
     marginTop: 4,
@@ -1680,567 +1689,576 @@ const styles = StyleSheet.create({
   pidBox: {
     alignItems: "flex-end",
   },
-
   pidLabel: {
-    color: "#5b6472",
+    color: "#6b7483",
     fontSize: 11,
-    fontWeight: "700",
-    marginBottom: 4,
+    fontWeight: "800",
   },
-
   pidValue: {
     color: "#101318",
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "900",
-    letterSpacing: 0.6,
+    marginTop: 2,
   },
 
-  disclaimerBox: {
-    backgroundColor: "#f8d7da",
-    borderWidth: 1,
-    borderColor: "rgba(176,24,24,0.2)",
+  noticeBox: {
+    backgroundColor: "#f2f5f9",
     borderRadius: 14,
     padding: 12,
-    marginBottom: 8,
+    marginBottom: 14,
   },
-
-  disclaimerText: {
-    color: "#7a1212",
+  noticeText: {
+    color: "#5f6775",
     fontSize: 12,
     lineHeight: 18,
-    fontWeight: "700",
+    fontWeight: "600",
   },
 
   sectionTitle: {
     color: "#101318",
     fontSize: 17,
-    fontWeight: "800",
+    fontWeight: "900",
     marginTop: 16,
-    marginBottom: 12,
+    marginBottom: 10,
   },
 
-  formRow: {
+  twoColRow: {
     flexDirection: "row",
-    gap: 12,
+    marginBottom: 2,
+  },
+  twoColGrid: {
+    flexDirection: "row",
     flexWrap: "wrap",
   },
 
   fieldBox: {
     width: "100%",
     backgroundColor: "#ffffff",
-    borderWidth: 1,
-    borderColor: "#e7ebf0",
-    borderRadius: 14,
-    padding: 12,
     marginBottom: 12,
   },
-
   fieldBoxHalf: {
-    flex: 1,
-    minWidth: 155,
+    width: "48.5%",
+    marginRight: "3%",
   },
-
-  fieldBoxCrit: {
-    backgroundColor: "rgba(255,107,107,0.07)",
-    borderColor: "rgba(255,107,107,0.24)",
+  fieldBoxHalfLast: {
+    marginRight: 0,
   },
-
+  fieldBoxCritical: {
+    backgroundColor: "rgba(255,77,79,0.06)",
+    borderRadius: 14,
+    padding: 10,
+  },
   fieldBoxWarn: {
-    backgroundColor: "rgba(250,173,20,0.08)",
-    borderColor: "rgba(250,173,20,0.24)",
+    backgroundColor: "rgba(250,173,20,0.09)",
+    borderRadius: 14,
+    padding: 10,
   },
-
   fieldBoxOk: {
-    backgroundColor: "rgba(36,194,106,0.07)",
-    borderColor: "rgba(36,194,106,0.22)",
+    backgroundColor: "rgba(82,196,26,0.08)",
+    borderRadius: 14,
+    padding: 10,
   },
 
   fieldLabelRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-    marginBottom: 8,
+    marginBottom: 6,
   },
-
-  fieldLabel: {
-    color: "#5b6472",
+  fieldLabelText: {
+    color: "#101318",
     fontSize: 12,
     fontWeight: "800",
-    textTransform: "uppercase",
-    flex: 1,
+    marginRight: 8,
   },
 
-  chip: {
+  fieldChip: {
     borderRadius: 999,
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 3,
   },
-
-  chipCrit: {
-    backgroundColor: "#ff4d4f",
-  },
-
-  chipWarn: {
-    backgroundColor: "#faad14",
-  },
-
-  chipOk: {
-    backgroundColor: "#52c41a",
-  },
-
-  chipText: {
+  fieldChipText: {
     fontSize: 10,
     fontWeight: "900",
-    color: "#101318",
-    textTransform: "uppercase",
   },
-
-  chipTextLight: {
+  fieldChipCritical: {
+    backgroundColor: "#ff4d4f",
+  },
+  fieldChipWarn: {
+    backgroundColor: "#faad14",
+  },
+  fieldChipOk: {
+    backgroundColor: "#52c41a",
+  },
+  fieldChipTextCritical: {
+    color: "#ffffff",
+  },
+  fieldChipTextWarn: {
+    color: "#101318",
+  },
+  fieldChipTextOk: {
     color: "#ffffff",
   },
 
   input: {
-    width: "100%",
-    backgroundColor: "#f4f6f8",
+    backgroundColor: "#f4f7fb",
     borderWidth: 1,
-    borderColor: "#e7ebf0",
-    borderRadius: 10,
+    borderColor: "rgba(16,19,24,0.06)",
+    borderRadius: 12,
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 15,
+    paddingVertical: 11,
+    fontSize: 14,
     color: "#101318",
   },
-
   textarea: {
-    minHeight: 76,
+    minHeight: 86,
     textAlignVertical: "top",
   },
-
   inputDisabled: {
-    opacity: 0.65,
+    opacity: 0.6,
   },
-
-  inputSpacing: {
+  inputSpaced: {
     marginTop: 8,
   },
 
   selectLike: {
-    backgroundColor: "#f4f6f8",
+    backgroundColor: "#f4f7fb",
     borderWidth: 1,
-    borderColor: "#e7ebf0",
-    borderRadius: 10,
+    borderColor: "rgba(16,19,24,0.06)",
+    borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 12,
   },
-
   selectLikeText: {
     color: "#101318",
-    fontSize: 15,
+    fontSize: 14,
   },
 
-  buttonRow: {
-    flexDirection: "row",
-    gap: 10,
-    flexWrap: "wrap",
+  contactSection: {
     marginTop: 4,
   },
-
-  primaryButton: {
-    backgroundColor: "#e10600",
+  callButton: {
+    backgroundColor: "#23324d",
     borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-    minWidth: 140,
+    paddingVertical: 10,
     alignItems: "center",
+    marginTop: 8,
   },
-
-  primaryButtonText: {
+  callButtonText: {
     color: "#ffffff",
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "800",
   },
 
-  secondaryButton: {
-    backgroundColor: "#1a2232",
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+  documentsSection: {
+    marginTop: 4,
   },
-
-  secondaryButtonWide: {
-    backgroundColor: "#1a2232",
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-    minWidth: 140,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+  documentToolbar: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 12,
   },
-
-  secondaryButtonText: {
-    color: "#ffffff",
-    fontSize: 15,
+  docsLoading: {
+    paddingVertical: 22,
+    alignItems: "center",
+  },
+  emptyDocumentBox: {
+    backgroundColor: "#f4f7fb",
+    borderWidth: 1,
+    borderColor: "rgba(16,19,24,0.06)",
+    borderRadius: 14,
+    padding: 12,
+  },
+  emptyDocumentText: {
+    color: "#6b7483",
+    fontSize: 12,
     fontWeight: "700",
   },
 
-  dangerButton: {
-    backgroundColor: "#fff0f0",
+  documentItem: {
+    backgroundColor: "#f9fbfd",
     borderWidth: 1,
-    borderColor: "rgba(176,24,24,0.18)",
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-    minWidth: 140,
+    borderColor: "rgba(16,19,24,0.06)",
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 10,
+  },
+  documentRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  documentLeft: {
+    flexDirection: "row",
+    flex: 1,
+    paddingRight: 10,
+  },
+  documentThumb: {
+    width: 60,
+    height: 60,
+    borderRadius: 10,
+    overflow: "hidden",
+    marginRight: 10,
+    backgroundColor: "#e8edf4",
+  },
+  documentThumbImage: {
+    width: "100%",
+    height: "100%",
+  },
+  documentThumbFallback: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
   },
-
-  dangerButtonText: {
+  documentThumbFallbackText: {
+    fontSize: 24,
+  },
+  documentMeta: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  documentName: {
+    color: "#101318",
+    fontSize: 13,
+    fontWeight: "800",
+    marginBottom: 4,
+  },
+  documentType: {
+    color: "#6b7483",
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  documentActions: {
+    justifyContent: "center",
+    alignItems: "flex-end",
+  },
+  linkButton: {
+    paddingVertical: 6,
+  },
+  linkButtonText: {
+    color: "#1f6feb",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  linkDangerButton: {
+    paddingVertical: 6,
+    marginTop: 2,
+  },
+  linkDangerButtonText: {
     color: "#b01818",
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: "800",
   },
 
+  footer: {
+    marginTop: 18,
+  },
+  footerButtonRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 10,
+  },
+  statusBox: {
+    marginTop: 2,
+  },
+  lastUpdateText: {
+    color: "#6b7483",
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  lastUpdateValue: {
+    color: "#101318",
+    fontWeight: "800",
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  statusOk: {
+    color: "#20a45c",
+  },
+  statusWarn: {
+    color: "#b77900",
+  },
+  statusErr: {
+    color: "#d63638",
+  },
+
+  primaryActionButton: {
+    backgroundColor: "#1f6feb",
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  primaryActionButtonText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  secondaryActionButton: {
+    backgroundColor: "#eef2f7",
+    borderWidth: 1,
+    borderColor: "#dde3ec",
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  secondaryActionButtonText: {
+    color: "#101318",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  dangerActionButton: {
+    backgroundColor: "#b01818",
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  dangerActionButtonText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "800",
+  },
   buttonDisabled: {
     opacity: 0.5,
   },
 
-  docsLoading: {
-    paddingVertical: 20,
-    alignItems: "center",
-  },
-
-  emptyDocsBox: {
-    backgroundColor: "#f4f6f8",
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: "#d9dee6",
-    borderRadius: 14,
-    padding: 14,
-  },
-
-  emptyDocsText: {
-    color: "#5b6472",
-    fontSize: 13,
-  },
-
-  docCard: {
-    backgroundColor: "#f9fafc",
-    borderWidth: 1,
-    borderColor: "#e7ebf0",
-    borderRadius: 14,
-    padding: 12,
-    marginBottom: 12,
-  },
-
-  docRow: {
-    flexDirection: "row",
-    gap: 12,
-    alignItems: "center",
-  },
-
-  docThumb: {
-    width: 64,
-    height: 64,
-    borderRadius: 10,
-    overflow: "hidden",
-    backgroundColor: "#e7ebf0",
-  },
-
-  docThumbImage: {
-    width: "100%",
-    height: "100%",
-  },
-
-  docThumbFallback: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  docThumbFallbackText: {
-    fontSize: 28,
-  },
-
-  docMeta: {
-    flex: 1,
-  },
-
-  docName: {
-    color: "#101318",
-    fontSize: 14,
-    fontWeight: "800",
-    marginBottom: 4,
-  },
-
-  docInfo: {
-    color: "#5b6472",
-    fontSize: 12,
-    lineHeight: 18,
-  },
-
-  docButtonRow: {
-    flexDirection: "row",
-    gap: 10,
-    flexWrap: "wrap",
-    marginTop: 12,
-  },
-
-  footerArea: {
-    marginTop: 18,
-  },
-
-  statusBox: {
-    marginTop: 14,
-  },
-
-  statusMeta: {
-    color: "#5b6472",
-    fontSize: 12,
-    marginBottom: 4,
-  },
-
-  statusMetaStrong: {
-    color: "#101318",
-    fontWeight: "700",
-  },
-
-  statusText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#5b6472",
-  },
-
-  statusOk: {
-    color: "#24c26a",
-  },
-
-  statusWarn: {
-    color: "#d48b00",
-  },
-
-  statusErr: {
-    color: "#ff6b6b",
-  },
-
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.42)",
     justifyContent: "center",
     padding: 20,
   },
-
   modalCard: {
     backgroundColor: "#ffffff",
     borderRadius: 16,
     padding: 16,
   },
-
   modalTitle: {
     color: "#101318",
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "900",
-    marginBottom: 10,
+    marginBottom: 12,
   },
-
-  modalOptionsWrap: {
+  modalScroll: {
     maxHeight: 320,
   },
-
   modalOption: {
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eef2f7",
+    paddingVertical: 12,
   },
-
   modalOptionText: {
     color: "#101318",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
   },
 
   emergencyScreen: {
     flex: 1,
-    backgroundColor: "#f4f6f8",
+    backgroundColor: "#ffffff",
   },
-
   emergencyHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    padding: 16,
-    gap: 12,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
   },
-
   emergencyHeaderLeft: {
     flex: 1,
+    paddingRight: 12,
   },
-
   emergencyHeaderRight: {
     alignItems: "flex-end",
   },
-
   emergencyTitle: {
     color: "#101318",
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "900",
   },
-
   emergencySubtitle: {
-    color: "#5b6472",
-    fontSize: 13,
+    color: "#6b7483",
+    fontSize: 12,
     lineHeight: 18,
     marginTop: 4,
   },
-
   emergencyPidLabel: {
-    color: "#5b6472",
+    color: "#6b7483",
     fontSize: 11,
-    fontWeight: "700",
-  },
-
-  emergencyPidLabelSpacing: {
-    marginTop: 10,
-  },
-
-  emergencyPidValue: {
-    color: "#101318",
-    fontSize: 13,
     fontWeight: "800",
   },
+  emergencyPidLabelSpaced: {
+    marginTop: 8,
+  },
+  emergencyPidValue: {
+    color: "#101318",
+    fontSize: 12,
+    fontWeight: "800",
+    marginTop: 2,
+  },
 
-  emergencyButton: {
-    flexGrow: 1,
+  emergencyCloseButton: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  emergencyCloseButtonText: {
+    color: "#1f6feb",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+
+  emergencyActionRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  emergencyActionButton: {
+    backgroundColor: "#eef2f7",
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  emergencyActionButtonPrimary: {
+    backgroundColor: "#b01818",
+  },
+  emergencyActionButtonText: {
+    color: "#101318",
+    fontSize: 14,
+    fontWeight: "900",
   },
 
   emergencyDocsBox: {
-    backgroundColor: "#ffffff",
-    borderWidth: 1,
-    borderColor: "#e7ebf0",
-    borderRadius: 16,
-    padding: 14,
+    backgroundColor: "#fff7df",
+    borderRadius: 14,
     marginHorizontal: 16,
-    marginTop: 10,
+    marginBottom: 12,
+    padding: 12,
   },
-
   emergencyDocsHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-
-  docsBadge: {
-    minWidth: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "#e10600",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 8,
+  emergencyDocsTitle: {
+    color: "#101318",
+    fontSize: 13,
+    fontWeight: "900",
   },
-
-  docsBadgeText: {
+  emergencyDocsBadge: {
+    backgroundColor: "#b01818",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  emergencyDocsBadgeText: {
     color: "#ffffff",
-    fontWeight: "800",
+    fontSize: 12,
+    fontWeight: "900",
   },
-
   emergencyDocsText: {
-    color: "#5b6472",
+    color: "#5f6775",
     fontSize: 13,
     lineHeight: 18,
-    marginTop: 4,
-    marginBottom: 8,
+    marginTop: 8,
   },
-
+  emergencyDocsList: {
+    marginTop: 10,
+  },
   emergencyDocRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: 10,
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: "#eef2f7",
+    paddingVertical: 8,
   },
-
-  emergencyDocText: {
+  emergencyDocRowText: {
     color: "#101318",
-    fontSize: 14,
+    fontSize: 13,
     flex: 1,
+    paddingRight: 10,
   },
-
-  emergencyDocOpen: {
+  emergencyDocRowOpen: {
     color: "#1f6feb",
     fontSize: 13,
-    fontWeight: "700",
+    fontWeight: "800",
   },
 
   emergencyContent: {
-    padding: 16,
+    paddingHorizontal: 16,
     paddingBottom: 30,
   },
-
-  emergencyCard: {
-    backgroundColor: "#ffffff",
-    borderWidth: 1,
-    borderColor: "#e7ebf0",
+  emergencyGrid: {
+    marginBottom: 8,
+  },
+  emergencyInfoCard: {
+    backgroundColor: "#f7f9fc",
     borderRadius: 14,
     padding: 12,
-    marginBottom: 12,
+    marginBottom: 10,
   },
-
-  emergencyCardCritical: {
-    backgroundColor: "rgba(255,107,107,0.08)",
-    borderColor: "rgba(255,107,107,0.24)",
+  emergencyInfoCardCritical: {
+    backgroundColor: "rgba(255,77,79,0.08)",
   },
-
-  emergencyCardTitle: {
-    color: "#5b6472",
+  emergencyInfoCardLabel: {
+    color: "#6b7483",
     fontSize: 11,
-    fontWeight: "800",
-    textTransform: "uppercase",
-    marginBottom: 6,
-  },
-
-  emergencyCardValue: {
-    color: "#101318",
-    fontSize: 16,
-    fontWeight: "700",
-    lineHeight: 22,
-  },
-
-  emergencyContact: {
-    backgroundColor: "#ffffff",
-    borderWidth: 1,
-    borderColor: "#e7ebf0",
-    borderRadius: 14,
-    padding: 12,
-    marginBottom: 12,
-    gap: 12,
-  },
-
-  emergencyContactMeta: {
-    flex: 1,
-  },
-
-  emergencyContactName: {
-    color: "#101318",
-    fontSize: 15,
     fontWeight: "800",
     marginBottom: 4,
   },
-
-  emergencyContactPhone: {
-    color: "#5b6472",
-    fontSize: 13,
+  emergencyInfoCardValue: {
+    color: "#101318",
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: "800",
   },
 
+  emergencyContact: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f7f9fc",
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 10,
+  },
+  emergencyContactMeta: {
+    flex: 1,
+    paddingRight: 10,
+  },
+  emergencyContactName: {
+    color: "#101318",
+    fontSize: 14,
+    fontWeight: "800",
+    marginBottom: 4,
+  },
+  emergencyContactPhone: {
+    color: "#6b7483",
+    fontSize: 13,
+  },
+  emergencyContactButton: {
+    backgroundColor: "#1f6feb",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  emergencyContactButtonText: {
+    color: "#ffffff",
+    fontSize: 13,
+    fontWeight: "800",
+  },
   emergencyHint: {
-    color: "#5b6472",
+    color: "#6b7483",
     fontSize: 12,
     lineHeight: 18,
-    marginTop: 4,
+    marginTop: 8,
   },
 });
