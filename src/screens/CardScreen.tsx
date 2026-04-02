@@ -1,12 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ActionSheetIOS,
   ActivityIndicator,
   Alert,
   Image,
   Linking,
   Modal,
-  Platform,
   RefreshControl,
   SafeAreaView,
   ScrollView,
@@ -22,29 +20,17 @@ import * as DocumentPicker from "expo-document-picker";
 
 import { supabase } from "../lib/supabase";
 import {
-  getCurrentUserCardProfile,
-  initialProfileForm,
-  saveCurrentUserCardProfile,
-} from "../services/profileService";
-import {
-  deleteMedicalDocument,
-  getSignedDocumentUrl,
-  loadMedicalDocuments,
-  uploadMedicalDocument,
-} from "../services/medicalDocumentsService";
-import { useCardRealtime } from "../hooks/useCardRealtime";
-import { getDocumentEmoji, isImageMime } from "../utils/medicalDocuments";
-import { formatFileSize, lineValue, normalizeTel } from "../utils/formatters";
-import { mapEmergencyDataToForm } from "../utils";
-import type {
   CardRow,
   EmergencyCardRow,
   ProfileFormValues,
-} from "../types";
+  getCurrentUserCardProfile,
+  initialProfileForm,
+  mapEmergencyDataToForm,
+  saveCurrentUserCardProfile,
+} from "../services/profileService";
+import { useCardRealtime } from "../hooks/useCardRealtime";
 
-type LangKey = "de" | "it" | "fr" | "es" | "en";
-
-type MedicalDocumentViewRow = {
+type MedicalDocumentRow = {
   id: string;
   owner_id?: string | null;
   public_id: string;
@@ -53,8 +39,13 @@ type MedicalDocumentViewRow = {
   mime_type?: string | null;
   file_size?: number | null;
   created_at?: string | null;
+};
+
+type MedicalDocumentViewRow = MedicalDocumentRow & {
   preview_url?: string | null;
 };
+
+type LangKey = "de" | "it" | "fr" | "es" | "en";
 
 const BLOOD_OPTIONS = [
   "",
@@ -113,7 +104,8 @@ const I18N: Record<LangKey, Record<string, string>> = {
     status_blocked: "Diese VIVE CARD wurde gesperrt oder deaktiviert.",
     status_error: "Ein Fehler ist aufgetreten.",
     need_login: "Du musst eingeloggt sein um diese Karte zu bearbeiten.",
-    readonly: "Diese Karte wird im öffentlichen Notfallmodus angezeigt.",
+    readonly:
+      "Diese Karte wird im öffentlichen Notfallmodus angezeigt.",
     camera: "📸 Foto aufnehmen",
     upload: "📂 Datei hochladen",
     open: "Öffnen",
@@ -139,17 +131,6 @@ const I18N: Record<LangKey, Record<string, string>> = {
       "Für diesen Account wurde aktuell keine VIVE CARD gefunden.",
     select_blood: "Blutgruppe auswählen",
     cancel: "Abbrechen",
-    critical_chip: "kritisch",
-    important_chip: "wichtig",
-    ok_chip: "ok",
-    camera_permission_title: "Kamera",
-    camera_permission_text: "Bitte Kamera-Zugriff erlauben.",
-library: "🖼 Fotomediathek",
-take_photo: "📸 Foto aufnehmen",
-choose_file: "📂 Datei auswählen",
-upload_menu_title: "Dokument hinzufügen",
-upload_menu_message: "Wähle eine Quelle",
-invalid_file_type: "Nur Bilder oder PDF-Dateien sind erlaubt.",
   },
   it: {
     brand: "VIVE CARD",
@@ -220,11 +201,6 @@ invalid_file_type: "Nur Bilder oder PDF-Dateien sind erlaubt.",
     no_card_text: "Per questo account non è stata trovata nessuna VIVE CARD.",
     select_blood: "Seleziona gruppo sanguigno",
     cancel: "Annulla",
-    critical_chip: "critico",
-    important_chip: "importante",
-    ok_chip: "ok",
-    camera_permission_title: "Fotocamera",
-    camera_permission_text: "Consenti l’accesso alla fotocamera.",
   },
   fr: {
     brand: "VIVE CARD",
@@ -292,14 +268,10 @@ invalid_file_type: "Nur Bilder oder PDF-Dateien sind erlaubt.",
       "Astuce : 112 fonctionne dans toute l’Europe. En Suisse, le 144 est le service médical d’urgence.",
     confirm_clear: "Voulez-vous vraiment tout supprimer ?",
     no_card_title: "Aucune carte trouvée",
-    no_card_text: "Aucune VIVE CARD n’a été trouvée pour ce compte.",
+    no_card_text:
+      "Aucune VIVE CARD n’a été trouvée pour ce compte.",
     select_blood: "Choisir le groupe sanguin",
     cancel: "Annuler",
-    critical_chip: "critique",
-    important_chip: "important",
-    ok_chip: "ok",
-    camera_permission_title: "Caméra",
-    camera_permission_text: "Veuillez autoriser l’accès à la caméra.",
   },
   es: {
     brand: "VIVE CARD",
@@ -371,11 +343,6 @@ invalid_file_type: "Nur Bilder oder PDF-Dateien sind erlaubt.",
       "Actualmente no se encontró ninguna VIVE CARD para esta cuenta.",
     select_blood: "Seleccionar grupo sanguíneo",
     cancel: "Cancelar",
-    critical_chip: "crítico",
-    important_chip: "importante",
-    ok_chip: "ok",
-    camera_permission_title: "Cámara",
-    camera_permission_text: "Permite el acceso a la cámara.",
   },
   en: {
     brand: "VIVE CARD",
@@ -443,16 +410,61 @@ invalid_file_type: "Nur Bilder oder PDF-Dateien sind erlaubt.",
       "Tip: 112 works across Europe. In Switzerland, 144 is the medical emergency service.",
     confirm_clear: "Do you really want to clear all fields?",
     no_card_title: "No card found",
-    no_card_text: "No VIVE CARD was currently found for this account.",
+    no_card_text:
+      "No VIVE CARD was currently found for this account.",
     select_blood: "Select blood group",
     cancel: "Cancel",
-    critical_chip: "critical",
-    important_chip: "important",
-    ok_chip: "ok",
-    camera_permission_title: "Camera",
-    camera_permission_text: "Please allow camera access.",
   },
 };
+
+function isImageMime(mimeType?: string | null) {
+  return String(mimeType || "").toLowerCase().startsWith("image/");
+}
+
+function isPdfMime(mimeType?: string | null, fileName?: string | null) {
+  const mime = String(mimeType || "").toLowerCase();
+  const name = String(fileName || "").toLowerCase();
+  return mime === "application/pdf" || name.endsWith(".pdf");
+}
+
+function formatFileSize(bytes?: number | null) {
+  if (!bytes) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function guessExtension(fileName?: string | null, mimeType?: string | null) {
+  const name = String(fileName || "").toLowerCase();
+  if (name.includes(".")) return name.split(".").pop() || "bin";
+
+  const mime = String(mimeType || "").toLowerCase();
+  if (mime === "image/jpeg") return "jpg";
+  if (mime === "image/png") return "png";
+  if (mime === "image/webp") return "webp";
+  if (mime === "application/pdf") return "pdf";
+  return "bin";
+}
+
+function normalizeTel(v?: string | null) {
+  return String(v || "").trim().replace(/[^0-9+]/g, "");
+}
+
+function lineValue(value?: string | null, fallback = "—") {
+  const clean = String(value || "").trim();
+  return clean || fallback;
+}
+
+async function uriToArrayBuffer(uri: string) {
+  const response = await fetch(uri);
+  return await response.arrayBuffer();
+}
+
+function getDocumentEmoji(doc: MedicalDocumentRow) {
+  if (isImageMime(doc.mime_type)) return "🖼️";
+  if (isPdfMime(doc.mime_type, doc.file_name)) return "📄";
+  return "📎";
+}
 
 export default function CardScreen({ navigation }: any) {
   const [lang, setLang] = useState<LangKey>("de");
@@ -488,28 +500,28 @@ export default function CardScreen({ navigation }: any) {
     []
   );
 
-  const setField = useCallback(
-    (key: keyof ProfileFormValues, value: string) => {
-      setForm((prev) => ({ ...prev, [key]: value }));
+  const setField = useCallback((key: keyof ProfileFormValues, value: string) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  }, []);
+
+  const checkCardBlocked = useCallback(
+    async (publicId?: string | null) => {
+      if (!publicId) return false;
+
+      const { data, error } = await supabase
+        .from("cards")
+        .select("id, public_id, status, blocked_at")
+        .eq("public_id", publicId)
+        .maybeSingle();
+
+      if (error) {
+        throw new Error("Kartenstatus konnte nicht geprüft werden: " + error.message);
+      }
+
+      return String(data?.status || "") === "blocked" || !!data?.blocked_at;
     },
     []
   );
-
-  const checkCardBlocked = useCallback(async (publicId?: string | null) => {
-    if (!publicId) return false;
-
-    const { data, error } = await supabase
-      .from("cards")
-      .select("id, public_id, status, blocked_at")
-      .eq("public_id", publicId)
-      .maybeSingle();
-
-    if (error) {
-      throw new Error("Kartenstatus konnte nicht geprüft werden: " + error.message);
-    }
-
-    return String(data?.status || "") === "blocked" || !!data?.blocked_at;
-  }, []);
 
   const loadDocuments = useCallback(
     async (publicId?: string | null) => {
@@ -521,10 +533,41 @@ export default function CardScreen({ navigation }: any) {
       try {
         setDocsLoading(true);
 
-        const docs = await loadMedicalDocuments(publicId);
-        setDocuments(docs);
+        const { data, error } = await supabase
+          .from("medical_documents")
+          .select("id, owner_id, public_id, file_name, file_path, mime_type, file_size, created_at")
+          .eq("public_id", publicId)
+          .order("created_at", { ascending: false });
 
-        if (docs.length > 0) {
+        if (error) {
+          throw new Error("Dokumente konnten nicht geladen werden: " + error.message);
+        }
+
+        const rows = (data || []) as MedicalDocumentRow[];
+
+        const rowsWithPreview = await Promise.all(
+          rows.map(async (doc) => {
+            if (!isImageMime(doc.mime_type)) {
+              return { ...doc, preview_url: null };
+            }
+
+            const { data: signedData, error: signedError } = await supabase.storage
+              .from("medical-docs")
+              .createSignedUrl(doc.file_path, 60 * 10);
+
+            if (signedError || !signedData?.signedUrl) {
+              return { ...doc, preview_url: null };
+            }
+
+            return {
+              ...doc,
+              preview_url: signedData.signedUrl,
+            };
+          })
+        );
+
+        setDocuments(rowsWithPreview);
+        if (rowsWithPreview.length > 0) {
           setStatus(T("status_docs_loaded"), "ok");
         } else {
           setStatus(T("status_docs_empty"), "");
@@ -550,7 +593,6 @@ export default function CardScreen({ navigation }: any) {
 
     if (result.card?.public_id) {
       const blocked = await checkCardBlocked(result.card.public_id);
-
       if (blocked) {
         setEditable(false);
         setStatus(T("status_blocked"), "err");
@@ -607,19 +649,14 @@ export default function CardScreen({ navigation }: any) {
 
     try {
       const blocked = await checkCardBlocked(card.public_id);
-
       if (blocked) {
         setEditable(false);
         setStatus(T("status_blocked"), "err");
         return;
       }
 
-      const nextEditable = !editable;
-      setEditable(nextEditable);
-      setStatus(
-        nextEditable ? T("edit_active") : T("status_ready"),
-        nextEditable ? "warn" : ""
-      );
+      setEditable((prev) => !prev);
+      setStatus(!editable ? T("edit_active") : T("status_ready"), !editable ? "warn" : "");
     } catch (e: any) {
       setStatus(e?.message || T("status_error"), "err");
     }
@@ -630,7 +667,6 @@ export default function CardScreen({ navigation }: any) {
       if (!card || !userId) return;
 
       const blocked = await checkCardBlocked(card.public_id);
-
       if (blocked) {
         setEditable(false);
         setStatus(T("status_blocked"), "err");
@@ -660,7 +696,6 @@ export default function CardScreen({ navigation }: any) {
             if (!card || !userId) return;
 
             const blocked = await checkCardBlocked(card.public_id);
-
             if (blocked) {
               setEditable(false);
               setStatus(T("status_blocked"), "err");
@@ -691,10 +726,16 @@ export default function CardScreen({ navigation }: any) {
 
   const openDocument = async (doc: MedicalDocumentViewRow) => {
     try {
-      const url = await getSignedDocumentUrl(doc.file_path);
+      const { data, error } = await supabase.storage
+        .from("medical-docs")
+        .createSignedUrl(doc.file_path, 60 * 10);
+
+      if (error || !data?.signedUrl) {
+        throw new Error("Dokument konnte nicht geöffnet werden");
+      }
 
       navigation?.navigate?.("DocumentViewer", {
-        url,
+        url: data.signedUrl,
         fileName: doc.file_name || "Dokument",
         mimeType: doc.mime_type || "",
       });
@@ -703,202 +744,169 @@ export default function CardScreen({ navigation }: any) {
     }
   };
 
-  const deleteDocumentHandler = async (doc: MedicalDocumentViewRow) => {
-    Alert.alert(T("remove"), `${doc.file_name || "Dokument"}?`, [
-      { text: T("cancel"), style: "cancel" },
-      {
-        text: T("remove"),
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await deleteMedicalDocument(doc.id, doc.file_path);
-            await loadDocuments(card?.public_id || null);
-          } catch (e: any) {
-            setStatus(e?.message || T("status_error"), "err");
-          }
+  const deleteDocument = async (doc: MedicalDocumentViewRow) => {
+    Alert.alert(
+      T("remove"),
+      `${doc.file_name || "Dokument"}?`,
+      [
+        { text: T("cancel"), style: "cancel" },
+        {
+          text: T("remove"),
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const { error: storageError } = await supabase.storage
+                .from("medical-docs")
+                .remove([doc.file_path]);
+
+              if (storageError) {
+                throw new Error(storageError.message);
+              }
+
+              const { error: dbError } = await supabase
+                .from("medical_documents")
+                .delete()
+                .eq("id", doc.id)
+                .eq("public_id", doc.public_id);
+
+              if (dbError) {
+                throw new Error(dbError.message);
+              }
+
+              await loadDocuments(card?.public_id || null);
+            } catch (e: any) {
+              setStatus(e?.message || T("status_error"), "err");
+            }
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
-const uploadSelectedAsset = async ({
-  uri,
-  fileName,
-  mimeType,
-  fileSize,
-}: {
-  uri: string;
-  fileName: string;
-  mimeType: string;
-  fileSize?: number | null;
-}) => {
-  if (!editable || !card?.public_id || !userId) {
-    setStatus(T("need_login"), "warn");
-    return;
-  }
 
-  const allowedMime =
-    mimeType.startsWith("image/") || mimeType === "application/pdf";
+  const uploadFileToSupabase = async (params: {
+    uri: string;
+    fileName: string;
+    mimeType: string;
+    fileSize?: number | null;
+  }) => {
+    if (!card?.public_id || !userId) {
+      throw new Error("User oder Karte fehlt");
+    }
 
-  if (!allowedMime) {
-    setStatus(T("invalid_file_type"), "err");
-    return;
-  }
+    const ext = guessExtension(params.fileName, params.mimeType);
+    const uniqueName = `${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2)}.${ext}`;
+    const filePath = `${userId}/${card.public_id}/${uniqueName}`;
 
-  try {
-    setUploading(true);
-    setStatus(T("status_uploading"), "warn");
+    const arrayBuffer = await uriToArrayBuffer(params.uri);
 
-    await uploadMedicalDocument({
-      uri,
-      fileName,
-      mimeType,
-      fileSize: fileSize || null,
-      userId,
-      publicId: card.public_id,
-    });
+    const { error: uploadError } = await supabase.storage
+      .from("medical-docs")
+      .upload(filePath, arrayBuffer, {
+        contentType: params.mimeType || "application/octet-stream",
+        upsert: false,
+      });
+
+    if (uploadError) {
+      throw new Error("Upload fehlgeschlagen: " + uploadError.message);
+    }
+
+    const { error: insertError } = await supabase
+      .from("medical_documents")
+      .insert({
+        owner_id: userId,
+        public_id: card.public_id,
+        file_name: params.fileName,
+        file_path: filePath,
+        mime_type: params.mimeType || "application/octet-stream",
+        file_size: params.fileSize || null,
+      });
+
+    if (insertError) {
+      throw new Error("DB-Eintrag fehlgeschlagen: " + insertError.message);
+    }
 
     await loadDocuments(card.public_id);
-    setStatus(T("status_saved"), "ok");
-  } catch (e: any) {
-    setStatus(e?.message || T("status_error"), "err");
-  } finally {
-    setUploading(false);
-  }
-};
-const handlePickDocument = async () => {
-  try {
-    if (!editable || !card?.public_id || !userId) {
-      setStatus(T("need_login"), "warn");
-      return;
-    }
+  };
 
-    const result = await DocumentPicker.getDocumentAsync({
-      type: ["image/*", "application/pdf"],
-      multiple: false,
-      copyToCacheDirectory: true,
-    });
-
-    if (result.canceled) return;
-
-    const asset = result.assets?.[0];
-    if (!asset?.uri) return;
-
-    await uploadSelectedAsset({
-      uri: asset.uri,
-      fileName: asset.name || "Dokument",
-      mimeType: asset.mimeType || "application/octet-stream",
-      fileSize: asset.size || null,
-    });
-  } catch (e: any) {
-    setStatus(e?.message || T("status_error"), "err");
-  }
-};
-
-const openUploadMenu = () => {
-  if (!editable || uploading) {
-    setStatus(T("need_login"), "warn");
-    return;
-  }
-
-  if (Platform.OS === "ios") {
-    ActionSheetIOS.showActionSheetWithOptions(
-      {
-        options: [
-          T("cancel"),
-          T("library"),
-          T("take_photo"),
-          T("choose_file"),
-        ],
-        cancelButtonIndex: 0,
-        title: T("upload_menu_title"),
-        message: T("upload_menu_message"),
-      },
-      async (buttonIndex) => {
-        if (buttonIndex === 1) {
-          await handlePickFromLibrary();
-        } else if (buttonIndex === 2) {
-          await handleTakePhoto();
-        } else if (buttonIndex === 3) {
-          await handlePickDocument();
-        }
+  const handlePickDocument = async () => {
+    try {
+      if (!editable) {
+        setStatus(T("need_login"), "warn");
+        return;
       }
-    );
-    return;
-  }
 
-  Alert.alert(T("upload_menu_title"), T("upload_menu_message"), [
-    { text: T("cancel"), style: "cancel" },
-    { text: T("library"), onPress: () => void handlePickFromLibrary() },
-    { text: T("take_photo"), onPress: () => void handleTakePhoto() },
-    { text: T("choose_file"), onPress: () => void handlePickDocument() },
-  ]);
-};
+      setUploading(true);
+      setStatus(T("status_uploading"), "warn");
+
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["image/*", "application/pdf"],
+        multiple: false,
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled) return;
+
+      const asset = result.assets?.[0];
+      if (!asset?.uri) return;
+
+      await uploadFileToSupabase({
+        uri: asset.uri,
+        fileName: asset.name || "Dokument",
+        mimeType: asset.mimeType || "application/octet-stream",
+        fileSize: asset.size || null,
+      });
+
+      setStatus(T("status_saved"), "ok");
+    } catch (e: any) {
+      setStatus(e?.message || T("status_error"), "err");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleTakePhoto = async () => {
-  try {
-    if (!editable || !card?.public_id || !userId) {
-      setStatus(T("need_login"), "warn");
-      return;
+    try {
+      if (!editable) {
+        setStatus(T("need_login"), "warn");
+        return;
+      }
+
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert("Kamera", "Bitte Kamera-Zugriff erlauben.");
+        return;
+      }
+
+      setUploading(true);
+      setStatus(T("status_uploading"), "warn");
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.85,
+      });
+
+      if (result.canceled) return;
+
+      const asset = result.assets?.[0];
+      if (!asset?.uri) return;
+
+      await uploadFileToSupabase({
+        uri: asset.uri,
+        fileName: asset.fileName || `camera-${Date.now()}.jpg`,
+        mimeType: asset.mimeType || "image/jpeg",
+        fileSize: asset.fileSize || null,
+      });
+
+      setStatus(T("status_saved"), "ok");
+    } catch (e: any) {
+      setStatus(e?.message || T("status_error"), "err");
+    } finally {
+      setUploading(false);
     }
+  };
 
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert(T("camera_permission_title"), T("camera_permission_text"));
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.85,
-    });
-
-    if (result.canceled) return;
-
-    const asset = result.assets?.[0];
-    if (!asset?.uri) return;
-
-    await uploadSelectedAsset({
-      uri: asset.uri,
-      fileName: asset.fileName || `camera-${Date.now()}.jpg`,
-      mimeType: asset.mimeType || "image/jpeg",
-      fileSize: asset.fileSize || null,
-    });
-  } catch (e: any) {
-    setStatus(e?.message || T("status_error"), "err");
-  }
-};
-const handlePickFromLibrary = async () => {
-  try {
-    if (!editable || !card?.public_id || !userId) {
-      setStatus(T("need_login"), "warn");
-      return;
-    }
-
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert("Fotos", "Bitte Zugriff auf die Fotomediathek erlauben.");
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.85,
-    });
-
-    if (result.canceled) return;
-
-    const asset = result.assets?.[0];
-    if (!asset?.uri) return;
-
-    await uploadSelectedAsset({
-      uri: asset.uri,
-      fileName: asset.fileName || `library-${Date.now()}.jpg`,
-      mimeType: asset.mimeType || "image/jpeg",
-      fileSize: asset.fileSize || null,
-    });
-  } catch (e: any) {
-    setStatus(e?.message || T("status_error"), "err");
-  }
-};
   const handleCheck = () => {
     const missing: string[] = [];
     if (!String(form.name || "").trim()) missing.push(T("name"));
@@ -919,7 +927,6 @@ const handlePickFromLibrary = async () => {
 
     const url = `tel:${clean}`;
     const supported = await Linking.canOpenURL(url);
-
     if (supported) {
       await Linking.openURL(url);
     }
@@ -946,10 +953,7 @@ const handlePickFromLibrary = async () => {
   const docsNotice =
     sortedDocuments.length === 1
       ? T("docs_notice_single")
-      : T("docs_notice_multi").replace(
-          "{count}",
-          String(sortedDocuments.length)
-        );
+      : T("docs_notice_multi").replace("{count}", String(sortedDocuments.length));
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -988,9 +992,7 @@ const handlePickFromLibrary = async () => {
               style={[styles.headerBtn, styles.headerBtnDanger]}
               onPress={() => setEmergencyVisible(true)}
             >
-              <Text style={styles.headerBtnDangerText}>
-                {T("btn_emergency")}
-              </Text>
+              <Text style={styles.headerBtnDangerText}>{T("btn_emergency")}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -1025,7 +1027,7 @@ const handlePickFromLibrary = async () => {
 
         <View style={styles.cardWrap}>
           <View style={styles.headline}>
-            <View style={styles.headlineContent}>
+            <View style={{ flex: 1 }}>
               <Text style={styles.headlineTitle}>{T("title")}</Text>
               <Text style={styles.headlineSub}>{T("subtitle")}</Text>
             </View>
@@ -1041,10 +1043,13 @@ const handlePickFromLibrary = async () => {
           </View>
 
           <View style={styles.row2}>
-            <FieldBox half>
-              <FieldLabel title={T("name")} chip={T("required")} />
+            <FieldBox>
+              <FieldLabel
+                title={T("name")}
+                chip={T("required")}
+              />
               <TextInput
-                style={[styles.input, !editable && styles.inputDisabled]}
+                style={styles.input}
                 value={form.name}
                 onChangeText={(v) => setField("name", v)}
                 editable={editable}
@@ -1052,10 +1057,13 @@ const handlePickFromLibrary = async () => {
               />
             </FieldBox>
 
-            <FieldBox half>
-              <FieldLabel title={T("dob")} chip={T("required")} />
+            <FieldBox>
+              <FieldLabel
+                title={T("dob")}
+                chip={T("required")}
+              />
               <TextInput
-                style={[styles.input, !editable && styles.inputDisabled]}
+                style={styles.input}
                 value={form.dob}
                 onChangeText={(v) => setField("dob", v)}
                 editable={editable}
@@ -1064,12 +1072,19 @@ const handlePickFromLibrary = async () => {
             </FieldBox>
           </View>
 
-          <FieldBox variant="warn">
-            <FieldLabel title={T("blood")} chip={T("prio1")} chipVariant="warn" />
+          <FieldBox style={{ marginTop: 12 }} variant="warn">
+            <FieldLabel
+              title={T("blood")}
+              chip={T("prio1")}
+              chipVariant="warn"
+            />
             <TouchableOpacity
               activeOpacity={editable ? 0.8 : 1}
               onPress={() => editable && setBloodPickerVisible(true)}
-              style={[styles.selectLike, !editable && styles.inputDisabled]}
+              style={[
+                styles.selectLike,
+                !editable && styles.inputDisabled,
+              ]}
             >
               <Text style={styles.selectLikeText}>{lineValue(form.blood)}</Text>
             </TouchableOpacity>
@@ -1078,14 +1093,10 @@ const handlePickFromLibrary = async () => {
           <SectionTitle title={T("critical_title")} />
 
           <View style={styles.grid2}>
-            <FieldBox half variant="crit">
-              <FieldLabel
-                title={T("allergies")}
-                chip={T("critical_chip")}
-                chipVariant="crit"
-              />
+            <FieldBox variant="crit">
+              <FieldLabel title={T("allergies")} chip="kritisch" chipVariant="crit" />
               <TextInput
-                style={[styles.input, styles.textarea, !editable && styles.inputDisabled]}
+                style={[styles.input, styles.textarea]}
                 value={form.allergies}
                 onChangeText={(v) => setField("allergies", v)}
                 editable={editable}
@@ -1094,14 +1105,10 @@ const handlePickFromLibrary = async () => {
               />
             </FieldBox>
 
-            <FieldBox half variant="crit">
-              <FieldLabel
-                title={T("thinner")}
-                chip={T("critical_chip")}
-                chipVariant="crit"
-              />
+            <FieldBox variant="crit">
+              <FieldLabel title={T("thinner")} chip="kritisch" chipVariant="crit" />
               <TextInput
-                style={[styles.input, styles.textarea, !editable && styles.inputDisabled]}
+                style={[styles.input, styles.textarea]}
                 value={form.bloodThinner}
                 onChangeText={(v) => setField("bloodThinner", v)}
                 editable={editable}
@@ -1110,14 +1117,10 @@ const handlePickFromLibrary = async () => {
               />
             </FieldBox>
 
-            <FieldBox half variant="warn">
-              <FieldLabel
-                title={T("meds")}
-                chip={T("important_chip")}
-                chipVariant="warn"
-              />
+            <FieldBox variant="warn">
+              <FieldLabel title={T("meds")} chip="wichtig" chipVariant="warn" />
               <TextInput
-                style={[styles.input, styles.textarea, !editable && styles.inputDisabled]}
+                style={[styles.input, styles.textarea]}
                 value={form.meds}
                 onChangeText={(v) => setField("meds", v)}
                 editable={editable}
@@ -1126,14 +1129,10 @@ const handlePickFromLibrary = async () => {
               />
             </FieldBox>
 
-            <FieldBox half variant="ok">
-              <FieldLabel
-                title={T("vaccines")}
-                chip={T("ok_chip")}
-                chipVariant="ok"
-              />
+            <FieldBox variant="ok">
+              <FieldLabel title={T("vaccines")} chip="ok" chipVariant="ok" />
               <TextInput
-                style={[styles.input, styles.textarea, !editable && styles.inputDisabled]}
+                style={[styles.input, styles.textarea]}
                 value={form.vaccines}
                 onChangeText={(v) => setField("vaccines", v)}
                 editable={editable}
@@ -1146,10 +1145,10 @@ const handlePickFromLibrary = async () => {
           <SectionTitle title={T("info_title")} />
 
           <View style={styles.grid2}>
-            <FieldBox half>
+            <FieldBox>
               <FieldLabel title={T("chronic")} />
               <TextInput
-                style={[styles.input, styles.textarea, !editable && styles.inputDisabled]}
+                style={[styles.input, styles.textarea]}
                 value={form.chronic}
                 onChangeText={(v) => setField("chronic", v)}
                 editable={editable}
@@ -1158,10 +1157,10 @@ const handlePickFromLibrary = async () => {
               />
             </FieldBox>
 
-            <FieldBox half>
+            <FieldBox>
               <FieldLabel title={T("organ")} />
               <TextInput
-                style={[styles.input, styles.textarea, !editable && styles.inputDisabled]}
+                style={[styles.input, styles.textarea]}
                 value={form.organ}
                 onChangeText={(v) => setField("organ", v)}
                 editable={editable}
@@ -1171,10 +1170,10 @@ const handlePickFromLibrary = async () => {
             </FieldBox>
           </View>
 
-          <FieldBox>
+          <FieldBox style={{ marginTop: 12 }}>
             <FieldLabel title={T("notes")} />
             <TextInput
-              style={[styles.input, styles.textarea, !editable && styles.inputDisabled]}
+              style={[styles.input, styles.textarea]}
               value={form.notes}
               onChangeText={(v) => setField("notes", v)}
               editable={editable}
@@ -1186,17 +1185,17 @@ const handlePickFromLibrary = async () => {
           <SectionTitle title={T("contacts_title")} />
 
           <View style={styles.contactsWrap}>
-            <FieldBox>
+            <FieldBox style={{ marginBottom: 10 }}>
               <FieldLabel title={T("ec1")} />
               <TextInput
-                style={[styles.input, styles.inputSpacing, !editable && styles.inputDisabled]}
+                style={[styles.input, { marginBottom: 10 }]}
                 value={form.em1_name}
                 onChangeText={(v) => setField("em1_name", v)}
                 editable={editable}
                 placeholderTextColor="#7e8797"
               />
               <TextInput
-                style={[styles.input, styles.inputSpacing, !editable && styles.inputDisabled]}
+                style={[styles.input, { marginBottom: 10 }]}
                 value={form.em1}
                 onChangeText={(v) => setField("em1", v)}
                 editable={editable}
@@ -1214,14 +1213,14 @@ const handlePickFromLibrary = async () => {
             <FieldBox>
               <FieldLabel title={T("ec2")} />
               <TextInput
-                style={[styles.input, styles.inputSpacing, !editable && styles.inputDisabled]}
+                style={[styles.input, { marginBottom: 10 }]}
                 value={form.em2_name}
                 onChangeText={(v) => setField("em2_name", v)}
                 editable={editable}
                 placeholderTextColor="#7e8797"
               />
               <TextInput
-                style={[styles.input, styles.inputSpacing, !editable && styles.inputDisabled]}
+                style={[styles.input, { marginBottom: 10 }]}
                 value={form.em2}
                 onChangeText={(v) => setField("em2", v)}
                 editable={editable}
@@ -1240,24 +1239,24 @@ const handlePickFromLibrary = async () => {
           <SectionTitle title={T("docs_title")} />
 
           <View style={styles.docsGrid}>
-            <<View style={styles.docToolbar}>
-  <TouchableOpacity
-    style={[
-      styles.footerBtnPrimary,
-      styles.docToolbarSingleButton,
-      (!editable || uploading) && styles.buttonDisabled,
-    ]}
-    onPress={openUploadMenu}
-    disabled={!editable || uploading}
-  >
-    <Text style={styles.footerBtnPrimaryText}>{T("camera")}</Text>
-  </TouchableOpacity>
-</View>
+            <View style={styles.docToolbar}>
+              <TouchableOpacity
+                style={[
+                  styles.footerBtnPrimary,
+                  !editable && styles.buttonDisabled,
+                  uploading && styles.buttonDisabled,
+                ]}
+                onPress={handleTakePhoto}
+                disabled={!editable || uploading}
+              >
+                <Text style={styles.footerBtnPrimaryText}>{T("camera")}</Text>
+              </TouchableOpacity>
 
               <TouchableOpacity
                 style={[
                   styles.footerBtn,
-                  (!editable || uploading) && styles.buttonDisabled,
+                  !editable && styles.buttonDisabled,
+                  uploading && styles.buttonDisabled,
                 ]}
                 onPress={handlePickDocument}
                 disabled={!editable || uploading}
@@ -1277,57 +1276,55 @@ const handlePickFromLibrary = async () => {
             ) : (
               sortedDocuments.map((doc) => (
                 <View key={doc.id} style={styles.docItem}>
-                  <View style={styles.docMainRow}>
-                    <View style={styles.docLeft}>
-                      <TouchableOpacity
-                        style={styles.docThumb}
-                        onPress={() => openDocument(doc)}
-                      >
-                        {isImageMime(doc.mime_type) && doc.preview_url ? (
-                          <Image
-                            source={{ uri: doc.preview_url }}
-                            style={styles.docThumbImage}
-                            resizeMode="cover"
-                          />
-                        ) : (
-                          <View style={styles.docThumbFallback}>
-                            <Text style={styles.docThumbFallbackText}>
-                              {getDocumentEmoji(doc)}
-                            </Text>
-                          </View>
-                        )}
-                      </TouchableOpacity>
-
-                      <View style={styles.docMeta}>
-                        <Text style={styles.docName} numberOfLines={2}>
-                          {doc.file_name || T("file")}
-                        </Text>
-                        <Text style={styles.docType}>
-                          {isImageMime(doc.mime_type) ? T("image") : T("file")}
-                          {doc.file_size ? ` • ${formatFileSize(doc.file_size)}` : ""}
-                        </Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.docActions}>
-                      <TouchableOpacity
-                        style={styles.docActionBtn}
-                        onPress={() => openDocument(doc)}
-                      >
-                        <Text style={styles.docActionBtnText}>{T("open")}</Text>
-                      </TouchableOpacity>
-
-                      {editable ? (
-                        <TouchableOpacity
-                          style={styles.docActionBtnDanger}
-                          onPress={() => deleteDocumentHandler(doc)}
-                        >
-                          <Text style={styles.docActionBtnDangerText}>
-                            {T("remove")}
+                  <View style={styles.docLeft}>
+                    <TouchableOpacity
+                      style={styles.docThumb}
+                      onPress={() => openDocument(doc)}
+                    >
+                      {isImageMime(doc.mime_type) && doc.preview_url ? (
+                        <Image
+                          source={{ uri: doc.preview_url }}
+                          style={styles.docThumbImage}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={styles.docThumbFallback}>
+                          <Text style={styles.docThumbFallbackText}>
+                            {getDocumentEmoji(doc)}
                           </Text>
-                        </TouchableOpacity>
-                      ) : null}
+                        </View>
+                      )}
+                    </TouchableOpacity>
+
+                    <View style={styles.docMeta}>
+                      <Text style={styles.docName} numberOfLines={2}>
+                        {doc.file_name || T("file")}
+                      </Text>
+                      <Text style={styles.docType}>
+                        {isImageMime(doc.mime_type) ? T("image") : T("file")}
+                        {doc.file_size ? ` • ${formatFileSize(doc.file_size)}` : ""}
+                      </Text>
                     </View>
+                  </View>
+
+                  <View style={styles.docActions}>
+                    <TouchableOpacity
+                      style={styles.docActionBtn}
+                      onPress={() => openDocument(doc)}
+                    >
+                      <Text style={styles.docActionBtnText}>{T("open")}</Text>
+                    </TouchableOpacity>
+
+                    {editable ? (
+                      <TouchableOpacity
+                        style={styles.docActionBtnDanger}
+                        onPress={() => deleteDocument(doc)}
+                      >
+                        <Text style={styles.docActionBtnDangerText}>
+                          {T("remove")}
+                        </Text>
+                      </TouchableOpacity>
+                    ) : null}
                   </View>
                 </View>
               ))
@@ -1376,7 +1373,6 @@ const handlePickFromLibrary = async () => {
                     : "—"}
                 </Text>
               </Text>
-
               <Text
                 style={[
                   styles.statusText,
@@ -1402,7 +1398,7 @@ const handlePickFromLibrary = async () => {
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>{T("select_blood")}</Text>
 
-            <ScrollView style={styles.bloodOptionsScroll}>
+            <ScrollView style={{ maxHeight: 320 }}>
               {BLOOD_OPTIONS.map((option) => (
                 <TouchableOpacity
                   key={option || "empty"}
@@ -1418,7 +1414,7 @@ const handlePickFromLibrary = async () => {
             </ScrollView>
 
             <TouchableOpacity
-              style={[styles.footerBtn, styles.modalCancelButton]}
+              style={[styles.footerBtn, { marginTop: 12 }]}
               onPress={() => setBloodPickerVisible(false)}
             >
               <Text style={styles.footerBtnText}>{T("cancel")}</Text>
@@ -1435,7 +1431,7 @@ const handlePickFromLibrary = async () => {
       >
         <SafeAreaView style={styles.emergencyScreen}>
           <View style={styles.emergencyTop}>
-            <View style={styles.emergencyHeadlineWrap}>
+            <View style={{ flex: 1 }}>
               <Text style={styles.emergencyTitle}>
                 🆘 {T("emergency_mode_title")}
               </Text>
@@ -1445,8 +1441,7 @@ const handlePickFromLibrary = async () => {
             <View style={styles.emergencyPidWrap}>
               <Text style={styles.emergencyPidLabel}>{T("profile_id")}</Text>
               <Text style={styles.emergencyPidValue}>{card.public_id}</Text>
-
-              <Text style={[styles.emergencyPidLabel, styles.emergencyPidLabelSpaced]}>
+              <Text style={[styles.emergencyPidLabel, { marginTop: 10 }]}>
                 {T("last_update")}
               </Text>
               <Text style={styles.emergencyPidValue}>
@@ -1486,7 +1481,6 @@ const handlePickFromLibrary = async () => {
                 <Text style={styles.emergencyDocsTitle}>
                   {T("docs_overlay_title")}
                 </Text>
-
                 <View style={styles.emergencyDocsBadge}>
                   <Text style={styles.emergencyDocsBadgeText}>
                     {sortedDocuments.length}
@@ -1496,7 +1490,7 @@ const handlePickFromLibrary = async () => {
 
               <Text style={styles.emergencyDocsText}>{docsNotice}</Text>
 
-              <View style={styles.emergencyDocsList}>
+              <View style={{ marginTop: 14 }}>
                 {sortedDocuments.map((doc) => (
                   <TouchableOpacity
                     key={doc.id}
@@ -1513,7 +1507,7 @@ const handlePickFromLibrary = async () => {
             </View>
           ) : null}
 
-          <ScrollView contentContainerStyle={styles.emergencyScrollContent}>
+          <ScrollView contentContainerStyle={{ paddingBottom: 30 }}>
             <View style={styles.emergencyGrid}>
               <EmergencyCard title={T("name")} value={form.name} />
               <EmergencyCard title={T("dob")} value={form.dob} />
@@ -1527,15 +1521,14 @@ const handlePickFromLibrary = async () => {
 
             {normalizeTel(form.em1) ? (
               <View style={styles.emergencyContact}>
-                <View style={styles.emergencyContactContent}>
+                <View style={{ flex: 1 }}>
                   <Text style={styles.emergencyContactName}>
-                    {lineValue(form.em1_name, T("ec1"))}
+                    {lineValue(form.em1_name, "☎️ Notfallkontakt 1")}
                   </Text>
                   <Text style={styles.emergencyContactPhone}>
                     {lineValue(form.em1)}
                   </Text>
                 </View>
-
                 <TouchableOpacity
                   style={styles.emergencyContactBtn}
                   onPress={() => callNumber(form.em1)}
@@ -1547,15 +1540,14 @@ const handlePickFromLibrary = async () => {
 
             {normalizeTel(form.em2) ? (
               <View style={styles.emergencyContact}>
-                <View style={styles.emergencyContactContent}>
+                <View style={{ flex: 1 }}>
                   <Text style={styles.emergencyContactName}>
-                    {lineValue(form.em2_name, T("ec2"))}
+                    {lineValue(form.em2_name, "☎️ Notfallkontakt 2")}
                   </Text>
                   <Text style={styles.emergencyContactPhone}>
                     {lineValue(form.em2)}
                   </Text>
                 </View>
-
                 <TouchableOpacity
                   style={styles.emergencyContactBtn}
                   onPress={() => callNumber(form.em2)}
@@ -1574,25 +1566,24 @@ const handlePickFromLibrary = async () => {
 }
 
 function SectionTitle({ title }: { title: string }) {
-  return <Text style={styles.sectionTitle}>{title}</Text>;
+  return (
+    <Text style={styles.sectionTitle}>{title}</Text>
+  );
 }
 
 function FieldBox({
   children,
   variant,
   style,
-  half,
 }: {
   children: React.ReactNode;
   variant?: "crit" | "warn" | "ok";
   style?: any;
-  half?: boolean;
 }) {
   return (
     <View
       style={[
         styles.field,
-        half && styles.fieldHalf,
         variant === "crit" && styles.fieldCrit,
         variant === "warn" && styles.fieldWarn,
         variant === "ok" && styles.fieldOk,
@@ -1767,254 +1758,283 @@ const styles = StyleSheet.create({
     backgroundColor: "#b01818",
   },
   headerBtnDangerText: {
-    color: "#ffffff",
-    fontSize: 13,
+    color: "#fff",
     fontWeight: "900",
+    fontSize: 13,
   },
   headerBtnSoft: {
-    backgroundColor: "#eef2f7",
+    backgroundColor: "#f0f3f7",
   },
   headerBtnSoftText: {
     color: "#101318",
-    fontSize: 13,
     fontWeight: "900",
+    fontSize: 13,
   },
   headerBtnWhite: {
-    backgroundColor: "#ffffff",
+    backgroundColor: "#fff",
     borderWidth: 1,
     borderColor: "#e7ebf0",
   },
   headerBtnWhiteText: {
     color: "#101318",
-    fontSize: 13,
     fontWeight: "800",
+    fontSize: 13,
   },
 
   readonlyBanner: {
-    backgroundColor: "#fff3cd",
-    padding: 10,
-    borderRadius: 10,
     marginBottom: 12,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: "rgba(31,111,235,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(31,111,235,0.20)",
   },
   readonlyBannerText: {
-    color: "#856404",
+    color: "#1b4f9b",
     fontSize: 13,
-    fontWeight: "700",
+    fontWeight: "800",
+    lineHeight: 19,
   },
 
   cardWrap: {
     backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#e7ebf0",
     borderRadius: 14,
     padding: 16,
+    shadowColor: "#101318",
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
   },
   headline: {
-    flexDirection: "row",
-    marginBottom: 14,
-  },
-  headlineContent: {
-    flex: 1,
+    marginBottom: 10,
   },
   headlineTitle: {
-    fontSize: 18,
-    fontWeight: "900",
     color: "#101318",
+    fontSize: 26,
+    fontWeight: "900",
   },
   headlineSub: {
-    fontSize: 13,
     color: "#5b6472",
     marginTop: 4,
+    fontWeight: "600",
+    fontSize: 15,
   },
-
   pidBox: {
-    alignItems: "flex-end",
-    marginLeft: 12,
+    marginTop: 12,
   },
   pidLabel: {
-    fontSize: 10,
     color: "#5b6472",
+    fontSize: 12,
+    fontWeight: "800",
   },
   pidValue: {
-    fontSize: 14,
-    fontWeight: "800",
     color: "#101318",
+    fontSize: 16,
+    fontWeight: "900",
+    marginTop: 2,
   },
 
   disclaimerBox: {
-    backgroundColor: "#f4f6f8",
-    padding: 10,
-    borderRadius: 10,
-    marginBottom: 12,
+    marginTop: 12,
+    marginBottom: 16,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: "rgba(176,24,24,.08)",
+    borderWidth: 1,
+    borderColor: "rgba(176,24,24,.25)",
   },
   disclaimerText: {
-    fontSize: 12,
-    color: "#5b6472",
-  },
-
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: "900",
-    color: "#101318",
-    marginTop: 16,
-    marginBottom: 6,
-  },
-
-  field: {
-    marginBottom: 10,
-  },
-  fieldHalf: {
-    flex: 1,
-    minWidth: "48%",
-  },
-  fieldCrit: {
-    backgroundColor: "#ffe5e5",
-    padding: 8,
-    borderRadius: 10,
-  },
-  fieldWarn: {
-    backgroundColor: "#fff3cd",
-    padding: 8,
-    borderRadius: 10,
-  },
-  fieldOk: {
-    backgroundColor: "#e6f4ea",
-    padding: 8,
-    borderRadius: 10,
+    color: "#7a1212",
+    fontSize: 13,
+    fontWeight: "700",
+    lineHeight: 20,
   },
 
   row2: {
     flexDirection: "row",
-    gap: 12,
+    flexWrap: "wrap",
+    justifyContent: "space-between",
   },
   grid2: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
+    justifyContent: "space-between",
+  },
+  field: {
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "#e7ebf0",
+    borderRadius: 12,
+    padding: 10,
+    backgroundColor: "#fff",
+    marginBottom: 12,
+  },
+  fieldCrit: {
+    borderColor: "rgba(176,24,24,.55)",
+  },
+  fieldWarn: {
+    borderColor: "rgba(211,155,34,.60)",
+  },
+  fieldOk: {
+    borderColor: "rgba(30,138,74,.45)",
+  },
+
+  sectionTitle: {
+    marginTop: 12,
+    marginBottom: 8,
+    color: "#2a3340",
+    fontSize: 12,
+    fontWeight: "900",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
   },
 
   labelRow: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 4,
-    flexWrap: "wrap",
+    marginBottom: 8,
   },
   labelText: {
+    color: "#5b6472",
     fontSize: 12,
-    color: "#101318",
-    fontWeight: "700",
-    marginRight: 6,
+    fontWeight: "900",
+    textTransform: "uppercase",
+    flex: 1,
+    marginRight: 8,
   },
 
   chip: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  chipText: {
-    fontSize: 10,
-    fontWeight: "800",
+    borderRadius: 999,
+    backgroundColor: "#f0f3f7",
+    borderWidth: 1,
+    borderColor: "#e7ebf0",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
   chipCrit: {
-    backgroundColor: "#ff4d4f",
+    backgroundColor: "rgba(176,24,24,.08)",
+    borderColor: "rgba(176,24,24,.18)",
   },
   chipWarn: {
-    backgroundColor: "#faad14",
+    backgroundColor: "rgba(211,155,34,.10)",
+    borderColor: "rgba(211,155,34,.22)",
   },
   chipOk: {
-    backgroundColor: "#52c41a",
+    backgroundColor: "rgba(30,138,74,.10)",
+    borderColor: "rgba(30,138,74,.18)",
+  },
+  chipText: {
+    color: "#5b6472",
+    fontSize: 11,
+    fontWeight: "900",
+    textTransform: "uppercase",
   },
   chipTextCrit: {
-    color: "#fff",
+    color: "#b01818",
   },
   chipTextWarn: {
-    color: "#000",
+    color: "#7a5400",
   },
   chipTextOk: {
-    color: "#fff",
+    color: "#1e8a4a",
   },
 
   input: {
-    backgroundColor: "#f4f6f8",
-    padding: 10,
-    borderRadius: 8,
-    fontSize: 14,
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "rgba(16,19,24,.10)",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    fontSize: 15,
     color: "#101318",
+    backgroundColor: "#fbfcfe",
   },
   textarea: {
     minHeight: 70,
     textAlignVertical: "top",
   },
   inputDisabled: {
-    opacity: 0.6,
-  },
-
-  selectLike: {
-    padding: 10,
-    borderRadius: 8,
     backgroundColor: "#f4f6f8",
+    borderColor: "rgba(16,19,24,.06)",
+  },
+  selectLike: {
+    borderWidth: 1,
+    borderColor: "rgba(16,19,24,.10)",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 12,
+    backgroundColor: "#fbfcfe",
   },
   selectLikeText: {
     color: "#101318",
+    fontSize: 15,
   },
 
   contactsWrap: {
-    marginTop: 8,
-  },
-  inputSpacing: {
-    marginTop: 6,
+    width: "100%",
   },
   callBtn: {
-    backgroundColor: "#2a3a57",
-    padding: 8,
-    borderRadius: 8,
-    marginTop: 6,
+    borderRadius: 12,
+    backgroundColor: "#1f4fb8",
+    paddingVertical: 12,
     alignItems: "center",
   },
   callBtnText: {
     color: "#fff",
-    fontWeight: "800",
+    fontSize: 15,
+    fontWeight: "900",
   },
 
   docsGrid: {
-    marginTop: 10,
+    marginTop: 4,
   },
   docToolbar: {
     flexDirection: "row",
-    marginBottom: 10,
-    gap: 8,
+    flexWrap: "wrap",
+    marginBottom: 12,
   },
   docsLoading: {
-    paddingVertical: 16,
+    paddingVertical: 20,
     alignItems: "center",
   },
   docEmpty: {
-    backgroundColor: "#f4f6f8",
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: "#e7ebf0",
+    borderRadius: 12,
+    backgroundColor: "#fbfcfe",
     padding: 12,
-    borderRadius: 10,
   },
   docEmptyText: {
     color: "#5b6472",
-    fontSize: 13,
+    fontSize: 12,
+    fontWeight: "700",
   },
 
   docItem: {
+    borderWidth: 1,
+    borderColor: "#e7ebf0",
+    borderRadius: 12,
+    backgroundColor: "#fbfcfe",
+    padding: 12,
     marginBottom: 10,
-    backgroundColor: "#ffffff",
-  },
-  docMainRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 10,
   },
   docLeft: {
     flexDirection: "row",
-    flex: 1,
+    alignItems: "center",
   },
   docThumb: {
-    width: 50,
-    height: 50,
-    borderRadius: 8,
+    width: 72,
+    height: 72,
+    borderRadius: 12,
     overflow: "hidden",
-    marginRight: 10,
+    backgroundColor: "#eef2f7",
+    marginRight: 12,
   },
   docThumbImage: {
     width: "100%",
@@ -2022,307 +2042,388 @@ const styles = StyleSheet.create({
   },
   docThumbFallback: {
     flex: 1,
-    justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#e7ebf0",
+    justifyContent: "center",
   },
   docThumbFallbackText: {
-    fontSize: 20,
+    fontSize: 28,
   },
   docMeta: {
     flex: 1,
-    justifyContent: "center",
   },
   docName: {
-    fontSize: 13,
-    fontWeight: "700",
     color: "#101318",
+    fontSize: 14,
+    fontWeight: "900",
+    marginBottom: 4,
   },
   docType: {
-    fontSize: 11,
     color: "#5b6472",
-    marginTop: 2,
-  },
-
-  docActions: {
-    justifyContent: "center",
-    alignItems: "flex-end",
-  },
-  docActionBtn: {
-    padding: 6,
-  },
-  docActionBtnText: {
-    color: "#2a3a57",
+    fontSize: 12,
     fontWeight: "700",
   },
+  docActions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 12,
+  },
+  docActionBtn: {
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#e7ebf0",
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  docActionBtnText: {
+    color: "#101318",
+    fontSize: 14,
+    fontWeight: "900",
+  },
   docActionBtnDanger: {
-    padding: 6,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: "#fff0f0",
+    borderWidth: 1,
+    borderColor: "rgba(176,24,24,.20)",
+    marginBottom: 8,
   },
   docActionBtnDangerText: {
     color: "#b01818",
-    fontWeight: "700",
+    fontSize: 14,
+    fontWeight: "900",
   },
 
   footer: {
-    marginTop: 16,
+    marginTop: 14,
   },
   footerLeft: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    marginBottom: 12,
   },
   footerBtn: {
-    backgroundColor: "#eef2f7",
-    padding: 10,
-    borderRadius: 8,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#e7ebf0",
+    marginRight: 8,
+    marginBottom: 8,
   },
   footerBtnText: {
-    fontWeight: "800",
     color: "#101318",
+    fontSize: 14,
+    fontWeight: "900",
   },
   footerBtnPrimary: {
-    backgroundColor: "#1f6feb",
-    padding: 10,
-    borderRadius: 8,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: "#2a3a57",
+    marginRight: 8,
+    marginBottom: 8,
   },
   footerBtnPrimaryText: {
     color: "#fff",
-    fontWeight: "800",
+    fontSize: 14,
+    fontWeight: "900",
   },
   footerBtnDanger: {
-    backgroundColor: "#b01818",
-    padding: 10,
-    borderRadius: 8,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: "#fff0f0",
+    borderWidth: 1,
+    borderColor: "rgba(176,24,24,.20)",
+    marginBottom: 8,
   },
   footerBtnDangerText: {
-    color: "#fff",
-    fontWeight: "800",
+    color: "#b01818",
+    fontSize: 14,
+    fontWeight: "900",
   },
-  footerStatusWrap: {
-    marginTop: 10,
-  },
+  footerStatusWrap: {},
   lastUpdateText: {
-    fontSize: 11,
     color: "#5b6472",
+    fontSize: 12,
+    fontWeight: "700",
+    marginBottom: 4,
   },
   lastUpdateValue: {
-    fontWeight: "700",
     color: "#101318",
+    fontWeight: "800",
   },
   statusText: {
     fontSize: 12,
-    marginTop: 4,
+    fontWeight: "800",
+    color: "#5b6472",
   },
   statusOk: {
-    color: "#52c41a",
+    color: "#1e8a4a",
   },
   statusWarn: {
-    color: "#faad14",
+    color: "#7a5400",
   },
   statusErr: {
-    color: "#ff4d4f",
+    color: "#b01818",
   },
+
   buttonDisabled: {
-    opacity: 
+    opacity: 0.5,
+  },
 
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: "rgba(0,0,0,0.50)",
     justifyContent: "center",
     padding: 20,
   },
   modalCard: {
     backgroundColor: "#fff",
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
   },
   modalTitle: {
-    fontSize: 16,
-    fontWeight: "900",
-    marginBottom: 10,
     color: "#101318",
-  },
-  bloodOptionsScroll: {
-    maxHeight: 320,
+    fontSize: 18,
+    fontWeight: "900",
+    marginBottom: 12,
   },
   modalOption: {
-    padding: 10,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eef2f7",
   },
   modalOptionText: {
-    fontSize: 14,
     color: "#101318",
-  },
-  modalCancelButton: {
-    marginTop: 12,
+    fontSize: 16,
+    fontWeight: "700",
   },
 
   emergencyScreen: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#8c1414",
+    paddingHorizontal: 16,
+    paddingTop: 10,
   },
   emergencyTop: {
     flexDirection: "row",
-    padding: 16,
-  },
-  emergencyHeadlineWrap: {
-    flex: 1,
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,255,255,.16)",
+    paddingBottom: 12,
+    marginBottom: 12,
   },
   emergencyTitle: {
-    fontSize: 18,
+    color: "#fff",
+    fontSize: 22,
     fontWeight: "900",
-    color: "#101318",
   },
   emergencySub: {
+    color: "#fff",
+    opacity: 0.92,
     fontSize: 12,
-    color: "#5b6472",
+    fontWeight: "800",
+    marginTop: 4,
+    lineHeight: 18,
+    maxWidth: 240,
   },
   emergencyPidWrap: {
     alignItems: "flex-end",
-    marginLeft: 12,
   },
   emergencyPidLabel: {
-    fontSize: 10,
-    color: "#5b6472",
-  },
-  emergencyPidLabelSpaced: {
-    marginTop: 10,
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "900",
+    opacity: 0.9,
   },
   emergencyPidValue: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#101318",
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "900",
+    marginTop: 2,
   },
-
   emergencyCloseBtn: {
-    padding: 10,
-    alignItems: "center",
+    alignSelf: "flex-end",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,.24)",
+    backgroundColor: "rgba(0,0,0,.14)",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 12,
   },
   emergencyCloseBtnText: {
+    color: "#fff",
+    fontSize: 14,
     fontWeight: "900",
-    color: "#101318",
   },
-
   emergencyActions: {
     flexDirection: "row",
-    justifyContent: "space-around",
-    marginVertical: 10,
-    gap: 12,
-    paddingHorizontal: 12,
+    flexWrap: "wrap",
+    marginBottom: 12,
   },
   emergencyActionBtn: {
     flex: 1,
-    padding: 12,
-    borderRadius: 10,
-    backgroundColor: "#eef2f7",
+    minWidth: 140,
+    borderRadius: 14,
+    backgroundColor: "rgba(0,0,0,.18)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,.20)",
+    paddingVertical: 14,
     alignItems: "center",
+    marginRight: 8,
+    marginBottom: 8,
   },
   emergencyActionBtnPrimary: {
-    backgroundColor: "#b01818",
+    backgroundColor: "rgba(255,255,255,.18)",
   },
   emergencyActionBtnText: {
-    fontWeight: "900",
-    color: "#101318",
+    color: "#fff",
+    fontSize: 17,
+    fontWeight: "950",
   },
 
   emergencyDocsAlert: {
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,.24)",
+    backgroundColor: "rgba(0,0,0,.14)",
+    borderRadius: 14,
     padding: 12,
-    backgroundColor: "#fff3cd",
-    margin: 12,
-    borderRadius: 10,
+    marginBottom: 12,
   },
   emergencyDocsHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
   },
   emergencyDocsTitle: {
+    color: "#fff",
+    fontSize: 12,
     fontWeight: "900",
-    color: "#101318",
+    textTransform: "uppercase",
   },
   emergencyDocsBadge: {
-    backgroundColor: "#b01818",
-    borderRadius: 10,
-    paddingHorizontal: 8,
+    minWidth: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,.16)",
+    alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: 10,
   },
   emergencyDocsBadgeText: {
     color: "#fff",
+    fontSize: 13,
+    fontWeight: "950",
   },
   emergencyDocsText: {
-    marginTop: 6,
-    color: "#101318",
-  },
-  emergencyDocsList: {
-    marginTop: 14,
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "800",
+    marginTop: 8,
+    lineHeight: 20,
   },
   emergencyDocRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 6,
-    gap: 12,
-  },
-  emergencyDocRowText: {
-    fontSize: 13,
-    color: "#101318",
-    flex: 1,
-  },
-  emergencyDocRowOpen: {
-    color: "#1f6feb",
-    fontWeight: "700",
-  },
-
-  emergencyScrollContent: {
-    paddingBottom: 30,
-  },
-  emergencyGrid: {
-    padding: 12,
-  },
-  emergencyCard: {
+    borderRadius: 14,
+    backgroundColor: "rgba(0,0,0,.18)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,.20)",
+    padding: 14,
     marginBottom: 10,
   },
+  emergencyDocRowText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "900",
+    marginBottom: 6,
+  },
+  emergencyDocRowOpen: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "900",
+    opacity: 0.9,
+  },
+
+  emergencyGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  emergencyCard: {
+    width: "48.5%",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,.18)",
+    backgroundColor: "rgba(255,255,255,.10)",
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 12,
+  },
   emergencyCardCritical: {
-    backgroundColor: "#ffe5e5",
-    padding: 8,
-    borderRadius: 8,
+    backgroundColor: "rgba(120,0,0,.20)",
+    borderColor: "rgba(255,255,255,.28)",
   },
   emergencyCardLabel: {
-    fontSize: 11,
-    color: "#5b6472",
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "900",
+    marginBottom: 8,
+    textTransform: "uppercase",
   },
   emergencyCardValue: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#101318",
+    color: "#fff",
+    fontSize: 17,
+    fontWeight: "900",
+    lineHeight: 23,
   },
 
   emergencyContact: {
     flexDirection: "row",
-    padding: 12,
     alignItems: "center",
-  },
-  emergencyContactContent: {
-    flex: 1,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,.18)",
+    backgroundColor: "rgba(0,0,0,.14)",
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 10,
   },
   emergencyContactName: {
-    fontWeight: "800",
-    color: "#101318",
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "950",
+    marginBottom: 4,
   },
   emergencyContactPhone: {
-    color: "#5b6472",
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "900",
   },
   emergencyContactBtn: {
-    backgroundColor: "#1f6feb",
-    padding: 8,
-    borderRadius: 8,
     marginLeft: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,.20)",
+    backgroundColor: "rgba(255,255,255,.10)",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   emergencyContactBtnText: {
     color: "#fff",
+    fontSize: 13,
+    fontWeight: "950",
   },
-
   emergencyHint: {
+    color: "#fff",
     fontSize: 12,
-    color: "#5b6472",
+    fontWeight: "800",
+    opacity: 0.92,
+    lineHeight: 18,
     marginTop: 10,
-    paddingHorizontal: 12,
   },
 });
