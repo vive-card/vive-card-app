@@ -20,33 +20,39 @@ import * as DocumentPicker from "expo-document-picker";
 
 import { supabase } from "../lib/supabase";
 import {
-  CardRow,
-  EmergencyCardRow,
-  ProfileFormValues,
   getCurrentUserCardProfile,
   initialProfileForm,
-  mapEmergencyDataToForm,
   saveCurrentUserCardProfile,
 } from "../services/profileService";
 import {
-  MedicalDocumentViewRow,
   deleteMedicalDocument,
   getSignedDocumentUrl,
   loadMedicalDocuments,
   uploadMedicalDocument,
 } from "../services/medicalDocumentsService";
 import { useCardRealtime } from "../hooks/useCardRealtime";
-import {
-  getDocumentEmoji,
-  isImageMime,
-} from "../utils/medicalDocuments";
-import {
-  formatFileSize,
-  lineValue,
-  normalizeTel,
-} from "../utils/formatters";
+import { getDocumentEmoji, isImageMime } from "../utils/medicalDocuments";
+import { formatFileSize, lineValue, normalizeTel } from "../utils/formatters";
+import { mapEmergencyDataToForm } from "../utils";
+import type {
+  CardRow,
+  EmergencyCardRow,
+  ProfileFormValues,
+} from "../types";
 
 type LangKey = "de" | "it" | "fr" | "es" | "en";
+
+type MedicalDocumentViewRow = {
+  id: string;
+  owner_id?: string | null;
+  public_id: string;
+  file_name: string;
+  file_path: string;
+  mime_type?: string | null;
+  file_size?: number | null;
+  created_at?: string | null;
+  preview_url?: string | null;
+};
 
 const BLOOD_OPTIONS = [
   "",
@@ -105,8 +111,7 @@ const I18N: Record<LangKey, Record<string, string>> = {
     status_blocked: "Diese VIVE CARD wurde gesperrt oder deaktiviert.",
     status_error: "Ein Fehler ist aufgetreten.",
     need_login: "Du musst eingeloggt sein um diese Karte zu bearbeiten.",
-    readonly:
-      "Diese Karte wird im öffentlichen Notfallmodus angezeigt.",
+    readonly: "Diese Karte wird im öffentlichen Notfallmodus angezeigt.",
     camera: "📸 Foto aufnehmen",
     upload: "📂 Datei hochladen",
     open: "Öffnen",
@@ -279,8 +284,7 @@ const I18N: Record<LangKey, Record<string, string>> = {
       "Astuce : 112 fonctionne dans toute l’Europe. En Suisse, le 144 est le service médical d’urgence.",
     confirm_clear: "Voulez-vous vraiment tout supprimer ?",
     no_card_title: "Aucune carte trouvée",
-    no_card_text:
-      "Aucune VIVE CARD n’a été trouvée pour ce compte.",
+    no_card_text: "Aucune VIVE CARD n’a été trouvée pour ce compte.",
     select_blood: "Choisir le groupe sanguin",
     cancel: "Annuler",
     critical_chip: "critique",
@@ -431,8 +435,7 @@ const I18N: Record<LangKey, Record<string, string>> = {
       "Tip: 112 works across Europe. In Switzerland, 144 is the medical emergency service.",
     confirm_clear: "Do you really want to clear all fields?",
     no_card_title: "No card found",
-    no_card_text:
-      "No VIVE CARD was currently found for this account.",
+    no_card_text: "No VIVE CARD was currently found for this account.",
     select_blood: "Select blood group",
     cancel: "Cancel",
     critical_chip: "critical",
@@ -477,9 +480,12 @@ export default function CardScreen({ navigation }: any) {
     []
   );
 
-  const setField = useCallback((key: keyof ProfileFormValues, value: string) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  }, []);
+  const setField = useCallback(
+    (key: keyof ProfileFormValues, value: string) => {
+      setForm((prev) => ({ ...prev, [key]: value }));
+    },
+    []
+  );
 
   const checkCardBlocked = useCallback(async (publicId?: string | null) => {
     if (!publicId) return false;
@@ -600,10 +606,11 @@ export default function CardScreen({ navigation }: any) {
         return;
       }
 
-      setEditable((prev) => !prev);
+      const nextEditable = !editable;
+      setEditable(nextEditable);
       setStatus(
-        !editable ? T("edit_active") : T("status_ready"),
-        !editable ? "warn" : ""
+        nextEditable ? T("edit_active") : T("status_ready"),
+        nextEditable ? "warn" : ""
       );
     } catch (e: any) {
       setStatus(e?.message || T("status_error"), "err");
@@ -836,7 +843,10 @@ export default function CardScreen({ navigation }: any) {
   const docsNotice =
     sortedDocuments.length === 1
       ? T("docs_notice_single")
-      : T("docs_notice_multi").replace("{count}", String(sortedDocuments.length));
+      : T("docs_notice_multi").replace(
+          "{count}",
+          String(sortedDocuments.length)
+        );
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -875,7 +885,9 @@ export default function CardScreen({ navigation }: any) {
               style={[styles.headerBtn, styles.headerBtnDanger]}
               onPress={() => setEmergencyVisible(true)}
             >
-              <Text style={styles.headerBtnDangerText}>{T("btn_emergency")}</Text>
+              <Text style={styles.headerBtnDangerText}>
+                {T("btn_emergency")}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -910,7 +922,7 @@ export default function CardScreen({ navigation }: any) {
 
         <View style={styles.cardWrap}>
           <View style={styles.headline}>
-            <View style={{ flex: 1 }}>
+            <View style={styles.headlineContent}>
               <Text style={styles.headlineTitle}>{T("title")}</Text>
               <Text style={styles.headlineSub}>{T("subtitle")}</Text>
             </View>
@@ -950,11 +962,7 @@ export default function CardScreen({ navigation }: any) {
           </View>
 
           <FieldBox variant="warn">
-            <FieldLabel
-              title={T("blood")}
-              chip={T("prio1")}
-              chipVariant="warn"
-            />
+            <FieldLabel title={T("blood")} chip={T("prio1")} chipVariant="warn" />
             <TouchableOpacity
               activeOpacity={editable ? 0.8 : 1}
               onPress={() => editable && setBloodPickerVisible(true)}
@@ -974,11 +982,7 @@ export default function CardScreen({ navigation }: any) {
                 chipVariant="crit"
               />
               <TextInput
-                style={[
-                  styles.input,
-                  styles.textarea,
-                  !editable && styles.inputDisabled,
-                ]}
+                style={[styles.input, styles.textarea, !editable && styles.inputDisabled]}
                 value={form.allergies}
                 onChangeText={(v) => setField("allergies", v)}
                 editable={editable}
@@ -994,11 +998,7 @@ export default function CardScreen({ navigation }: any) {
                 chipVariant="crit"
               />
               <TextInput
-                style={[
-                  styles.input,
-                  styles.textarea,
-                  !editable && styles.inputDisabled,
-                ]}
+                style={[styles.input, styles.textarea, !editable && styles.inputDisabled]}
                 value={form.bloodThinner}
                 onChangeText={(v) => setField("bloodThinner", v)}
                 editable={editable}
@@ -1014,11 +1014,7 @@ export default function CardScreen({ navigation }: any) {
                 chipVariant="warn"
               />
               <TextInput
-                style={[
-                  styles.input,
-                  styles.textarea,
-                  !editable && styles.inputDisabled,
-                ]}
+                style={[styles.input, styles.textarea, !editable && styles.inputDisabled]}
                 value={form.meds}
                 onChangeText={(v) => setField("meds", v)}
                 editable={editable}
@@ -1034,11 +1030,7 @@ export default function CardScreen({ navigation }: any) {
                 chipVariant="ok"
               />
               <TextInput
-                style={[
-                  styles.input,
-                  styles.textarea,
-                  !editable && styles.inputDisabled,
-                ]}
+                style={[styles.input, styles.textarea, !editable && styles.inputDisabled]}
                 value={form.vaccines}
                 onChangeText={(v) => setField("vaccines", v)}
                 editable={editable}
@@ -1054,11 +1046,7 @@ export default function CardScreen({ navigation }: any) {
             <FieldBox half>
               <FieldLabel title={T("chronic")} />
               <TextInput
-                style={[
-                  styles.input,
-                  styles.textarea,
-                  !editable && styles.inputDisabled,
-                ]}
+                style={[styles.input, styles.textarea, !editable && styles.inputDisabled]}
                 value={form.chronic}
                 onChangeText={(v) => setField("chronic", v)}
                 editable={editable}
@@ -1070,11 +1058,7 @@ export default function CardScreen({ navigation }: any) {
             <FieldBox half>
               <FieldLabel title={T("organ")} />
               <TextInput
-                style={[
-                  styles.input,
-                  styles.textarea,
-                  !editable && styles.inputDisabled,
-                ]}
+                style={[styles.input, styles.textarea, !editable && styles.inputDisabled]}
                 value={form.organ}
                 onChangeText={(v) => setField("organ", v)}
                 editable={editable}
@@ -1087,11 +1071,7 @@ export default function CardScreen({ navigation }: any) {
           <FieldBox>
             <FieldLabel title={T("notes")} />
             <TextInput
-              style={[
-                styles.input,
-                styles.textarea,
-                !editable && styles.inputDisabled,
-              ]}
+              style={[styles.input, styles.textarea, !editable && styles.inputDisabled]}
               value={form.notes}
               onChangeText={(v) => setField("notes", v)}
               editable={editable}
@@ -1106,22 +1086,14 @@ export default function CardScreen({ navigation }: any) {
             <FieldBox>
               <FieldLabel title={T("ec1")} />
               <TextInput
-                style={[
-                  styles.input,
-                  styles.inputSpacing,
-                  !editable && styles.inputDisabled,
-                ]}
+                style={[styles.input, styles.inputSpacing, !editable && styles.inputDisabled]}
                 value={form.em1_name}
                 onChangeText={(v) => setField("em1_name", v)}
                 editable={editable}
                 placeholderTextColor="#7e8797"
               />
               <TextInput
-                style={[
-                  styles.input,
-                  styles.inputSpacing,
-                  !editable && styles.inputDisabled,
-                ]}
+                style={[styles.input, styles.inputSpacing, !editable && styles.inputDisabled]}
                 value={form.em1}
                 onChangeText={(v) => setField("em1", v)}
                 editable={editable}
@@ -1139,22 +1111,14 @@ export default function CardScreen({ navigation }: any) {
             <FieldBox>
               <FieldLabel title={T("ec2")} />
               <TextInput
-                style={[
-                  styles.input,
-                  styles.inputSpacing,
-                  !editable && styles.inputDisabled,
-                ]}
+                style={[styles.input, styles.inputSpacing, !editable && styles.inputDisabled]}
                 value={form.em2_name}
                 onChangeText={(v) => setField("em2_name", v)}
                 editable={editable}
                 placeholderTextColor="#7e8797"
               />
               <TextInput
-                style={[
-                  styles.input,
-                  styles.inputSpacing,
-                  !editable && styles.inputDisabled,
-                ]}
+                style={[styles.input, styles.inputSpacing, !editable && styles.inputDisabled]}
                 value={form.em2}
                 onChangeText={(v) => setField("em2", v)}
                 editable={editable}
@@ -1307,6 +1271,7 @@ export default function CardScreen({ navigation }: any) {
                     : "—"}
                 </Text>
               </Text>
+
               <Text
                 style={[
                   styles.statusText,
@@ -1332,7 +1297,7 @@ export default function CardScreen({ navigation }: any) {
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>{T("select_blood")}</Text>
 
-            <ScrollView style={{ maxHeight: 320 }}>
+            <ScrollView style={styles.bloodOptionsScroll}>
               {BLOOD_OPTIONS.map((option) => (
                 <TouchableOpacity
                   key={option || "empty"}
@@ -1348,7 +1313,7 @@ export default function CardScreen({ navigation }: any) {
             </ScrollView>
 
             <TouchableOpacity
-              style={[styles.footerBtn, { marginTop: 12 }]}
+              style={[styles.footerBtn, styles.modalCancelButton]}
               onPress={() => setBloodPickerVisible(false)}
             >
               <Text style={styles.footerBtnText}>{T("cancel")}</Text>
@@ -1365,7 +1330,7 @@ export default function CardScreen({ navigation }: any) {
       >
         <SafeAreaView style={styles.emergencyScreen}>
           <View style={styles.emergencyTop}>
-            <View style={{ flex: 1 }}>
+            <View style={styles.emergencyHeadlineWrap}>
               <Text style={styles.emergencyTitle}>
                 🆘 {T("emergency_mode_title")}
               </Text>
@@ -1375,7 +1340,8 @@ export default function CardScreen({ navigation }: any) {
             <View style={styles.emergencyPidWrap}>
               <Text style={styles.emergencyPidLabel}>{T("profile_id")}</Text>
               <Text style={styles.emergencyPidValue}>{card.public_id}</Text>
-              <Text style={[styles.emergencyPidLabel, { marginTop: 10 }]}>
+
+              <Text style={[styles.emergencyPidLabel, styles.emergencyPidLabelSpaced]}>
                 {T("last_update")}
               </Text>
               <Text style={styles.emergencyPidValue}>
@@ -1415,6 +1381,7 @@ export default function CardScreen({ navigation }: any) {
                 <Text style={styles.emergencyDocsTitle}>
                   {T("docs_overlay_title")}
                 </Text>
+
                 <View style={styles.emergencyDocsBadge}>
                   <Text style={styles.emergencyDocsBadgeText}>
                     {sortedDocuments.length}
@@ -1424,7 +1391,7 @@ export default function CardScreen({ navigation }: any) {
 
               <Text style={styles.emergencyDocsText}>{docsNotice}</Text>
 
-              <View style={{ marginTop: 14 }}>
+              <View style={styles.emergencyDocsList}>
                 {sortedDocuments.map((doc) => (
                   <TouchableOpacity
                     key={doc.id}
@@ -1441,7 +1408,7 @@ export default function CardScreen({ navigation }: any) {
             </View>
           ) : null}
 
-          <ScrollView contentContainerStyle={{ paddingBottom: 30 }}>
+          <ScrollView contentContainerStyle={styles.emergencyScrollContent}>
             <View style={styles.emergencyGrid}>
               <EmergencyCard title={T("name")} value={form.name} />
               <EmergencyCard title={T("dob")} value={form.dob} />
@@ -1455,7 +1422,7 @@ export default function CardScreen({ navigation }: any) {
 
             {normalizeTel(form.em1) ? (
               <View style={styles.emergencyContact}>
-                <View style={{ flex: 1 }}>
+                <View style={styles.emergencyContactContent}>
                   <Text style={styles.emergencyContactName}>
                     {lineValue(form.em1_name, T("ec1"))}
                   </Text>
@@ -1463,6 +1430,7 @@ export default function CardScreen({ navigation }: any) {
                     {lineValue(form.em1)}
                   </Text>
                 </View>
+
                 <TouchableOpacity
                   style={styles.emergencyContactBtn}
                   onPress={() => callNumber(form.em1)}
@@ -1474,7 +1442,7 @@ export default function CardScreen({ navigation }: any) {
 
             {normalizeTel(form.em2) ? (
               <View style={styles.emergencyContact}>
-                <View style={{ flex: 1 }}>
+                <View style={styles.emergencyContactContent}>
                   <Text style={styles.emergencyContactName}>
                     {lineValue(form.em2_name, T("ec2"))}
                   </Text>
@@ -1482,6 +1450,7 @@ export default function CardScreen({ navigation }: any) {
                     {lineValue(form.em2)}
                   </Text>
                 </View>
+
                 <TouchableOpacity
                   style={styles.emergencyContactBtn}
                   onPress={() => callNumber(form.em2)}
@@ -1733,10 +1702,12 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 16,
   },
-
   headline: {
     flexDirection: "row",
     marginBottom: 14,
+  },
+  headlineContent: {
+    flex: 1,
   },
   headlineTitle: {
     fontSize: 18,
@@ -1751,6 +1722,7 @@ const styles = StyleSheet.create({
 
   pidBox: {
     alignItems: "flex-end",
+    marginLeft: 12,
   },
   pidLabel: {
     fontSize: 10,
@@ -1786,7 +1758,7 @@ const styles = StyleSheet.create({
   },
   fieldHalf: {
     flex: 1,
-    marginRight: 6,
+    minWidth: "48%",
   },
   fieldCrit: {
     backgroundColor: "#ffe5e5",
@@ -1806,16 +1778,19 @@ const styles = StyleSheet.create({
 
   row2: {
     flexDirection: "row",
+    gap: 12,
   },
   grid2: {
     flexDirection: "row",
     flexWrap: "wrap",
+    gap: 12,
   },
 
   labelRow: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 4,
+    flexWrap: "wrap",
   },
   labelText: {
     fontSize: 12,
@@ -1900,14 +1875,30 @@ const styles = StyleSheet.create({
   docToolbar: {
     flexDirection: "row",
     marginBottom: 10,
+    gap: 8,
+  },
+  docsLoading: {
+    paddingVertical: 16,
+    alignItems: "center",
+  },
+  docEmpty: {
+    backgroundColor: "#f4f6f8",
+    padding: 12,
+    borderRadius: 10,
+  },
+  docEmptyText: {
+    color: "#5b6472",
+    fontSize: 13,
   },
 
   docItem: {
     marginBottom: 10,
+    backgroundColor: "#ffffff",
   },
   docMainRow: {
     flexDirection: "row",
     justifyContent: "space-between",
+    gap: 10,
   },
   docLeft: {
     flexDirection: "row",
@@ -1935,18 +1926,22 @@ const styles = StyleSheet.create({
   },
   docMeta: {
     flex: 1,
+    justifyContent: "center",
   },
   docName: {
     fontSize: 13,
     fontWeight: "700",
+    color: "#101318",
   },
   docType: {
     fontSize: 11,
     color: "#5b6472",
+    marginTop: 2,
   },
 
   docActions: {
     justifyContent: "center",
+    alignItems: "flex-end",
   },
   docActionBtn: {
     padding: 6,
@@ -1998,7 +1993,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "800",
   },
-
   footerStatusWrap: {
     marginTop: 10,
   },
@@ -2008,6 +2002,7 @@ const styles = StyleSheet.create({
   },
   lastUpdateValue: {
     fontWeight: "700",
+    color: "#101318",
   },
   statusText: {
     fontSize: 12,
@@ -2021,6 +2016,9 @@ const styles = StyleSheet.create({
   },
   statusErr: {
     color: "#ff4d4f",
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
 
   modalOverlay: {
@@ -2038,12 +2036,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "900",
     marginBottom: 10,
+    color: "#101318",
+  },
+  bloodOptionsScroll: {
+    maxHeight: 320,
   },
   modalOption: {
     padding: 10,
   },
   modalOptionText: {
     fontSize: 14,
+    color: "#101318",
+  },
+  modalCancelButton: {
+    marginTop: 12,
   },
 
   emergencyScreen: {
@@ -2054,9 +2060,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     padding: 16,
   },
+  emergencyHeadlineWrap: {
+    flex: 1,
+  },
   emergencyTitle: {
     fontSize: 18,
     fontWeight: "900",
+    color: "#101318",
   },
   emergencySub: {
     fontSize: 12,
@@ -2064,14 +2074,19 @@ const styles = StyleSheet.create({
   },
   emergencyPidWrap: {
     alignItems: "flex-end",
+    marginLeft: 12,
   },
   emergencyPidLabel: {
     fontSize: 10,
     color: "#5b6472",
   },
+  emergencyPidLabelSpaced: {
+    marginTop: 10,
+  },
   emergencyPidValue: {
     fontSize: 12,
     fontWeight: "800",
+    color: "#101318",
   },
 
   emergencyCloseBtn: {
@@ -2080,17 +2095,22 @@ const styles = StyleSheet.create({
   },
   emergencyCloseBtnText: {
     fontWeight: "900",
+    color: "#101318",
   },
 
   emergencyActions: {
     flexDirection: "row",
     justifyContent: "space-around",
     marginVertical: 10,
+    gap: 12,
+    paddingHorizontal: 12,
   },
   emergencyActionBtn: {
+    flex: 1,
     padding: 12,
     borderRadius: 10,
     backgroundColor: "#eef2f7",
+    alignItems: "center",
   },
   emergencyActionBtnPrimary: {
     backgroundColor: "#b01818",
@@ -2112,31 +2132,43 @@ const styles = StyleSheet.create({
   },
   emergencyDocsTitle: {
     fontWeight: "900",
+    color: "#101318",
   },
   emergencyDocsBadge: {
     backgroundColor: "#b01818",
     borderRadius: 10,
     paddingHorizontal: 8,
+    justifyContent: "center",
   },
   emergencyDocsBadgeText: {
     color: "#fff",
   },
   emergencyDocsText: {
     marginTop: 6,
+    color: "#101318",
   },
-
+  emergencyDocsList: {
+    marginTop: 14,
+  },
   emergencyDocRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginTop: 6,
+    gap: 12,
   },
   emergencyDocRowText: {
     fontSize: 13,
+    color: "#101318",
+    flex: 1,
   },
   emergencyDocRowOpen: {
     color: "#1f6feb",
+    fontWeight: "700",
   },
 
+  emergencyScrollContent: {
+    paddingBottom: 30,
+  },
   emergencyGrid: {
     padding: 12,
   },
@@ -2155,14 +2187,20 @@ const styles = StyleSheet.create({
   emergencyCardValue: {
     fontSize: 14,
     fontWeight: "700",
+    color: "#101318",
   },
 
   emergencyContact: {
     flexDirection: "row",
     padding: 12,
+    alignItems: "center",
+  },
+  emergencyContactContent: {
+    flex: 1,
   },
   emergencyContactName: {
     fontWeight: "800",
+    color: "#101318",
   },
   emergencyContactPhone: {
     color: "#5b6472",
@@ -2171,6 +2209,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#1f6feb",
     padding: 8,
     borderRadius: 8,
+    marginLeft: 12,
   },
   emergencyContactBtnText: {
     color: "#fff",
@@ -2183,4 +2222,3 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
 });
-  
