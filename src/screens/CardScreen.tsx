@@ -963,16 +963,20 @@ const handlePickFromLibrary = async () => {
     Alert.alert(T("btn_check"), `Fehlend:\n${missing.join("\n")}`);
   };
 
-  const callNumber = async (number?: string | null) => {
-    const clean = normalizeTel(number);
-    if (!clean) return;
+const callNumber = async (number?: string | null) => {
+  const clean = normalizeTel(number);
 
-    const url = `tel:${clean}`;
-    const supported = await Linking.canOpenURL(url);
-    if (supported) {
-      await Linking.openURL(url);
-    }
-  };
+  if (!clean) {
+    Alert.alert("Hinweis", "Keine Telefonnummer vorhanden.");
+    return;
+  }
+
+  try {
+    await Linking.openURL(`tel:${clean}`);
+  } catch (e) {
+    Alert.alert("Fehler", `Nummer konnte nicht gewählt werden: ${clean}`);
+  }
+};
 
   if (loading) {
     return (
