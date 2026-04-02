@@ -720,90 +720,185 @@ export default function CardScreen({ navigation }: any) {
       },
     ]);
   };
+const uploadSelectedAsset = async ({
+  uri,
+  fileName,
+  mimeType,
+  fileSize,
+}: {
+  uri: string;
+  fileName: string;
+  mimeType: string;
+  fileSize?: number | null;
+}) => {
+  if (!editable || !card?.public_id || !userId) {
+    setStatus(T("need_login"), "warn");
+    return;
+  }
 
-  const handlePickDocument = async () => {
-    try {
-      if (!editable || !card?.public_id || !userId) {
-        setStatus(T("need_login"), "warn");
-        return;
-      }
+  const allowedMime =
+    mimeType.startsWith("image/") || mimeType === "application/pdf";
 
-      setUploading(true);
-      setStatus(T("status_uploading"), "warn");
+  if (!allowedMime) {
+    setStatus(T("invalid_file_type"), "err");
+    return;
+  }
 
-      const result = await DocumentPicker.getDocumentAsync({
-        type: ["image/*", "application/pdf"],
-        multiple: false,
-        copyToCacheDirectory: true,
-      });
+  try {
+    setUploading(true);
+    setStatus(T("status_uploading"), "warn");
 
-      if (result.canceled) return;
+    await uploadMedicalDocument({
+      uri,
+      fileName,
+      mimeType,
+      fileSize: fileSize || null,
+      userId,
+      publicId: card.public_id,
+    });
 
-      const asset = result.assets?.[0];
-      if (!asset?.uri) return;
-
-      await uploadMedicalDocument({
-        uri: asset.uri,
-        fileName: asset.name || "Dokument",
-        mimeType: asset.mimeType || "application/octet-stream",
-        fileSize: asset.size || null,
-        userId,
-        publicId: card.public_id,
-      });
-
-      await loadDocuments(card.public_id);
-      setStatus(T("status_saved"), "ok");
-    } catch (e: any) {
-      setStatus(e?.message || T("status_error"), "err");
-    } finally {
-      setUploading(false);
+    await loadDocuments(card.public_id);
+    setStatus(T("status_saved"), "ok");
+  } catch (e: any) {
+    setStatus(e?.message || T("status_error"), "err");
+  } finally {
+    setUploading(false);
+  }
+};
+const handlePickDocument = async () => {
+  try {
+    if (!editable || !card?.public_id || !userId) {
+      setStatus(T("need_login"), "warn");
+      return;
     }
-  };
 
+    const result = await DocumentPicker.getDocumentAsync({
+      type: ["image/*", "application/pdf"],
+      multiple: false,
+      copyToCacheDirectory: true,
+    });
+
+    if (result.canceled) return;
+
+    const asset = result.assets?.[0];
+    if (!asset?.uri) return;
+
+    await uploadSelectedAsset({
+      uri: asset.uri,
+      fileName: asset.name || "Dokument",
+      mimeType: asset.mimeType || "application/octet-stream",
+      fileSize: asset.size || null,
+    });
+  } catch (e: any) {
+    setStatus(e?.message || T("status_error"), "err");
+  }
+};
+
+const openUploadMenu = () => {
+  if (!editable || uploading) {
+    setStatus(T("need_login"), "warn");
+    return;
+  }
+
+  if (Platform.OS === "ios") {
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        options: [
+          T("cancel"),
+          T("library"),
+          T("take_photo"),
+          T("choose_file"),
+        ],
+        cancelButtonIndex: 0,
+        title: T("upload_menu_title"),
+        message: T("upload_menu_message"),
+      },
+      async (buttonIndex) => {
+        if (buttonIndex === 1) {
+          await handlePickFromLibrary();
+        } else if (buttonIndex === 2) {
+          await handleTakePhoto();
+        } else if (buttonIndex === 3) {
+          await handlePickDocument();
+        }
+      }
+    );
+    return;
+  }
+
+  Alert.alert(T("upload_menu_title"), T("upload_menu_message"), [
+    { text: T("cancel"), style: "cancel" },
+    { text: T("library"), onPress: () => void handlePickFromLibrary() },
+    { text: T("take_photo"), onPress: () => void handleTakePhoto() },
+    { text: T("choose_file"), onPress: () => void handlePickDocument() },
+  ]);
+};
   const handleTakePhoto = async () => {
-    try {
-      if (!editable || !card?.public_id || !userId) {
-        setStatus(T("need_login"), "warn");
-        return;
-      }
-
-      const permission = await ImagePicker.requestCameraPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert(T("camera_permission_title"), T("camera_permission_text"));
-        return;
-      }
-
-      setUploading(true);
-      setStatus(T("status_uploading"), "warn");
-
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 0.85,
-      });
-
-      if (result.canceled) return;
-
-      const asset = result.assets?.[0];
-      if (!asset?.uri) return;
-
-      await uploadMedicalDocument({
-        uri: asset.uri,
-        fileName: asset.fileName || `camera-${Date.now()}.jpg`,
-        mimeType: asset.mimeType || "image/jpeg",
-        fileSize: asset.fileSize || null,
-        userId,
-        publicId: card.public_id,
-      });
-
-      await loadDocuments(card.public_id);
-      setStatus(T("status_saved"), "ok");
-    } catch (e: any) {
-      setStatus(e?.message || T("status_error"), "err");
-    } finally {
-      setUploading(false);
+  try {
+    if (!editable || !card?.public_id || !userId) {
+      setStatus(T("need_login"), "warn");
+      return;
     }
-  };
 
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert(T("camera_permission_title"), T("camera_permission_text"));
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.85,
+    });
+
+    if (result.canceled) return;
+
+    const asset = result.assets?.[0];
+    if (!asset?.uri) return;
+
+    await uploadSelectedAsset({
+      uri: asset.uri,
+      fileName: asset.fileName || `camera-${Date.now()}.jpg`,
+      mimeType: asset.mimeType || "image/jpeg",
+      fileSize: asset.fileSize || null,
+    });
+  } catch (e: any) {
+    setStatus(e?.message || T("status_error"), "err");
+  }
+};
+const handlePickFromLibrary = async () => {
+  try {
+    if (!editable || !card?.public_id || !userId) {
+      setStatus(T("need_login"), "warn");
+      return;
+    }
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert("Fotos", "Bitte Zugriff auf die Fotomediathek erlauben.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.85,
+    });
+
+    if (result.canceled) return;
+
+    const asset = result.assets?.[0];
+    if (!asset?.uri) return;
+
+    await uploadSelectedAsset({
+      uri: asset.uri,
+      fileName: asset.fileName || `library-${Date.now()}.jpg`,
+      mimeType: asset.mimeType || "image/jpeg",
+      fileSize: asset.fileSize || null,
+    });
+  } catch (e: any) {
+    setStatus(e?.message || T("status_error"), "err");
+  }
+};
   const handleCheck = () => {
     const missing: string[] = [];
     if (!String(form.name || "").trim()) missing.push(T("name"));
@@ -1145,17 +1240,19 @@ export default function CardScreen({ navigation }: any) {
           <SectionTitle title={T("docs_title")} />
 
           <View style={styles.docsGrid}>
-            <View style={styles.docToolbar}>
-              <TouchableOpacity
-                style={[
-                  styles.footerBtnPrimary,
-                  (!editable || uploading) && styles.buttonDisabled,
-                ]}
-                onPress={handleTakePhoto}
-                disabled={!editable || uploading}
-              >
-                <Text style={styles.footerBtnPrimaryText}>{T("camera")}</Text>
-              </TouchableOpacity>
+            <<View style={styles.docToolbar}>
+  <TouchableOpacity
+    style={[
+      styles.footerBtnPrimary,
+      styles.docToolbarSingleButton,
+      (!editable || uploading) && styles.buttonDisabled,
+    ]}
+    onPress={openUploadMenu}
+    disabled={!editable || uploading}
+  >
+    <Text style={styles.footerBtnPrimaryText}>{T("camera")}</Text>
+  </TouchableOpacity>
+</View>
 
               <TouchableOpacity
                 style={[
@@ -2026,8 +2123,7 @@ const styles = StyleSheet.create({
     color: "#ff4d4f",
   },
   buttonDisabled: {
-    opacity: 0.6,
-  },
+    opacity: 
 
   modalOverlay: {
     flex: 1,
