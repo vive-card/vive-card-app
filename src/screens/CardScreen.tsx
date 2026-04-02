@@ -47,17 +47,13 @@ type MedicalDocumentViewRow = MedicalDocumentRow & {
 
 type LangKey = "de" | "it" | "fr" | "es" | "en";
 
-const BLOOD_OPTIONS = [
-  "",
-  "0 negative",
-  "0 positive",
-  "A negative",
-  "A positive",
-  "B negative",
-  "B positive",
-  "AB negative",
-  "AB positive",
-];
+const BLOOD_OPTIONS: Record<LangKey, string[]> = {
+  de: ["", "0 negativ", "0 positiv", "A negativ", "A positiv", "B negativ", "B positiv", "AB negativ", "AB positiv"],
+  it: ["", "0 negativo", "0 positivo", "A negativo", "A positivo", "B negativo", "B positivo", "AB negativo", "AB positivo"],
+  fr: ["", "0 négatif", "0 positif", "A négatif", "A positif", "B négatif", "B positif", "AB négatif", "AB positif"],
+  es: ["", "0 negativo", "0 positivo", "A negativo", "A positivo", "B negativo", "B positivo", "AB negativo", "AB positivo"],
+  en: ["", "0 negative", "0 positive", "A negative", "A positive", "B negative", "B positive", "AB negative", "AB positive"],
+};
 
 const I18N: Record<LangKey, Record<string, string>> = {
   de: {
@@ -621,23 +617,23 @@ export default function CardScreen({ navigation }: any) {
   }, []);
 
   const checkCardBlocked = useCallback(
-    async (publicId?: string | null) => {
-      if (!publicId) return false;
+  async (publicId?: string | null) => {
+    if (!publicId) return false;
 
-      const { data, error } = await supabase
-        .from("cards")
-        .select("id, public_id, status, blocked_at")
-        .eq("public_id", publicId)
-        .maybeSingle();
+    const { data, error } = await supabase
+      .from("cards")
+      .select("id, public_id, status, blocked_at")
+      .eq("public_id", publicId)
+      .maybeSingle();
 
-      if (error) {
-        throw new Error(`${T("status_card_check_error")} ${error.message}`);
-      }
+    if (error) {
+      throw new Error(`${T("status_card_check_error")} ${error.message}`);
+    }
 
-      return String(data?.status || "") === "blocked" || !!data?.blocked_at;
-    },
-    []
-  );
+    return String(data?.status || "") === "blocked" || !!data?.blocked_at;
+  },
+  [T]
+);
 
   const loadDocuments = useCallback(
     async (publicId?: string | null) => {
@@ -864,8 +860,8 @@ export default function CardScreen({ navigation }: any) {
 
   const deleteDocument = async (doc: MedicalDocumentViewRow) => {
     Alert.alert(
-      T("remove"),
-      `${doc.file_name || "Dokument"}?`,
+  T("remove"),
+  ${doc.file_name || T("document_default_name")}?,
       [
         { text: T("cancel"), style: "cancel" },
         {
@@ -1071,7 +1067,7 @@ const handlePickFromLibrary = async () => {
     if (!String(form.blood || "").trim()) missing.push(T("blood"));
 
     if (missing.length === 0) {
-      Alert.alert(T("btn_check"), "OK");
+      Alert.alert(T("btn_check"), T("check_ok"));
       return;
     }
 
