@@ -1250,10 +1250,7 @@ setMainMessage(t.err_confirm_email_first, "err");
         return;
       }
       if (!signupTermsCheck) {
-        setSignupMessage(
-          "Bitte akzeptiere zuerst die AGB und die Nutzungsvereinbarung.",
-          "err"
-        );
+        setSignupMessage(t.err_accept_terms_first, "err");
         return;
       }
 
