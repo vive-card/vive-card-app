@@ -1664,7 +1664,7 @@ setMainMessage(t.err_confirm_email_first, "err");
               <FieldLabel text={t.pid_label} />
               <TextInput
                 style={styles.input}
-                placeholder="z.B. PVJ2AT5B6Y"
+                placeholder={t.pid_ph}
                 placeholderTextColor="#95a0b0"
                 autoCapitalize="characters"
                 autoCorrect={false}
@@ -1697,25 +1697,14 @@ setMainMessage(t.err_confirm_email_first, "err");
 
               {!!claimSuccessPid && (
                 <View style={styles.claimSuccessCard}>
-                  <Text style={styles.claimSuccessTitle}>
-                    ✅ Deine VIVE CARD wurde erfolgreich aktiviert
-                  </Text>
-                  <Text style={styles.claimSuccessText}>
-                    Deine Karte ist jetzt mit deinem Konto verbunden. Du kannst
-                    nun dein Profil und deine Notfallinformationen ausfüllen.
-                    {"\n\n"}
-                    Falls du weitere Karten bestellt hast, öffne einfach den
-                    nächsten Aktivierungslink aus deiner E-Mail und wiederhole
-                    den Vorgang.
-                  </Text>
+                  <Text style={styles.claimSuccessTitle}>{t.claim_success_title}</Text>
+                  <Text style={styles.claimSuccessText}>{t.claim_success_text}</Text>
 
                   <TouchableOpacity
                     style={styles.primaryButton}
                     onPress={goProfile}
                   >
-                    <Text style={styles.primaryButtonText}>
-                      Profil ausfüllen
-                    </Text>
+                    <Text style={styles.primaryButtonText}>{t.btn_go_profile}</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -1924,7 +1913,7 @@ setMainMessage(t.err_confirm_email_first, "err");
             <FieldLabel text="PUBLIC_ID" />
             <TextInput
               style={styles.input}
-              placeholder="z.B. PVJ2AT5B6Y"
+              placeholder={t.pid_ph}
               placeholderTextColor="#95a0b0"
               autoCapitalize="characters"
               autoCorrect={false}
