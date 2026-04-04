@@ -1762,7 +1762,7 @@ setMainMessage(t.err_confirm_email_first, "err");
         >
           <Pressable style={styles.modalCard} onPress={() => {}}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Konto erstellen</Text>
+              <Text style={styles.modalTitle}>{t.signup_title}</Text>
               <TouchableOpacity
                 style={styles.modalCloseBtn}
                 onPress={() => setSignupOpen(false)}
@@ -1773,7 +1773,7 @@ setMainMessage(t.err_confirm_email_first, "err");
 
             <View style={styles.sep} />
 
-            <FieldLabel text="E-Mail" />
+            <FieldLabel text={t.email_label} />
             <TextInput
               style={styles.input}
               placeholder="name@domain.ch"
@@ -1784,11 +1784,11 @@ setMainMessage(t.err_confirm_email_first, "err");
               onChangeText={setSignupEmail}
             />
 
-            <FieldLabel text="Passwort" />
+            <FieldLabel text={t.pw_label} />
             <View style={styles.passwordWrap}>
               <TextInput
                 style={[styles.input, styles.passwordInput]}
-                placeholder="Mindestens 6 Zeichen"
+                placeholder={t.signup_password_ph}
                 placeholderTextColor="#95a0b0"
                 secureTextEntry={!signupPwVisible}
                 value={signupPassword}
@@ -1804,10 +1804,10 @@ setMainMessage(t.err_confirm_email_first, "err");
               </TouchableOpacity>
             </View>
 
-            <FieldLabel text="Passwort wiederholen" />
+            <FieldLabel text={t.signup_pw2_label} />
             <TextInput
               style={styles.input}
-              placeholder="Passwort wiederholen"
+              placeholder={t.signup_password2_ph}
               placeholderTextColor="#95a0b0"
               secureTextEntry={!signupPwVisible}
               value={signupPassword2}
