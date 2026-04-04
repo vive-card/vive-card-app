@@ -1389,7 +1389,7 @@ setMainMessage(t.err_confirm_email_first, "err");
   return (
     <>
       <View style={styles.banner}>
-        <Text style={styles.bannerText}>PRE-LAUNCH PRIVATE VERSION</Text>
+        <Text style={styles.bannerText}>{t.banner}</Text>
       </View>
 
       <KeyboardAvoidingView
@@ -1482,11 +1482,7 @@ setMainMessage(t.err_confirm_email_first, "err");
               <Text style={styles.smallText}>{t.rescue_note}</Text>
 
               <View style={styles.warnBox}>
-                <Text style={styles.warnBoxText}>
-                  Wichtiger Hinweis: Pro PUBLIC_ID kann nur eine E-Mail-Adresse
-                  bzw. ein Konto verwendet werden. Bitte registriere dich mit
-                  derselben E-Mail-Adresse wie bei deiner Bestellung.
-                </Text>
+                <Text style={styles.warnBoxText}>{t.single_account_notice}</Text>
               </View>
 
               {showResetBox && (
@@ -1578,10 +1574,7 @@ setMainMessage(t.err_confirm_email_first, "err");
 
               {showTermsBox && (
                 <View style={styles.infoBox}>
-                  <Text style={styles.smallText}>
-                    Bevor du deine VIVE CARD aktivieren kannst, bestätige bitte
-                    die AGB und Nutzungsvereinbarung.
-                  </Text>
+                  <Text style={styles.smallText}>{t.terms_intro}</Text>
 
                   <View style={styles.checkRow}>
                     <Switch
@@ -1626,35 +1619,17 @@ setMainMessage(t.err_confirm_email_first, "err");
 
               {showPrivacyBox && (
                 <View style={styles.infoBox}>
-                  <Text style={styles.smallTitle}>
-                    Datenschutzhinweis zur Kartenaktivierung
-                  </Text>
+                  <Text style={styles.smallTitle}>{t.privacy_claim_title}</Text>
 
                   <View style={styles.warnBox}>
-                    <Text style={styles.warnBoxText}>
-                      Mit der Aktivierung deiner VIVE CARD können freiwillig
-                      persönliche Informationen gespeichert werden,
-                      einschliesslich möglicher Gesundheitsdaten wie z. B.
-                      Allergien, Medikamente, Blutgruppe oder
-                      Notfallhinweise.{"\n\n"}
-                      Diese Angaben werden ausschliesslich von dir
-                      bereitgestellt und verwaltet. Bitte speichere nur Daten,
-                      deren Verarbeitung du ausdrücklich wünschst.
-                    </Text>
-                  </View>
+                   <Text style={styles.warnBoxText}>{t.privacy_claim_body}</Text>
 
                   <View style={styles.checkRow}>
                     <Switch
                       value={privacyCheck}
                       onValueChange={setPrivacyCheck}
                     />
-                    <Text style={styles.checkText}>
-                      Ich habe den Datenschutzhinweis zur Kartenaktivierung
-                      gelesen und bin damit einverstanden, dass von mir
-                      freiwillig eingegebene persönliche Daten – einschliesslich
-                      möglicher Gesundheitsdaten – im Rahmen meiner VIVE CARD
-                      gespeichert werden.
-                    </Text>
+                    <Text style={styles.checkText}>{t.privacy_claim_checkbox}</Text>
                   </View>
 
                   <TouchableOpacity
@@ -1666,10 +1641,8 @@ setMainMessage(t.err_confirm_email_first, "err");
                     disabled={!privacyCheck || busy !== null}
                   >
                     <Text style={styles.primaryButtonText}>
-                      {busy === "privacy"
-                        ? "..."
-                        : "Datenschutzhinweis akzeptieren"}
-                    </Text>
+  {busy === "privacy" ? "..." : t.btn_accept_privacy_claim}
+</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -1678,15 +1651,12 @@ setMainMessage(t.err_confirm_email_first, "err");
 
               {showClaimNotice && !!claimNoticePid && (
                 <View style={styles.claimNoticeBox}>
-                  <Text style={styles.claimNoticeTitle}>VIVE CARD erkannt</Text>
-                  <Text style={styles.claimNoticeText}>
-                    Bitte logge dich ein oder erstelle ein Konto. Danach wird
-                    deine VIVE CARD automatisch aktiviert.
-                  </Text>
+                  <Text style={styles.claimNoticeTitle}>{t.claim_notice_title}</Text>
+                  <Text style={styles.claimNoticeText}>{t.claim_notice_text}</Text>
                   <View style={styles.pidBadge}>
                     <Text style={styles.pidBadgeText}>
-                      PUBLIC_ID: {claimNoticePid}
-                    </Text>
+  {t.public_id_label}: {claimNoticePid}
+</Text>
                   </View>
                 </View>
               )}
