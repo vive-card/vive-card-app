@@ -1274,7 +1274,7 @@ setMainMessage(t.err_confirm_email_first, "err");
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        setSignupMessage(data?.error || "Registrierung fehlgeschlagen.", "err");
+        setSignupMessage(data?.error || t.err_signup_failed_generic, "err");
         return;
       }
 
@@ -1316,15 +1316,15 @@ setMainMessage(t.err_confirm_email_first, "err");
       const cleanPid = normalizePid(blockPublicId);
 
       if (!cleanEmail) {
-        setBlockMessage("Bitte E-Mail eingeben.", "err");
+        setBlockMessage(t.err_enter_email, "err");
         return;
       }
       if (!isValidEmail(cleanEmail)) {
-        setBlockMessage("Bitte eine gültige E-Mail eingeben.", "err");
+        setBlockMessage(t.err_valid_email, "err");
         return;
       }
       if (!cleanPid) {
-        setBlockMessage("Bitte PUBLIC_ID eingeben.", "err");
+        setBlockMessage(t.err_pid, "err");
         return;
       }
 
@@ -1349,18 +1349,13 @@ setMainMessage(t.err_confirm_email_first, "err");
 
       if (!response.ok) {
         setBlockMessage(
-          data?.error ||
-            data?.details ||
-            "Sperranfrage konnte nicht gesendet werden.",
+          data?.error || data?.details || t.err_block_card_request
           "err"
         );
         return;
       }
 
-      setBlockMessage(
-        "Deine Sperranfrage wurde erfolgreich übermittelt. Die Karte wurde sofort gesperrt und unser Support prüft den Fall schnellstmöglich.",
-        "ok"
-      );
+      setBlockMessage(t.block_card_success, "ok");
     } catch {
       setBlockMessage("Sperranfrage konnte nicht gesendet werden.", "err");
     } finally {
