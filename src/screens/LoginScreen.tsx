@@ -1357,7 +1357,7 @@ setMainMessage(t.err_confirm_email_first, "err");
 
       setBlockMessage(t.block_card_success, "ok");
     } catch {
-      setBlockMessage("Sperranfrage konnte nicht gesendet werden.", "err");
+      setBlockMessage(t.err_block_card_request, "err");
     } finally {
       setBusy(null);
     }
