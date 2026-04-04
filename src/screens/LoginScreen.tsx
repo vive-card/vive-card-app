@@ -1364,22 +1364,20 @@ setMainMessage(t.err_confirm_email_first, "err");
   };
 
   const goProfile = async () => {
-    const pid = normalizePid(claimSuccessPid || publicId);
+  const pid = normalizePid(claimSuccessPid || publicId);
 
-    if (!pid) {
-      return;
-    }
+  if (!pid) {
+    return;
+  }
 
-    const blockCheck = await ensureCardNotBlocked(pid);
-    if (!blockCheck.ok) {
-      setMainMessage(blockCheck.message, "err");
-      return;
-    }
+  const blockCheck = await ensureCardNotBlocked(pid);
+  if (!blockCheck.ok) {
+    setMainMessage(blockCheck.message, "err");
+    return;
+  }
 
-    Alert.alert(
-      "VIVE CARD aktiviert",
-      "Deine Karte wurde aktiviert. Durch die aktive Session wechselst du nun in die App."
-    );
+  Alert.alert(t.alert_card_activated_title, t.alert_card_activated_text);
+};
   };
 
   useEffect(() => {
