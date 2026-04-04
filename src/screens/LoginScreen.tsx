@@ -1353,7 +1353,7 @@ setMainMessage(t.err_confirm_email_first, "err");
 
       if (!response.ok) {
         setBlockMessage(
-          data?.error || data?.details || t.err_block_card_request
+          data?.error || data?.details || t.err_block_card_request,
           "err"
         );
         return;
@@ -1382,7 +1382,6 @@ setMainMessage(t.err_confirm_email_first, "err");
 
   Alert.alert(t.alert_card_activated_title, t.alert_card_activated_text);
 };
-  };
 
   useEffect(() => {
     const currentLang =
@@ -1620,35 +1619,35 @@ setMainMessage(t.err_confirm_email_first, "err");
               )}
 
               {showPrivacyBox && (
-                <View style={styles.infoBox}>
-                  <Text style={styles.smallTitle}>{t.privacy_claim_title}</Text>
+  <View style={styles.infoBox}>
+    <Text style={styles.smallTitle}>{t.privacy_claim_title}</Text>
 
-                  <View style={styles.warnBox}>
-                   <Text style={styles.warnBoxText}>{t.privacy_claim_body}</Text>
+    <View style={styles.warnBox}>
+      <Text style={styles.warnBoxText}>{t.privacy_claim_body}</Text>
+    </View>
 
-                  <View style={styles.checkRow}>
-                    <Switch
-                      value={privacyCheck}
-                      onValueChange={setPrivacyCheck}
-                    />
-                    <Text style={styles.checkText}>{t.privacy_claim_checkbox}</Text>
-                  </View>
+    <View style={styles.checkRow}>
+      <Switch
+        value={privacyCheck}
+        onValueChange={setPrivacyCheck}
+      />
+      <Text style={styles.checkText}>{t.privacy_claim_checkbox}</Text>
+    </View>
 
-                  <TouchableOpacity
-                    style={[
-                      styles.primaryButton,
-                      !privacyCheck && styles.disabledButton,
-                    ]}
-                    onPress={handleAcceptPrivacyClaim}
-                    disabled={!privacyCheck || busy !== null}
-                  >
-                    <Text style={styles.primaryButtonText}>
-  {busy === "privacy" ? "..." : t.btn_accept_privacy_claim}
-</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-
+    <TouchableOpacity
+      style={[
+        styles.primaryButton,
+        !privacyCheck && styles.disabledButton,
+      ]}
+      onPress={handleAcceptPrivacyClaim}
+      disabled={!privacyCheck || busy !== null}
+    >
+      <Text style={styles.primaryButtonText}>
+        {busy === "privacy" ? "..." : t.btn_accept_privacy_claim}
+      </Text>
+    </TouchableOpacity>
+  </View>
+)}
               <View style={styles.sep} />
 
               {showClaimNotice && !!claimNoticePid && (
