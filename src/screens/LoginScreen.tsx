@@ -1842,7 +1842,7 @@ setMainMessage(t.err_confirm_email_first, "err");
               disabled={busy !== null}
             >
               <Text style={styles.primaryButtonText}>
-                {busy === "signup" ? "..." : "Registrierung starten"}
+                {busy === "signup" ? "..." : t.btn_signup_start}
               </Text>
             </TouchableOpacity>
 
@@ -1858,10 +1858,7 @@ setMainMessage(t.err_confirm_email_first, "err");
               </Text>
             )}
 
-            <Text style={styles.smallText}>
-              Nach dem Klick erhältst du eine Bestätigungs-E-Mail. Danach kannst
-              du dein Konto aktivieren und deine VIVE CARD zuordnen.
-            </Text>
+            <Text style={styles.smallText}>{t.signup_hint}</Text>
           </Pressable>
         </Pressable>
       </Modal>
