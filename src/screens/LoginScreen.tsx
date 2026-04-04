@@ -753,17 +753,17 @@ export default function LoginScreen({ navigation }: any) {
   };
 
   const openUrl = async (url: string) => {
-    try {
-      const supported = await Linking.canOpenURL(url);
-      if (!supported) {
-        Alert.alert("Fehler", "Link konnte nicht geöffnet werden");
-        return;
-      }
-      await Linking.openURL(url);
-    } catch {
-      Alert.alert("Fehler", "Link konnte nicht geöffnet werden");
+  try {
+    const supported = await Linking.canOpenURL(url);
+    if (!supported) {
+      Alert.alert(t.alert_error_title, t.alert_open_link_failed);
+      return;
     }
-  };
+    await Linking.openURL(url);
+  } catch {
+    Alert.alert(t.alert_error_title, t.alert_open_link_failed);
+  }
+};
 
   const getCurrentUser = async () => {
     const { data, error } = await supabase.auth.getUser();
