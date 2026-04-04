@@ -1820,23 +1820,23 @@ setMainMessage(t.err_confirm_email_first, "err");
                 value={signupTermsCheck}
                 onValueChange={setSignupTermsCheck}
               />
-              <Text style={styles.checkText}>
-                Ich akzeptiere die{" "}
-                <Text
-                  style={styles.inlineLink}
-                  onPress={() => openUrl("https://vive-card.com/agb.html")}
-                >
-                  AGB
-                </Text>{" "}
-                und die{" "}
-                <Text
-                  style={styles.inlineLink}
-                  onPress={() => openUrl("https://vive-card.com/nutzung.html")}
-                >
-                  Nutzungsvereinbarung
-                </Text>
-                .
-              </Text>
+<Text style={styles.checkText}>
+  {t.terms_prefix}{" "}
+  <Text
+    style={styles.inlineLink}
+    onPress={() => openUrl("https://vive-card.com/agb.html")}
+  >
+    {t.terms_agb}
+  </Text>{" "}
+  {t.terms_and}{" "}
+  <Text
+    style={styles.inlineLink}
+    onPress={() => openUrl("https://vive-card.com/nutzung.html")}
+  >
+    {t.terms_usage}
+  </Text>
+  .
+</Text>
             </View>
 
             <TouchableOpacity
@@ -1902,7 +1902,7 @@ setMainMessage(t.err_confirm_email_first, "err");
               onChangeText={setBlockEmail}
             />
 
-            <FieldLabel text="PUBLIC_ID" />
+            <FieldLabel text={t.public_id_label} />
             <TextInput
               style={styles.input}
               placeholder={t.pid_ph}
