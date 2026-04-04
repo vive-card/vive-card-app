@@ -1581,25 +1581,23 @@ setMainMessage(t.err_confirm_email_first, "err");
                       value={termsCheck}
                       onValueChange={setTermsCheck}
                     />
-                    <Text style={styles.checkText}>
-                      {t.terms_prefix}{" "}
-                      <Text
-                        style={styles.inlineLink}
-                        onPress={() => openUrl("https://vive-card.com/agb.html")}
-                      >
-                        {t.terms_agb}
-                      </Text>{" "}
-                      {t.terms_and}{" "}
-                      <Text
-                        style={styles.inlineLink}
-                        onPress={() =>
-                          openUrl("https://vive-card.com/nutzung.html")
-                        }
-                      >
-                        {t.terms_usage}
-                      </Text>
-                      .
-                    </Text>
+                   <Text style={styles.checkText}>
+  {t.terms_prefix}{" "}
+  <Text
+    style={styles.inlineLink}
+    onPress={() => openUrl("https://vive-card.com/agb.html")}
+  >
+    {t.terms_agb}
+  </Text>{" "}
+  {t.terms_and}{" "}
+  <Text
+    style={styles.inlineLink}
+    onPress={() => openUrl("https://vive-card.com/nutzung.html")}
+  >
+    {t.terms_usage}
+  </Text>
+  .
+</Text>
                   </View>
 
                   <TouchableOpacity
