@@ -854,7 +854,7 @@ export default function LoginScreen({ navigation }: any) {
       return {
         ok: false,
         card: null,
-        message: "Kartenstatus konnte nicht geprüft werden: " + error.message,
+        message: t.card_status_check_failed + error.message,
       };
     }
 
@@ -862,7 +862,7 @@ export default function LoginScreen({ navigation }: any) {
       return {
         ok: false,
         card,
-        message: "Diese VIVE CARD wurde gesperrt oder deaktiviert.",
+        message: t.card_blocked,
       };
     }
 
@@ -908,10 +908,7 @@ export default function LoginScreen({ navigation }: any) {
 
     if (!profile?.email_confirmed_at) {
       await supabase.auth.signOut();
-      setMainMessage(
-        "Bitte bestätige zuerst deine E-Mail-Adresse über den Link in deinem Postfach.",
-        "err"
-      );
+      setMainMessage(t.err_confirm_email_first, "err");
       return false;
     }
 
@@ -1086,10 +1083,7 @@ export default function LoginScreen({ navigation }: any) {
 
       if (!profile?.email_confirmed_at) {
         await supabase.auth.signOut();
-        setMainMessage(
-          "Bitte bestätige zuerst deine E-Mail-Adresse über den Link in deinem Postfach.",
-          "err"
-        );
+setMainMessage(t.err_confirm_email_first, "err");
         return;
       }
 
@@ -1244,7 +1238,7 @@ export default function LoginScreen({ navigation }: any) {
         return;
       }
       if (!isValidEmail(cleanEmail)) {
-        setSignupMessage("Bitte eine gültige E-Mail eingeben.", "err");
+        setSignupMessage(t.err_valid_email, "err");
         return;
       }
       if (!signupPassword || signupPassword.length < 6) {
