@@ -970,10 +970,14 @@ export default function LoginScreen({ navigation }: any) {
       setMainMessage("");
 
       const cleanEmail = email.trim();
-      if (!cleanEmail || !isValidEmail(cleanEmail)) {
-        setMainMessage(t.err_enter_email, "err");
-        return;
-      }
+      if (!cleanEmail) {
+  setMainMessage(t.err_enter_email, "err");
+  return;
+}
+if (!isValidEmail(cleanEmail)) {
+  setMainMessage(t.err_valid_email, "err");
+  return;
+}
 
       const redirectTo = "https://vive-card.com/login";
 
@@ -1043,7 +1047,7 @@ export default function LoginScreen({ navigation }: any) {
       }
 
       if (!isValidEmail(cleanEmail)) {
-        setMainMessage(t.err_enter_email, "err");
+        setMainMessage(t.err_valid_email, "err");
         return;
       }
 
@@ -1875,9 +1879,7 @@ setMainMessage(t.err_confirm_email_first, "err");
         >
           <Pressable style={styles.modalCard} onPress={() => {}}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                Karte sperren / deaktivieren
-              </Text>
+              <Text style={styles.modalTitle}>{t.block_card_title}</Text>
               <TouchableOpacity
                 style={styles.modalCloseBtn}
                 onPress={() => setBlockOpen(false)}
@@ -1888,13 +1890,9 @@ setMainMessage(t.err_confirm_email_first, "err");
 
             <View style={styles.sep} />
 
-            <Text style={styles.smallText}>
-              Wenn deine Karte verloren wurde oder deaktiviert werden soll,
-              sende hier eine Sperranfrage. Bitte gib die E-Mail-Adresse und
-              die PUBLIC_ID an, die mit der Karte verknüpft sind.
-            </Text>
+            <Text style={styles.smallText}>{t.block_card_intro}</Text>
 
-            <FieldLabel text="E-Mail" />
+           <FieldLabel text={t.email_label} />
             <TextInput
               style={styles.input}
               placeholder="name@domain.ch"
@@ -1916,10 +1914,10 @@ setMainMessage(t.err_confirm_email_first, "err");
               onChangeText={(v) => setBlockPublicId(normalizePid(v))}
             />
 
-            <FieldLabel text="Grund (optional)" />
+            <FieldLabel text={t.block_reason_label} />
             <TextInput
               style={[styles.input, styles.textarea]}
-              placeholder="z.B. Karte verloren, falsche Zuordnung, Konto löschen"
+              placeholder={t.block_reason_ph}
               placeholderTextColor="#95a0b0"
               multiline
               value={blockReason}
@@ -1932,7 +1930,7 @@ setMainMessage(t.err_confirm_email_first, "err");
               disabled={busy !== null}
             >
               <Text style={styles.primaryButtonText}>
-                {busy === "block" ? "..." : "Sperranfrage senden"}
+                {busy === "block" ? "..." : t.btn_block_card_submit}
               </Text>
             </TouchableOpacity>
 
@@ -1948,10 +1946,7 @@ setMainMessage(t.err_confirm_email_first, "err");
               </Text>
             )}
 
-            <Text style={styles.smallText}>
-              Die Anfrage wird an den Support weitergeleitet. Danach wird die
-              Karte manuell geprüft und gesperrt bzw. deaktiviert.
-            </Text>
+           <Text style={styles.smallText}>{t.block_card_hint}</Text>
           </Pressable>
         </Pressable>
       </Modal>
