@@ -95,6 +95,65 @@ const I18N: Record<Lang, Record<string, string>> = {
     err_pid_save: "PUBLIC_ID konnte nicht gespeichert werden: ",
     err_privacy_save:
       "Datenschutzzustimmung konnte nicht gespeichert werden: ",
+    banner: "PRE-LAUNCH PRIVATE VERSION",
+single_account_notice:
+  "Wichtiger Hinweis: Pro PUBLIC_ID kann nur eine E-Mail-Adresse bzw. ein Konto verwendet werden. Bitte registriere dich mit derselben E-Mail-Adresse wie bei deiner Bestellung.",
+terms_intro:
+  "Bevor du deine VIVE CARD aktivieren kannst, bestätige bitte die AGB und Nutzungsvereinbarung.",
+
+privacy_claim_title: "Datenschutzhinweis zur Kartenaktivierung",
+privacy_claim_body:
+  "Mit der Aktivierung deiner VIVE CARD können freiwillig persönliche Informationen gespeichert werden, einschliesslich möglicher Gesundheitsdaten wie z. B. Allergien, Medikamente, Blutgruppe oder Notfallhinweise.\n\nDiese Angaben werden ausschliesslich von dir bereitgestellt und verwaltet. Bitte speichere nur Daten, deren Verarbeitung du ausdrücklich wünschst.",
+privacy_claim_checkbox:
+  "Ich habe den Datenschutzhinweis zur Kartenaktivierung gelesen und bin damit einverstanden, dass von mir freiwillig eingegebene persönliche Daten – einschliesslich möglicher Gesundheitsdaten – im Rahmen meiner VIVE CARD gespeichert werden.",
+btn_accept_privacy_claim: "Datenschutzhinweis akzeptieren",
+
+claim_notice_title: "VIVE CARD erkannt",
+claim_notice_text:
+  "Bitte logge dich ein oder erstelle ein Konto. Danach wird deine VIVE CARD automatisch aktiviert.",
+public_id_label: "PUBLIC_ID",
+
+claim_success_title: "✅ Deine VIVE CARD wurde erfolgreich aktiviert",
+claim_success_text:
+  "Deine Karte ist jetzt mit deinem Konto verbunden. Du kannst nun dein Profil und deine Notfallinformationen ausfüllen.\n\nFalls du weitere Karten bestellt hast, öffne einfach den nächsten Aktivierungslink aus deiner E-Mail und wiederhole den Vorgang.",
+btn_go_profile: "Profil ausfüllen",
+
+signup_title: "Konto erstellen",
+signup_password_ph: "Mindestens 6 Zeichen",
+signup_password2_ph: "Passwort wiederholen",
+signup_pw2_label: "Passwort wiederholen",
+btn_signup_start: "Registrierung starten",
+signup_hint:
+  "Nach dem Klick erhältst du eine Bestätigungs-E-Mail. Danach kannst du dein Konto aktivieren und deine VIVE CARD zuordnen.",
+
+block_card_title: "Karte sperren / deaktivieren",
+block_card_intro:
+  "Wenn deine Karte verloren wurde oder deaktiviert werden soll, sende hier eine Sperranfrage. Bitte gib die E-Mail-Adresse und die PUBLIC_ID an, die mit der Karte verknüpft sind.",
+block_reason_label: "Grund (optional)",
+block_reason_ph: "z.B. Karte verloren, falsche Zuordnung, Konto löschen",
+btn_block_card_submit: "Sperranfrage senden",
+block_card_hint:
+  "Die Anfrage wird an den Support weitergeleitet. Danach wird die Karte manuell geprüft und gesperrt bzw. deaktiviert.",
+
+err_valid_email: "Bitte eine gültige E-Mail eingeben.",
+err_accept_terms_first:
+  "Bitte akzeptiere zuerst die AGB und die Nutzungsvereinbarung.",
+err_signup_failed_generic: "Registrierung fehlgeschlagen.",
+err_block_card_request: "Sperranfrage konnte nicht gesendet werden.",
+block_card_success:
+  "Deine Sperranfrage wurde erfolgreich übermittelt. Die Karte wurde sofort gesperrt und unser Support prüft den Fall schnellstmöglich.",
+err_confirm_email_first:
+  "Bitte bestätige zuerst deine E-Mail-Adresse über den Link in deinem Postfach.",
+card_status_check_failed: "Kartenstatus konnte nicht geprüft werden: ",
+card_blocked: "Diese VIVE CARD wurde gesperrt oder deaktiviert.",
+
+alert_error_title: "Fehler",
+alert_open_link_failed: "Link konnte nicht geöffnet werden",
+alert_card_activated_title: "VIVE CARD aktiviert",
+alert_card_activated_text:
+  "Deine Karte wurde aktiviert. Durch die aktive Session wechselst du nun in die App.",
+
+pid_ph: "z.B. PVJ2AT5B6Y",
   },
   it: {
     pill: "🔒 Login / attiva VIVE CARD",
@@ -165,6 +224,65 @@ const I18N: Record<Lang, Record<string, string>> = {
     err_pid_save: "Impossibile salvare la PUBLIC_ID: ",
     err_privacy_save:
       "Impossibile salvare il consenso privacy: ",
+    banner: "VERSIONE PRIVATA PRE-LANCIO",
+single_account_notice:
+  "Avviso importante: per ogni PUBLIC_ID può essere utilizzato un solo indirizzo e-mail o un solo account. Registrati con lo stesso indirizzo e-mail usato per il tuo ordine.",
+terms_intro:
+  "Prima di poter attivare la tua VIVE CARD, conferma i Termini e le Condizioni d'uso.",
+
+privacy_claim_title: "Informativa privacy per l'attivazione della carta",
+privacy_claim_body:
+  "Con l'attivazione della tua VIVE CARD possono essere salvate volontariamente informazioni personali, inclusi possibili dati sanitari come allergie, farmaci, gruppo sanguigno o note di emergenza.\n\nQuesti dati sono forniti e gestiti esclusivamente da te. Salva solo i dati di cui desideri espressamente il trattamento.",
+privacy_claim_checkbox:
+  "Ho letto l'informativa privacy per l'attivazione della carta e accetto che i dati personali inseriti volontariamente da me – inclusi eventuali dati sanitari – vengano memorizzati nell'ambito della mia VIVE CARD.",
+btn_accept_privacy_claim: "Accetta informativa privacy",
+
+claim_notice_title: "VIVE CARD rilevata",
+claim_notice_text:
+  "Effettua il login o crea un account. Successivamente la tua VIVE CARD verrà attivata automaticamente.",
+public_id_label: "PUBLIC_ID",
+
+claim_success_title: "✅ La tua VIVE CARD è stata attivata con successo",
+claim_success_text:
+  "La tua carta è ora collegata al tuo account. Ora puoi compilare il tuo profilo e le tue informazioni di emergenza.\n\nSe hai ordinato altre carte, apri semplicemente il link di attivazione successivo ricevuto via e-mail e ripeti la procedura.",
+btn_go_profile: "Compila profilo",
+
+signup_title: "Crea account",
+signup_password_ph: "Almeno 6 caratteri",
+signup_password2_ph: "Ripeti password",
+signup_pw2_label: "Ripeti password",
+btn_signup_start: "Avvia registrazione",
+signup_hint:
+  "Dopo il clic riceverai un'e-mail di conferma. Successivamente potrai attivare il tuo account e associare la tua VIVE CARD.",
+
+block_card_title: "Blocca / disattiva carta",
+block_card_intro:
+  "Se la tua carta è stata smarrita o deve essere disattivata, invia qui una richiesta di blocco. Indica l'indirizzo e-mail e la PUBLIC_ID collegati alla carta.",
+block_reason_label: "Motivo (opzionale)",
+block_reason_ph: "es. carta smarrita, assegnazione errata, eliminazione account",
+btn_block_card_submit: "Invia richiesta di blocco",
+block_card_hint:
+  "La richiesta verrà inoltrata al supporto. Successivamente la carta sarà verificata manualmente e bloccata o disattivata.",
+
+err_valid_email: "Inserisci un indirizzo e-mail valido.",
+err_accept_terms_first:
+  "Accetta prima i Termini e le Condizioni d'uso.",
+err_signup_failed_generic: "Registrazione fallita.",
+err_block_card_request: "Impossibile inviare la richiesta di blocco.",
+block_card_success:
+  "La tua richiesta di blocco è stata inviata con successo. La carta è stata bloccata immediatamente e il nostro supporto esaminerà il caso il prima possibile.",
+err_confirm_email_first:
+  "Conferma prima il tuo indirizzo e-mail tramite il link nella tua casella di posta.",
+card_status_check_failed: "Impossibile verificare lo stato della carta: ",
+card_blocked: "Questa VIVE CARD è stata bloccata o disattivata.",
+
+alert_error_title: "Errore",
+alert_open_link_failed: "Impossibile aprire il link",
+alert_card_activated_title: "VIVE CARD attivata",
+alert_card_activated_text:
+  "La tua carta è stata attivata. Grazie alla sessione attiva, ora entrerai nell'app.",
+
+pid_ph: "es. PVJ2AT5B6Y",
   },
   fr: {
     pill: "🔒 Login / activer VIVE CARD",
@@ -234,6 +352,65 @@ const I18N: Record<Lang, Record<string, string>> = {
     err_pid_save: "Impossible d’enregistrer la PUBLIC_ID : ",
     err_privacy_save:
       "Impossible d’enregistrer le consentement confidentialité : ",
+    banner: "VERSION PRIVÉE PRÉ-LANCEMENT",
+single_account_notice:
+  "Remarque importante : une seule adresse e-mail ou un seul compte peut être utilisé par PUBLIC_ID. Veuillez vous inscrire avec la même adresse e-mail que celle utilisée lors de votre commande.",
+terms_intro:
+  "Avant de pouvoir activer votre VIVE CARD, veuillez confirmer les conditions générales et les conditions d'utilisation.",
+
+privacy_claim_title: "Avis de confidentialité pour l'activation de la carte",
+privacy_claim_body:
+  "Avec l'activation de votre VIVE CARD, des informations personnelles peuvent être enregistrées volontairement, y compris d'éventuelles données de santé telles que des allergies, des médicaments, le groupe sanguin ou des notes d'urgence.\n\nCes informations sont fournies et gérées exclusivement par vous. Veuillez n'enregistrer que les données dont vous souhaitez expressément le traitement.",
+privacy_claim_checkbox:
+  "J'ai lu l'avis de confidentialité relatif à l'activation de la carte et j'accepte que les données personnelles que je saisis volontairement – y compris d'éventuelles données de santé – soient enregistrées dans le cadre de ma VIVE CARD.",
+btn_accept_privacy_claim: "Accepter l'avis de confidentialité",
+
+claim_notice_title: "VIVE CARD détectée",
+claim_notice_text:
+  "Veuillez vous connecter ou créer un compte. Ensuite, votre VIVE CARD sera automatiquement activée.",
+public_id_label: "PUBLIC_ID",
+
+claim_success_title: "✅ Votre VIVE CARD a été activée avec succès",
+claim_success_text:
+  "Votre carte est maintenant liée à votre compte. Vous pouvez désormais compléter votre profil et vos informations d'urgence.\n\nSi vous avez commandé d'autres cartes, ouvrez simplement le lien d'activation suivant reçu par e-mail et répétez la procédure.",
+btn_go_profile: "Compléter le profil",
+
+signup_title: "Créer un compte",
+signup_password_ph: "Au moins 6 caractères",
+signup_password2_ph: "Répéter le mot de passe",
+signup_pw2_label: "Répéter le mot de passe",
+btn_signup_start: "Démarrer l'inscription",
+signup_hint:
+  "Après avoir cliqué, vous recevrez un e-mail de confirmation. Vous pourrez ensuite activer votre compte et associer votre VIVE CARD.",
+
+block_card_title: "Bloquer / désactiver la carte",
+block_card_intro:
+  "Si votre carte a été perdue ou doit être désactivée, envoyez ici une demande de blocage. Veuillez indiquer l'adresse e-mail et la PUBLIC_ID liées à la carte.",
+block_reason_label: "Motif (optionnel)",
+block_reason_ph: "p. ex. carte perdue, mauvaise attribution, suppression du compte",
+btn_block_card_submit: "Envoyer la demande de blocage",
+block_card_hint:
+  "La demande sera transmise au support. Ensuite, la carte sera vérifiée manuellement puis bloquée ou désactivée.",
+
+err_valid_email: "Veuillez saisir une adresse e-mail valide.",
+err_accept_terms_first:
+  "Veuillez d'abord accepter les conditions générales et les conditions d'utilisation.",
+err_signup_failed_generic: "Échec de l'inscription.",
+err_block_card_request: "La demande de blocage n'a pas pu être envoyée.",
+block_card_success:
+  "Votre demande de blocage a été transmise avec succès. La carte a été bloquée immédiatement et notre support examinera le cas dans les plus brefs délais.",
+err_confirm_email_first:
+  "Veuillez d'abord confirmer votre adresse e-mail via le lien dans votre boîte mail.",
+card_status_check_failed: "Impossible de vérifier le statut de la carte : ",
+card_blocked: "Cette VIVE CARD a été bloquée ou désactivée.",
+
+alert_error_title: "Erreur",
+alert_open_link_failed: "Le lien n'a pas pu être ouvert",
+alert_card_activated_title: "VIVE CARD activée",
+alert_card_activated_text:
+  "Votre carte a été activée. Grâce à la session active, vous allez maintenant entrer dans l'application.",
+
+pid_ph: "p. ex. PVJ2AT5B6Y",
   },
   es: {
     pill: "🔒 Login / activar VIVE CARD",
@@ -303,6 +480,65 @@ const I18N: Record<Lang, Record<string, string>> = {
     err_pid_save: "No se pudo guardar la PUBLIC_ID: ",
     err_privacy_save:
       "No se pudo guardar el consentimiento de privacidad: ",
+   banner: "VERSIÓN PRIVADA DE PRELANZAMIENTO",
+single_account_notice:
+  "Aviso importante: por cada PUBLIC_ID solo se puede utilizar una dirección de correo electrónico o una cuenta. Regístrate con la misma dirección de correo electrónico que utilizaste en tu pedido.",
+terms_intro:
+  "Antes de poder activar tu VIVE CARD, confirma los términos y condiciones y las condiciones de uso.",
+
+privacy_claim_title: "Aviso de privacidad para la activación de la tarjeta",
+privacy_claim_body:
+  "Con la activación de tu VIVE CARD se podrán guardar voluntariamente datos personales, incluidos posibles datos de salud como alergias, medicamentos, grupo sanguíneo o indicaciones de emergencia.\n\nEstos datos son proporcionados y gestionados exclusivamente por ti. Guarda solo los datos cuyo tratamiento deseas expresamente.",
+privacy_claim_checkbox:
+  "He leído el aviso de privacidad para la activación de la tarjeta y acepto que los datos personales introducidos voluntariamente por mí – incluidos posibles datos de salud – se almacenen en el marco de mi VIVE CARD.",
+btn_accept_privacy_claim: "Aceptar aviso de privacidad",
+
+claim_notice_title: "VIVE CARD detectada",
+claim_notice_text:
+  "Inicia sesión o crea una cuenta. Después, tu VIVE CARD se activará automáticamente.",
+public_id_label: "PUBLIC_ID",
+
+claim_success_title: "✅ Tu VIVE CARD se ha activado correctamente",
+claim_success_text:
+  "Tu tarjeta ya está vinculada a tu cuenta. Ahora puedes completar tu perfil y tu información de emergencia.\n\nSi has pedido más tarjetas, solo tienes que abrir el siguiente enlace de activación de tu correo electrónico y repetir el proceso.",
+btn_go_profile: "Completar perfil",
+
+signup_title: "Crear cuenta",
+signup_password_ph: "Al menos 6 caracteres",
+signup_password2_ph: "Repetir contraseña",
+signup_pw2_label: "Repetir contraseña",
+btn_signup_start: "Iniciar registro",
+signup_hint:
+  "Después de hacer clic recibirás un correo de confirmación. Después podrás activar tu cuenta y asignar tu VIVE CARD.",
+
+block_card_title: "Bloquear / desactivar tarjeta",
+block_card_intro:
+  "Si tu tarjeta se ha perdido o debe desactivarse, envía aquí una solicitud de bloqueo. Indica la dirección de correo electrónico y la PUBLIC_ID vinculadas a la tarjeta.",
+block_reason_label: "Motivo (opcional)",
+block_reason_ph: "p. ej. tarjeta perdida, asignación incorrecta, eliminar cuenta",
+btn_block_card_submit: "Enviar solicitud de bloqueo",
+block_card_hint:
+  "La solicitud se enviará al soporte. Después, la tarjeta será revisada manualmente y bloqueada o desactivada.",
+
+err_valid_email: "Introduce una dirección de correo electrónico válida.",
+err_accept_terms_first:
+  "Acepta primero los términos y condiciones y las condiciones de uso.",
+err_signup_failed_generic: "Error en el registro.",
+err_block_card_request: "No se pudo enviar la solicitud de bloqueo.",
+block_card_success:
+  "Tu solicitud de bloqueo se ha enviado correctamente. La tarjeta se ha bloqueado de inmediato y nuestro soporte revisará el caso lo antes posible.",
+err_confirm_email_first:
+  "Confirma primero tu dirección de correo electrónico mediante el enlace de tu bandeja de entrada.",
+card_status_check_failed: "No se pudo comprobar el estado de la tarjeta: ",
+card_blocked: "Esta VIVE CARD ha sido bloqueada o desactivada.",
+
+alert_error_title: "Error",
+alert_open_link_failed: "No se pudo abrir el enlace",
+alert_card_activated_title: "VIVE CARD activada",
+alert_card_activated_text:
+  "Tu tarjeta ha sido activada. Gracias a la sesión activa, ahora entrarás en la aplicación.",
+
+pid_ph: "p. ej. PVJ2AT5B6Y",
   },
   en: {
     pill: "🔒 Login / activate VIVE CARD",
@@ -372,6 +608,65 @@ const I18N: Record<Lang, Record<string, string>> = {
     err_pid_save: "PUBLIC_ID could not be saved: ",
     err_privacy_save:
       "Privacy consent could not be saved: ",
+    banner: "PRE-LAUNCH PRIVATE VERSION",
+single_account_notice:
+  "Important notice: only one email address or account can be used per PUBLIC_ID. Please register with the same email address you used for your order.",
+terms_intro:
+  "Before you can activate your VIVE CARD, please confirm the Terms and Conditions and the Terms of Use.",
+
+privacy_claim_title: "Privacy notice for card activation",
+privacy_claim_body:
+  "When activating your VIVE CARD, you may voluntarily store personal information, including possible health data such as allergies, medications, blood type, or emergency notes.\n\nThis information is provided and managed exclusively by you. Please store only data that you explicitly want to be processed.",
+privacy_claim_checkbox:
+  "I have read the privacy notice for card activation and agree that personal data voluntarily entered by me – including possible health data – may be stored as part of my VIVE CARD.",
+btn_accept_privacy_claim: "Accept privacy notice",
+
+claim_notice_title: "VIVE CARD detected",
+claim_notice_text:
+  "Please log in or create an account. After that, your VIVE CARD will be activated automatically.",
+public_id_label: "PUBLIC_ID",
+
+claim_success_title: "✅ Your VIVE CARD has been activated successfully",
+claim_success_text:
+  "Your card is now linked to your account. You can now complete your profile and your emergency information.\n\nIf you ordered additional cards, simply open the next activation link from your email and repeat the process.",
+btn_go_profile: "Complete profile",
+
+signup_title: "Create account",
+signup_password_ph: "At least 6 characters",
+signup_password2_ph: "Repeat password",
+signup_pw2_label: "Repeat password",
+btn_signup_start: "Start registration",
+signup_hint:
+  "After clicking, you will receive a confirmation email. After that, you can activate your account and assign your VIVE CARD.",
+
+block_card_title: "Block / deactivate card",
+block_card_intro:
+  "If your card has been lost or needs to be deactivated, submit a block request here. Please enter the email address and PUBLIC_ID linked to the card.",
+block_reason_label: "Reason (optional)",
+block_reason_ph: "e.g. lost card, wrong assignment, delete account",
+btn_block_card_submit: "Send block request",
+block_card_hint:
+  "The request will be forwarded to support. After that, the card will be checked manually and blocked or deactivated.",
+
+err_valid_email: "Please enter a valid email address.",
+err_accept_terms_first:
+  "Please accept the Terms and Conditions and the Terms of Use first.",
+err_signup_failed_generic: "Sign up failed.",
+err_block_card_request: "Block request could not be sent.",
+block_card_success:
+  "Your block request was submitted successfully. The card was blocked immediately and our support team will review the case as soon as possible.",
+err_confirm_email_first:
+  "Please confirm your email address first using the link in your inbox.",
+card_status_check_failed: "Card status could not be checked: ",
+card_blocked: "This VIVE CARD has been blocked or deactivated.",
+
+alert_error_title: "Error",
+alert_open_link_failed: "The link could not be opened",
+alert_card_activated_title: "VIVE CARD activated",
+alert_card_activated_text:
+  "Your card has been activated. Because your session is active, you will now enter the app.",
+
+pid_ph: "e.g. PVJ2AT5B6Y",
   },
 };
 
