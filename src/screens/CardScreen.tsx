@@ -1386,7 +1386,7 @@ const callNumber = async (number?: string | null) => {
 
   {docsLoading ? (
     <View style={styles.docsLoading}>
-      <ActivityIndicator color="#2a3340" />
+      <ActivityIndicator color={COLORS.textSoft} />
     </View>
   ) : sortedDocuments.length === 0 ? (
     <View style={styles.docEmpty}>
