@@ -2265,20 +2265,20 @@ footerBtnDangerText: {
 },
   footerStatusWrap: {},
   lastUpdateText: {
-    color: "#5b6472",
-    fontSize: 12,
-    fontWeight: "700",
-    marginBottom: 4,
-  },
-  lastUpdateValue: {
-    color: "#101318",
-    fontWeight: "800",
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#5b6472",
-  },
+  color: COLORS.textMuted,
+  fontSize: 12,
+  fontWeight: "700",
+  marginBottom: 4,
+},
+lastUpdateValue: {
+  color: COLORS.text,
+  fontWeight: "800",
+},
+statusText: {
+  fontSize: 12,
+  fontWeight: "800",
+  color: COLORS.textSoft,
+},
   statusOk: {
     color: "#1e8a4a",
   },
@@ -2299,27 +2299,29 @@ footerBtnDangerText: {
     justifyContent: "center",
     padding: 20,
   },
-  modalCard: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 16,
-  },
-  modalTitle: {
-    color: "#101318",
-    fontSize: 18,
-    fontWeight: "900",
-    marginBottom: 12,
-  },
-  modalOption: {
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eef2f7",
-  },
-  modalOptionText: {
-    color: "#101318",
-    fontSize: 16,
-    fontWeight: "700",
-  },
+ modalCard: {
+  backgroundColor: COLORS.panel,
+  borderRadius: 20,
+  padding: 16,
+  borderWidth: 1,
+  borderColor: COLORS.border,
+},
+modalTitle: {
+  color: COLORS.text,
+  fontSize: 18,
+  fontWeight: "900",
+  marginBottom: 12,
+},
+modalOption: {
+  paddingVertical: 14,
+  borderBottomWidth: 1,
+  borderBottomColor: COLORS.border,
+},
+modalOptionText: {
+  color: COLORS.text,
+  fontSize: 16,
+  fontWeight: "700",
+},
 langDropdown: {
   borderWidth: 1,
   borderColor: COLORS.border,
