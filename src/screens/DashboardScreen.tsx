@@ -35,7 +35,7 @@ const I18N = {
 
     status_active: "Aktiv",
     status_blocked: "Gesperrt",
-    status_pending: "Pending",
+    status_pending: "In Bearbeitung",
     status_unknown: "Unbekannt",
 
     no_card_linked_title: "Keine Karte verknüpft",
@@ -72,7 +72,7 @@ const I18N = {
     contact2_phone: "Kontakt 2 Telefon",
 
     technical_data: "Technische Daten",
-    emergency_record: "Emergency Record",
+    emergency_record: "Notfallprofil",
     record_exists: "Vorhanden",
     record_missing: "Noch nicht gespeichert",
     last_update: "Letztes Update",
