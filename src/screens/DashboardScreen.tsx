@@ -20,12 +20,6 @@ import type {
 } from "../types";
 import { mapEmergencyDataToForm } from "../utils";
 
-const [lang, setLang] = useState<keyof typeof I18N>("de");
-
-function t(key: keyof typeof I18N.de) {
-  return I18N[lang]?.[key] ?? I18N.de[key] ?? key;
-}
-
 const I18N = {
   de: {
     loading: "Dashboard wird geladen …",
@@ -323,10 +317,6 @@ const I18N = {
   },
 } as const;
 
-function t(key: keyof typeof I18N.de) {
-  return I18N[LANG]?.[key] ?? I18N.de[key] ?? key;
-}
-
 function getStatusColor(status?: string | null) {
   const value = String(status || "").toLowerCase();
 
@@ -449,7 +439,7 @@ export default function DashboardScreen({ navigation }: any) {
       return;
     }
 
-   Alert.alert(t("alert_note"), t("card_screen_not_connected")
+   Alert.alert(t("alert_note"), t("card_screen_not_connected"));
   };
 
   const handleOpenCardTab = () => {
@@ -458,7 +448,7 @@ export default function DashboardScreen({ navigation }: any) {
       return;
     }
 
-    Alert.alert(t("alert_note"), t("card_screen_not_connected")
+    Alert.alert(t("alert_note"), t("card_screen_not_connected"));
   };
 
   if (loading) {
@@ -478,7 +468,7 @@ export default function DashboardScreen({ navigation }: any) {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      <<Text style={styles.title}>{t("dashboard_title")}</Text>
+      <Text style={styles.title}>{t("dashboard_title")}</Text>
 <Text style={styles.subtitle}>
   {t("welcome")}{userEmail ? `, ${userEmail}` : ""}
 </Text>
