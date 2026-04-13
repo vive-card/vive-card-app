@@ -374,27 +374,27 @@ function lineValue(value?: string | null, fallback = t("fallback")) {
     setFormView(mapEmergencyDataToForm(result.profile));
   }, []);
 
-  const initialLoad = useCallback(async () => {
-    try {
-      setLoading(true);
-      await loadData();
-    } catch (e: any) {
-      setError(e?.message || t("unknown_error"));
-    } finally {
-      setLoading(false);
-    }
-  }, [loadData]);
+const initialLoad = useCallback(async () => {
+  try {
+    setLoading(true);
+    await loadData();
+  } catch (e: any) {
+    setError(e?.message || t("unknown_error"));
+  } finally {
+    setLoading(false);
+  }
+}, [loadData, lang]);
 
-  const onRefresh = useCallback(async () => {
-    try {
-      setRefreshing(true);
-      await loadData();
-    } catch (e: any) {
-      setError(e?.message || t("unknown_error"));
-    } finally {
-      setRefreshing(false);
-    }
-  }, [loadData]);
+const onRefresh = useCallback(async () => {
+  try {
+    setRefreshing(true);
+    await loadData();
+  } catch (e: any) {
+    setError(e?.message || t("unknown_error"));
+  } finally {
+    setRefreshing(false);
+  }
+}, [loadData, lang]);
 
   useEffect(() => {
     initialLoad();
@@ -473,10 +473,47 @@ function lineValue(value?: string | null, fallback = t("fallback")) {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      <Text style={styles.title}>{t("dashboard_title")}</Text>
+     <Text style={styles.title}>{t("dashboard_title")}</Text>
 <Text style={styles.subtitle}>
   {t("welcome")}{userEmail ? `, ${userEmail}` : ""}
 </Text>
+
+<View style={styles.langRow}>
+  <TouchableOpacity
+    style={[styles.langBtn, lang === "de" && styles.langBtnActive]}
+    onPress={() => setLang("de")}
+  >
+    <Text style={styles.langBtnText}>DE</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    style={[styles.langBtn, lang === "it" && styles.langBtnActive]}
+    onPress={() => setLang("it")}
+  >
+    <Text style={styles.langBtnText}>IT</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    style={[styles.langBtn, lang === "fr" && styles.langBtnActive]}
+    onPress={() => setLang("fr")}
+  >
+    <Text style={styles.langBtnText}>FR</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    style={[styles.langBtn, lang === "es" && styles.langBtnActive]}
+    onPress={() => setLang("es")}
+  >
+    <Text style={styles.langBtnText}>ES</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    style={[styles.langBtn, lang === "en" && styles.langBtnActive]}
+    onPress={() => setLang("en")}
+  >
+    <Text style={styles.langBtnText}>EN</Text>
+  </TouchableOpacity>
+</View>
       {!!error && (
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>{error}</Text>
@@ -780,6 +817,29 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "800",
     letterSpacing: 1,
+  },
+  langRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 18,
+    flexWrap: "wrap",
+  },
+  langBtn: {
+    backgroundColor: "#1a2232",
+    borderRadius: 999,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
+  langBtnActive: {
+    backgroundColor: "#e10600",
+    borderColor: "#e10600",
+  },
+  langBtnText: {
+    color: "#ffffff",
+    fontSize: 13,
+    fontWeight: "800",
   },
   buttonRow: {
     flexDirection: "row",
