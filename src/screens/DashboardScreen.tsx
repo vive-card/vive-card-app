@@ -342,7 +342,20 @@ export default function DashboardScreen({ navigation }: any) {
   function t(key: keyof typeof I18N.de) {
     return I18N[lang]?.[key] ?? I18N.de[key] ?? key;
   }
-  
+  function getStatusLabel(status?: string | null) {
+  const value = String(status || "").toLowerCase();
+
+  if (value === "active") return t("status_active");
+  if (value === "blocked") return t("status_blocked");
+  if (value === "pending") return t("status_pending");
+
+  return t("status_unknown");
+}
+
+function lineValue(value?: string | null, fallback = t("fallback")) {
+  const clean = String(value || "").trim();
+  return clean || fallback;
+}
   const [userEmail, setUserEmail] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const [card, setCard] = useState<CardRow | null>(null);
