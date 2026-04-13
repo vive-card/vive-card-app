@@ -1085,7 +1085,7 @@ const callNumber = async (number?: string | null) => {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.bg} />
 
       <View style={styles.topbar}>
         <View style={styles.topbarInner}>
@@ -1852,26 +1852,23 @@ emptyText: {
 },
 
   topbar: {
-    backgroundColor: "rgba(255,255,255,0.96)",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e7ebf0",
-  },
-  topbarInner: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  brandWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#1f6feb",
-    marginRight: 10,
-  },
+  backgroundColor: COLORS.bg,
+  borderBottomWidth: 1,
+  borderBottomColor: "rgba(255,255,255,0.04)",
+},
+brandText: {
+  color: COLORS.text,
+  fontSize: 18,
+  fontWeight: "900",
+  letterSpacing: 1,
+},
+dot: {
+  width: 10,
+  height: 10,
+  borderRadius: 5,
+  backgroundColor: COLORS.primary,
+  marginRight: 10,
+},
   brandText: {
     color: "#101318",
     fontSize: 18,
