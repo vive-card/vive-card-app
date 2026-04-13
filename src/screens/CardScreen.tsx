@@ -1869,12 +1869,6 @@ dot: {
   backgroundColor: COLORS.primary,
   marginRight: 10,
 },
-  brandText: {
-    color: "#101318",
-    fontSize: 18,
-    fontWeight: "900",
-    letterSpacing: 1,
-  },
   actionsRow: {
     alignItems: "center",
     paddingRight: 8,
@@ -1947,7 +1941,38 @@ dot: {
     fontWeight: "800",
     lineHeight: 19,
   },
+content: {
+  paddingHorizontal: 16,
+  paddingTop: 8,
+  paddingBottom: 40,
+},
 
+topbarInner: {
+  paddingHorizontal: 16,
+  paddingVertical: 14,
+},
+
+brandWrap: {
+  flexDirection: "row",
+  alignItems: "center",
+  marginBottom: 12,
+},
+
+headline: {
+  marginBottom: 10,
+},
+
+pidBox: {
+  marginTop: 12,
+},
+
+halfField: {
+  width: "48.5%",
+},
+
+fullField: {
+  width: "100%",
+},
   cardWrap: {
   backgroundColor: COLORS.panel,
   borderWidth: 1,
@@ -2198,20 +2223,20 @@ docActionBtnText: {
   fontSize: 14,
   fontWeight: "900",
 },
-  docActionBtnDanger: {
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    backgroundColor: "#fff0f0",
-    borderWidth: 1,
-    borderColor: "rgba(176,24,24,.20)",
-    marginBottom: 8,
-  },
-  docActionBtnDangerText: {
-    color: "#b01818",
-    fontSize: 14,
-    fontWeight: "900",
-  },
+docActionBtnDanger: {
+  borderRadius: 14,
+  paddingHorizontal: 14,
+  paddingVertical: 10,
+  backgroundColor: COLORS.dangerSoft,
+  borderWidth: 1,
+  borderColor: "rgba(255,43,43,0.20)",
+  marginBottom: 8,
+},
+docActionBtnDangerText: {
+  color: "#ff6b6b",
+  fontSize: 14,
+  fontWeight: "900",
+},
 
   footer: {
     marginTop: 14,
