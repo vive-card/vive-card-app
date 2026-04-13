@@ -20,7 +20,11 @@ import type {
 } from "../types";
 import { mapEmergencyDataToForm } from "../utils";
 
-const LANG = "de"; // später durch AsyncStorage / Context / Settings ersetzen
+const [lang, setLang] = useState<keyof typeof I18N>("de");
+
+function t(key: keyof typeof I18N.de) {
+  return I18N[lang]?.[key] ?? I18N.de[key] ?? key;
+}
 
 const I18N = {
   de: {
@@ -380,7 +384,7 @@ export default function DashboardScreen({ navigation }: any) {
       setLoading(true);
       await loadData();
     } catch (e: any) {
-      setError(e?.message || "Unbekannter Fehler");
+      setError(e?.message || t("unknown_error"));
     } finally {
       setLoading(false);
     }
@@ -391,7 +395,7 @@ export default function DashboardScreen({ navigation }: any) {
       setRefreshing(true);
       await loadData();
     } catch (e: any) {
-      setError(e?.message || "Unbekannter Fehler");
+      setError(e?.message || t("unknown_error"));
     } finally {
       setRefreshing(false);
     }
@@ -420,14 +424,14 @@ export default function DashboardScreen({ navigation }: any) {
 
   const handleOpenCard = async () => {
     if (!card?.public_id) {
-      Alert.alert("Hinweis", "Keine Karte gefunden");
+      Alert.alert(t("alert_note"), t("no_card_found"));
       return;
     }
 
     const supported = await Linking.canOpenURL(cardUrl);
 
     if (!supported) {
-      Alert.alert("Fehler", "Kartenlink konnte nicht geöffnet werden");
+      Alert.alert(t("alert_error"), t("card_link_open_failed"));
       return;
     }
 
@@ -436,7 +440,7 @@ export default function DashboardScreen({ navigation }: any) {
 
   const handleEditProfile = () => {
     if (!card?.public_id) {
-      Alert.alert("Hinweis", "Keine Karte gefunden");
+      Alert.alert(t("alert_note"), t("no_card_found"));
       return;
     }
 
@@ -445,7 +449,7 @@ export default function DashboardScreen({ navigation }: any) {
       return;
     }
 
-    Alert.alert("Hinweis", "Card Screen ist noch nicht verbunden");
+   Alert.alert(t("alert_note"), t("card_screen_not_connected")
   };
 
   const handleOpenCardTab = () => {
@@ -454,14 +458,14 @@ export default function DashboardScreen({ navigation }: any) {
       return;
     }
 
-    Alert.alert("Hinweis", "Card Screen ist noch nicht verbunden");
+    Alert.alert(t("alert_note"), t("card_screen_not_connected")
   };
 
   if (loading) {
     return (
       <View style={styles.loadingWrap}>
         <ActivityIndicator size="large" color="#e10600" />
-        <Text style={styles.loadingText}>Dashboard wird geladen …</Text>
+        <Text style={styles.loadingText}>{t("loading")}</Text>
       </View>
     );
   }
@@ -474,11 +478,10 @@ export default function DashboardScreen({ navigation }: any) {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      <Text style={styles.title}>Dashboard</Text>
-      <Text style={styles.subtitle}>
-        Willkommen{userEmail ? `, ${userEmail}` : ""}
-      </Text>
-
+      <<Text style={styles.title}>{t("dashboard_title")}</Text>
+<Text style={styles.subtitle}>
+  {t("welcome")}{userEmail ? `, ${userEmail}` : ""}
+</Text>
       {!!error && (
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>{error}</Text>
@@ -487,21 +490,20 @@ export default function DashboardScreen({ navigation }: any) {
 
       {!card ? (
         <View style={styles.cardBox}>
-          <Text style={styles.sectionTitle}>Keine Karte verknüpft</Text>
-          <Text style={styles.sectionText}>
-            Für diesen User wurde aktuell noch keine VIVE CARD gefunden.
-          </Text>
+          <Text style={styles.sectionTitle}>{t("no_card_linked_title")}</Text>
+<Text style={styles.sectionText}>
+  {t("no_card_linked_text")}
+</Text>
 
           <TouchableOpacity style={styles.secondaryButton} onPress={onRefresh}>
-            <Text style={styles.secondaryButtonText}>Erneut prüfen</Text>
+            <Text style={styles.secondaryButtonText}>{t("check_again")}</Text>
           </TouchableOpacity>
         </View>
       ) : (
         <>
           <View style={styles.cardBox}>
             <View style={styles.rowBetween}>
-              <Text style={styles.sectionTitle}>Deine Karte</Text>
-
+              <Text style={styles.sectionTitle}>{t("your_card")}</Text>
               <View
                 style={[
                   styles.statusBadge,
@@ -515,12 +517,12 @@ export default function DashboardScreen({ navigation }: any) {
             </View>
 
             <View style={styles.infoBlock}>
-              <Text style={styles.label}>PUBLIC_ID</Text>
+              <Text style={styles.label}>{t("public_id")}</Text>
               <Text style={styles.valueMono}>{lineValue(card.public_id)}</Text>
             </View>
 
             <View style={styles.infoBlock}>
-              <Text style={styles.label}>Kartenlink</Text>
+              <Text style={styles.label}>{t("card_link")}</Text>
               <Text style={styles.valueSmall}>{lineValue(cardUrl)}</Text>
             </View>
 
@@ -529,130 +531,129 @@ export default function DashboardScreen({ navigation }: any) {
                 style={styles.primaryButton}
                 onPress={handleOpenCard}
               >
-                <Text style={styles.primaryButtonText}>Karte öffnen</Text>
+                <Text style={styles.primaryButtonText}>{t("open_card")}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.secondaryButton}
                 onPress={handleOpenCardTab}
               >
-                <Text style={styles.secondaryButtonText}>Karte in App</Text>
+                <Text style={styles.secondaryButtonText}>{t("open_card_in_app")}</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           <View style={styles.cardBox}>
             <View style={styles.rowBetween}>
-              <Text style={styles.sectionTitle}>Grunddaten</Text>
+              <Text style={styles.sectionTitle}>{t("basic_data")}</Text>
 
               <TouchableOpacity onPress={handleEditProfile}>
-                <Text style={styles.linkText}>Bearbeiten</Text>
+                <Text style={styles.linkText}>{t("edit")}</Text>
               </TouchableOpacity>
             </View>
 
             <View style={styles.infoBlock}>
-              <Text style={styles.label}>Name</Text>
+              <Text style={styles.label}>{t("name")}</Text>
               <Text style={styles.value}>{lineValue(formView?.name)}</Text>
             </View>
 
             <View style={styles.infoRow}>
               <View style={styles.infoCol}>
-                <Text style={styles.label}>Geburtsdatum</Text>
+                <Text style={styles.label}>{t("dob")}</Text>
                 <Text style={styles.value}>{lineValue(formView?.dob)}</Text>
               </View>
 
               <View style={styles.infoCol}>
-                <Text style={styles.label}>Blutgruppe</Text>
+                <Text style={styles.label}>{t("blood_group")}</Text>
                 <Text style={styles.value}>{lineValue(formView?.blood)}</Text>
               </View>
             </View>
           </View>
 
           <View style={styles.cardBox}>
-            <Text style={styles.sectionTitle}>Kritische Informationen</Text>
-
+            <Text style={styles.sectionTitle}>{t("critical_info")}</Text>
             <View style={styles.infoBlock}>
-              <Text style={styles.label}>Allergien</Text>
+              <Text style={styles.label}>{t("allergies")}</Text>
               <Text style={styles.value}>{lineValue(formView?.allergies)}</Text>
             </View>
 
             <View style={styles.infoBlock}>
-              <Text style={styles.label}>Blutverdünner</Text>
+              <Text style={styles.label}>{t("blood_thinner")}</Text>
               <Text style={styles.value}>
                 {lineValue(formView?.bloodThinner)}
               </Text>
             </View>
 
             <View style={styles.infoBlock}>
-              <Text style={styles.label}>Medikamente</Text>
+              <Text style={styles.label}>{t("medication")}</Text>
               <Text style={styles.value}>{lineValue(formView?.meds)}</Text>
             </View>
           </View>
 
           <View style={styles.cardBox}>
-            <Text style={styles.sectionTitle}>Weitere Informationen</Text>
+            <Text style={styles.sectionTitle}>{t("more_info")}</Text>
 
             <View style={styles.infoBlock}>
-              <Text style={styles.label}>Impfungen</Text>
+              <Text style={styles.label}>{t("vaccinations")}</Text>
               <Text style={styles.value}>{lineValue(formView?.vaccines)}</Text>
             </View>
 
             <View style={styles.infoBlock}>
-              <Text style={styles.label}>Chronische Erkrankungen</Text>
+              <Text style={styles.label}>{t("chronic_conditions")}</Text>
               <Text style={styles.value}>{lineValue(formView?.chronic)}</Text>
             </View>
 
             <View style={styles.infoBlock}>
-              <Text style={styles.label}>Organspende</Text>
+              <Text style={styles.label}>{t("organ_donation")}</Text>
               <Text style={styles.value}>{lineValue(formView?.organ)}</Text>
             </View>
 
             <View style={styles.infoBlock}>
-              <Text style={styles.label}>Notizen / Hinweise</Text>
+              <Text style={styles.label}>{t("notes")}</Text>
               <Text style={styles.value}>{lineValue(formView?.notes)}</Text>
             </View>
           </View>
 
           <View style={styles.cardBox}>
-            <Text style={styles.sectionTitle}>Notfallkontakte</Text>
+            <Text style={styles.sectionTitle}>{t("emergency_contacts")}</Text>
 
             <View style={styles.infoRow}>
               <View style={styles.infoCol}>
-                <Text style={styles.label}>Kontakt 1 Name</Text>
+                <Text style={styles.label}>{t("contact1_name")}</Text>
                 <Text style={styles.value}>{lineValue(formView?.em1_name)}</Text>
               </View>
 
               <View style={styles.infoCol}>
-                <Text style={styles.label}>Kontakt 1 Telefon</Text>
+                <Text style={styles.label}>{t("contact1_phone")}</Text>
                 <Text style={styles.value}>{lineValue(formView?.em1)}</Text>
               </View>
             </View>
 
             <View style={styles.infoRow}>
               <View style={styles.infoCol}>
-                <Text style={styles.label}>Kontakt 2 Name</Text>
+                <Text style={styles.label}>{t("contact2_name")}</Text>
                 <Text style={styles.value}>{lineValue(formView?.em2_name)}</Text>
               </View>
 
               <View style={styles.infoCol}>
-                <Text style={styles.label}>Kontakt 2 Telefon</Text>
+                <Text style={styles.label}>{t("contact2_phone")}</Text>
                 <Text style={styles.value}>{lineValue(formView?.em2)}</Text>
               </View>
             </View>
           </View>
 
           <View style={styles.cardBox}>
-            <Text style={styles.sectionTitle}>Technische Daten</Text>
+            <Text style={styles.sectionTitle}>{t("technical_data")}</Text>
 
             <View style={styles.infoBlock}>
-              <Text style={styles.label}>Emergency Record</Text>
+              <Text style={styles.label}>{t("emergency_record")}</Text>
               <Text style={styles.value}>
-                {profile?.updated_at ? "Vorhanden" : "Noch nicht gespeichert"}
+                {profile?.updated_at ? t("record_exists") : t("record_missing")}
               </Text>
             </View>
 
             <View style={styles.infoBlock}>
-              <Text style={styles.label}>Letztes Update</Text>
+              <Text style={styles.label}>{t("last_update")}</Text>
               <Text style={styles.value}>
                 {lineValue(
                   profile?.updated_at
