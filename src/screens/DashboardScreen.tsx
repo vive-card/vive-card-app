@@ -327,30 +327,22 @@ function getStatusColor(status?: string | null) {
   return "#5b6472";
 }
 
-function getStatusLabel(status?: string | null) {
-  const value = String(status || "").toLowerCase();
-
-  if (value === "active") return t("status_active");
-  if (value === "blocked") return t("status_blocked");
-  if (value === "pending") return t("status_pending");
-
-  return t("status_unknown");
-}
 function fullCardUrl(publicId?: string | null) {
   if (!publicId) return "";
   return `https://www.vive-card.com/card?pid=${encodeURIComponent(publicId)}&edit=1`;
 }
 
-function lineValue(value?: string | null, fallback = t("fallback")) {
-  const clean = String(value || "").trim();
-  return clean || fallback;
-}
 
 export default function DashboardScreen({ navigation }: any) {
+  const [lang, setLang] = useState<keyof typeof I18N>("de");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
+  function t(key: keyof typeof I18N.de) {
+    return I18N[lang]?.[key] ?? I18N.de[key] ?? key;
+  }
+  
   const [userEmail, setUserEmail] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const [card, setCard] = useState<CardRow | null>(null);
