@@ -2358,18 +2358,41 @@ dot: {
   },
 langDropdown: {
   borderWidth: 1,
-  borderColor: "#e7ebf0",
-  borderRadius: 10,
+  borderColor: COLORS.border,
+  borderRadius: 14,
   paddingHorizontal: 14,
   paddingVertical: 10,
-  backgroundColor: "#fff",
+  backgroundColor: COLORS.panel2,
   marginRight: 8,
 },
 
 langDropdownText: {
   fontSize: 14,
   fontWeight: "900",
-  color: "#101318",
+  color: COLORS.text,
+},
+headerBtnDanger: {
+  backgroundColor: COLORS.primary,
+},
+headerBtnSoft: {
+  backgroundColor: COLORS.panel2,
+  borderWidth: 1,
+  borderColor: COLORS.border,
+},
+headerBtnSoftText: {
+  color: COLORS.text,
+  fontWeight: "900",
+  fontSize: 13,
+},
+headerBtnWhite: {
+  backgroundColor: COLORS.panel2,
+  borderWidth: 1,
+  borderColor: COLORS.border,
+},
+headerBtnWhiteText: {
+  color: COLORS.text,
+  fontWeight: "800",
+  fontSize: 13,
 },
   emergencyScreen: {
     flex: 1,
