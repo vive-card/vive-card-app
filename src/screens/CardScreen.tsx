@@ -1793,53 +1793,63 @@ function EmergencyCard({
     </View>
   );
 }
-
+const COLORS = {
+  bg: "#050816",
+  panel: "#0b1226",
+  panel2: "#111a33",
+  border: "rgba(255,255,255,0.08)",
+  text: "#ffffff",
+  textSoft: "#aab3c5",
+  textMuted: "#7f8aa3",
+  primary: "#ff2b2b",
+  primaryDark: "#cc1f1f",
+  dangerSoft: "rgba(255,59,59,0.12)",
+  blueSoft: "rgba(80,120,255,0.12)",
+  inputBg: "#0f1830",
+  inputBorder: "rgba(255,255,255,0.08)",
+};
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: "#f4f6f8",
-  },
-  screen: {
-    flex: 1,
-    backgroundColor: "#f4f6f8",
-  },
-  content: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  loadingWrap: {
-    flex: 1,
-    backgroundColor: "#f4f6f8",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
-  },
-  loadingText: {
-    marginTop: 12,
-    color: "#5b6472",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  emptyWrap: {
-    flex: 1,
-    backgroundColor: "#f4f6f8",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
-  },
-  emptyTitle: {
-    color: "#101318",
-    fontSize: 28,
-    fontWeight: "900",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  emptyText: {
-    color: "#5b6472",
-    fontSize: 15,
-    textAlign: "center",
-    lineHeight: 22,
-  },
+safe: {
+  flex: 1,
+  backgroundColor: COLORS.bg,
+},
+screen: {
+  flex: 1,
+  backgroundColor: COLORS.bg,
+},
+loadingWrap: {
+  flex: 1,
+  backgroundColor: COLORS.bg,
+  justifyContent: "center",
+  alignItems: "center",
+  padding: 24,
+},
+loadingText: {
+  marginTop: 12,
+  color: COLORS.textSoft,
+  fontSize: 15,
+  fontWeight: "700",
+},
+emptyWrap: {
+  flex: 1,
+  backgroundColor: COLORS.bg,
+  justifyContent: "center",
+  alignItems: "center",
+  padding: 24,
+},
+emptyTitle: {
+  color: COLORS.text,
+  fontSize: 28,
+  fontWeight: "900",
+  marginBottom: 8,
+  textAlign: "center",
+},
+emptyText: {
+  color: COLORS.textSoft,
+  fontSize: 15,
+  textAlign: "center",
+  lineHeight: 22,
+},
 
   topbar: {
     backgroundColor: "rgba(255,255,255,0.96)",
