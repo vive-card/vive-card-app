@@ -20,6 +20,309 @@ import type {
 } from "../types";
 import { mapEmergencyDataToForm } from "../utils";
 
+const LANG = "de"; // später durch AsyncStorage / Context / Settings ersetzen
+
+const I18N = {
+  de: {
+    loading: "Dashboard wird geladen …",
+    dashboard_title: "Dashboard",
+    welcome: "Willkommen",
+    unknown_error: "Unbekannter Fehler",
+
+    alert_note: "Hinweis",
+    alert_error: "Fehler",
+    no_card_found: "Keine Karte gefunden",
+    card_link_open_failed: "Kartenlink konnte nicht geöffnet werden",
+    card_screen_not_connected: "Card Screen ist noch nicht verbunden",
+
+    status_active: "Aktiv",
+    status_blocked: "Gesperrt",
+    status_pending: "Pending",
+    status_unknown: "Unbekannt",
+
+    no_card_linked_title: "Keine Karte verknüpft",
+    no_card_linked_text: "Für diesen User wurde aktuell noch keine VIVE CARD gefunden.",
+    check_again: "Erneut prüfen",
+
+    your_card: "Deine Karte",
+    public_id: "PUBLIC_ID",
+    card_link: "Kartenlink",
+    open_card: "Karte öffnen",
+    open_card_in_app: "Karte in App",
+
+    basic_data: "Grunddaten",
+    edit: "Bearbeiten",
+    name: "Name",
+    dob: "Geburtsdatum",
+    blood_group: "Blutgruppe",
+
+    critical_info: "Kritische Informationen",
+    allergies: "Allergien",
+    blood_thinner: "Blutverdünner",
+    medication: "Medikamente",
+
+    more_info: "Weitere Informationen",
+    vaccinations: "Impfungen",
+    chronic_conditions: "Chronische Erkrankungen",
+    organ_donation: "Organspende",
+    notes: "Notizen / Hinweise",
+
+    emergency_contacts: "Notfallkontakte",
+    contact1_name: "Kontakt 1 Name",
+    contact1_phone: "Kontakt 1 Telefon",
+    contact2_name: "Kontakt 2 Name",
+    contact2_phone: "Kontakt 2 Telefon",
+
+    technical_data: "Technische Daten",
+    emergency_record: "Emergency Record",
+    record_exists: "Vorhanden",
+    record_missing: "Noch nicht gespeichert",
+    last_update: "Letztes Update",
+
+    fallback: "—",
+  },
+
+  it: {
+    loading: "Dashboard in caricamento…",
+    dashboard_title: "Dashboard",
+    welcome: "Benvenuto",
+    unknown_error: "Errore sconosciuto",
+
+    alert_note: "Avviso",
+    alert_error: "Errore",
+    no_card_found: "Nessuna carta trovata",
+    card_link_open_failed: "Impossibile aprire il link della carta",
+    card_screen_not_connected: "La schermata Card non è ancora collegata",
+
+    status_active: "Attiva",
+    status_blocked: "Bloccata",
+    status_pending: "In attesa",
+    status_unknown: "Sconosciuto",
+
+    no_card_linked_title: "Nessuna carta collegata",
+    no_card_linked_text: "Per questo utente al momento non è stata trovata alcuna VIVE CARD.",
+    check_again: "Controlla di nuovo",
+
+    your_card: "La tua carta",
+    public_id: "PUBLIC_ID",
+    card_link: "Link della carta",
+    open_card: "Apri carta",
+    open_card_in_app: "Carta nell'app",
+
+    basic_data: "Dati di base",
+    edit: "Modifica",
+    name: "Nome",
+    dob: "Data di nascita",
+    blood_group: "Gruppo sanguigno",
+
+    critical_info: "Informazioni critiche",
+    allergies: "Allergie",
+    blood_thinner: "Anticoagulanti",
+    medication: "Farmaci",
+
+    more_info: "Ulteriori informazioni",
+    vaccinations: "Vaccinazioni",
+    chronic_conditions: "Malattie croniche",
+    organ_donation: "Donazione di organi",
+    notes: "Note / Indicazioni",
+
+    emergency_contacts: "Contatti di emergenza",
+    contact1_name: "Contatto 1 Nome",
+    contact1_phone: "Contatto 1 Telefono",
+    contact2_name: "Contatto 2 Nome",
+    contact2_phone: "Contatto 2 Telefono",
+
+    technical_data: "Dati tecnici",
+    emergency_record: "Record di emergenza",
+    record_exists: "Presente",
+    record_missing: "Non ancora salvato",
+    last_update: "Ultimo aggiornamento",
+
+    fallback: "—",
+  },
+
+  fr: {
+    loading: "Chargement du tableau de bord…",
+    dashboard_title: "Tableau de bord",
+    welcome: "Bienvenue",
+    unknown_error: "Erreur inconnue",
+
+    alert_note: "Information",
+    alert_error: "Erreur",
+    no_card_found: "Aucune carte trouvée",
+    card_link_open_failed: "Le lien de la carte n’a pas pu être ouvert",
+    card_screen_not_connected: "L’écran Card n’est pas encore connecté",
+
+    status_active: "Active",
+    status_blocked: "Bloquée",
+    status_pending: "En attente",
+    status_unknown: "Inconnu",
+
+    no_card_linked_title: "Aucune carte liée",
+    no_card_linked_text: "Aucune VIVE CARD n’a été trouvée actuellement pour cet utilisateur.",
+    check_again: "Vérifier à nouveau",
+
+    your_card: "Votre carte",
+    public_id: "PUBLIC_ID",
+    card_link: "Lien de la carte",
+    open_card: "Ouvrir la carte",
+    open_card_in_app: "Carte dans l’app",
+
+    basic_data: "Données de base",
+    edit: "Modifier",
+    name: "Nom",
+    dob: "Date de naissance",
+    blood_group: "Groupe sanguin",
+
+    critical_info: "Informations critiques",
+    allergies: "Allergies",
+    blood_thinner: "Anticoagulants",
+    medication: "Médicaments",
+
+    more_info: "Autres informations",
+    vaccinations: "Vaccinations",
+    chronic_conditions: "Maladies chroniques",
+    organ_donation: "Don d’organes",
+    notes: "Notes / Remarques",
+
+    emergency_contacts: "Contacts d’urgence",
+    contact1_name: "Contact 1 Nom",
+    contact1_phone: "Contact 1 Téléphone",
+    contact2_name: "Contact 2 Nom",
+    contact2_phone: "Contact 2 Téléphone",
+
+    technical_data: "Données techniques",
+    emergency_record: "Dossier d’urgence",
+    record_exists: "Disponible",
+    record_missing: "Pas encore enregistré",
+    last_update: "Dernière mise à jour",
+
+    fallback: "—",
+  },
+
+  es: {
+    loading: "Cargando panel…",
+    dashboard_title: "Panel",
+    welcome: "Bienvenido",
+    unknown_error: "Error desconocido",
+
+    alert_note: "Aviso",
+    alert_error: "Error",
+    no_card_found: "No se encontró ninguna tarjeta",
+    card_link_open_failed: "No se pudo abrir el enlace de la tarjeta",
+    card_screen_not_connected: "La pantalla Card aún no está conectada",
+
+    status_active: "Activa",
+    status_blocked: "Bloqueada",
+    status_pending: "Pendiente",
+    status_unknown: "Desconocido",
+
+    no_card_linked_title: "No hay ninguna tarjeta vinculada",
+    no_card_linked_text: "Actualmente no se encontró ninguna VIVE CARD para este usuario.",
+    check_again: "Comprobar de nuevo",
+
+    your_card: "Tu tarjeta",
+    public_id: "PUBLIC_ID",
+    card_link: "Enlace de la tarjeta",
+    open_card: "Abrir tarjeta",
+    open_card_in_app: "Tarjeta en la app",
+
+    basic_data: "Datos básicos",
+    edit: "Editar",
+    name: "Nombre",
+    dob: "Fecha de nacimiento",
+    blood_group: "Grupo sanguíneo",
+
+    critical_info: "Información crítica",
+    allergies: "Alergias",
+    blood_thinner: "Anticoagulantes",
+    medication: "Medicamentos",
+
+    more_info: "Más información",
+    vaccinations: "Vacunas",
+    chronic_conditions: "Enfermedades crónicas",
+    organ_donation: "Donación de órganos",
+    notes: "Notas / Indicaciones",
+
+    emergency_contacts: "Contactos de emergencia",
+    contact1_name: "Contacto 1 Nombre",
+    contact1_phone: "Contacto 1 Teléfono",
+    contact2_name: "Contacto 2 Nombre",
+    contact2_phone: "Contacto 2 Teléfono",
+
+    technical_data: "Datos técnicos",
+    emergency_record: "Registro de emergencia",
+    record_exists: "Disponible",
+    record_missing: "Aún no guardado",
+    last_update: "Última actualización",
+
+    fallback: "—",
+  },
+
+  en: {
+    loading: "Loading dashboard…",
+    dashboard_title: "Dashboard",
+    welcome: "Welcome",
+    unknown_error: "Unknown error",
+
+    alert_note: "Notice",
+    alert_error: "Error",
+    no_card_found: "No card found",
+    card_link_open_failed: "Card link could not be opened",
+    card_screen_not_connected: "Card screen is not connected yet",
+
+    status_active: "Active",
+    status_blocked: "Blocked",
+    status_pending: "Pending",
+    status_unknown: "Unknown",
+
+    no_card_linked_title: "No card linked",
+    no_card_linked_text: "No VIVE CARD has currently been found for this user.",
+    check_again: "Check again",
+
+    your_card: "Your card",
+    public_id: "PUBLIC_ID",
+    card_link: "Card link",
+    open_card: "Open card",
+    open_card_in_app: "Card in app",
+
+    basic_data: "Basic data",
+    edit: "Edit",
+    name: "Name",
+    dob: "Date of birth",
+    blood_group: "Blood group",
+
+    critical_info: "Critical information",
+    allergies: "Allergies",
+    blood_thinner: "Blood thinners",
+    medication: "Medication",
+
+    more_info: "More information",
+    vaccinations: "Vaccinations",
+    chronic_conditions: "Chronic conditions",
+    organ_donation: "Organ donation",
+    notes: "Notes / Remarks",
+
+    emergency_contacts: "Emergency contacts",
+    contact1_name: "Contact 1 Name",
+    contact1_phone: "Contact 1 Phone",
+    contact2_name: "Contact 2 Name",
+    contact2_phone: "Contact 2 Phone",
+
+    technical_data: "Technical data",
+    emergency_record: "Emergency record",
+    record_exists: "Available",
+    record_missing: "Not saved yet",
+    last_update: "Last update",
+
+    fallback: "—",
+  },
+} as const;
+
+function t(key: keyof typeof I18N.de) {
+  return I18N[LANG]?.[key] ?? I18N.de[key] ?? key;
+}
+
 function getStatusColor(status?: string | null) {
   const value = String(status || "").toLowerCase();
 
@@ -33,19 +336,18 @@ function getStatusColor(status?: string | null) {
 function getStatusLabel(status?: string | null) {
   const value = String(status || "").toLowerCase();
 
-  if (value === "active") return "Aktiv";
-  if (value === "blocked") return "Gesperrt";
-  if (value === "pending") return "Pending";
+  if (value === "active") return t("status_active");
+  if (value === "blocked") return t("status_blocked");
+  if (value === "pending") return t("status_pending");
 
-  return "Unbekannt";
+  return t("status_unknown");
 }
-
 function fullCardUrl(publicId?: string | null) {
   if (!publicId) return "";
   return `https://www.vive-card.com/card?pid=${encodeURIComponent(publicId)}&edit=1`;
 }
 
-function lineValue(value?: string | null, fallback = "—") {
+function lineValue(value?: string | null, fallback = t("fallback")) {
   const clean = String(value || "").trim();
   return clean || fallback;
 }
