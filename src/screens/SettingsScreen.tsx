@@ -418,7 +418,7 @@ export default function SettingsScreen({ navigation }: any) {
 
         <TouchableOpacity
           style={styles.button}
-          onPress={() => navigation.navigate("Karte")}
+          onPress={() => navigation.navigate("Card")}
         >
           <Text style={styles.buttonText}>{t("nav_card")}</Text>
         </TouchableOpacity>
