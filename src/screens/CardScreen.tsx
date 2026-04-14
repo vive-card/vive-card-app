@@ -1794,18 +1794,18 @@ function EmergencyCard({
   );
 }
 const COLORS = {
-  bg: "#050816",
-  panel: "#0b1226",
-  panel2: "#111a33",
+  bg: "#06080d",
+  panel: "#10141f",
+  panel2: "#1a2232",
   border: "rgba(255,255,255,0.08)",
   text: "#ffffff",
-  textSoft: "#aab3c5",
-  textMuted: "#7f8aa3",
-  primary: "#ff2b2b",
-  primaryDark: "#cc1f1f",
-  dangerSoft: "rgba(255,59,59,0.12)",
-  blueSoft: "rgba(80,120,255,0.12)",
-  inputBg: "#0f1830",
+  textSoft: "#aeb6c4",
+  textMuted: "#8f98a8",
+  primary: "#e10600",
+  primaryDark: "#b80500",
+  dangerSoft: "rgba(255,107,107,0.12)",
+  blueSoft: "rgba(30,80,180,0.14)",
+  inputBg: "#111827",
   inputBorder: "rgba(255,255,255,0.08)",
 };
 const styles = StyleSheet.create({
@@ -1851,10 +1851,10 @@ emptyText: {
   lineHeight: 22,
 },
 
-  topbar: {
-  backgroundColor: COLORS.bg,
+topbar: {
+  backgroundColor: "#06080d",
   borderBottomWidth: 1,
-  borderBottomColor: "rgba(255,255,255,0.04)",
+  borderBottomColor: "rgba(255,255,255,0.03)",
 },
 brandText: {
   color: COLORS.text,
@@ -1927,20 +1927,20 @@ dot: {
     fontSize: 13,
   },
 
-  readonlyBanner: {
-    marginBottom: 12,
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: "rgba(31,111,235,0.08)",
-    borderWidth: 1,
-    borderColor: "rgba(31,111,235,0.20)",
-  },
-  readonlyBannerText: {
-    color: "#1b4f9b",
-    fontSize: 13,
-    fontWeight: "800",
-    lineHeight: 19,
-  },
+readonlyBanner: {
+  marginBottom: 12,
+  padding: 14,
+  borderRadius: 16,
+  backgroundColor: "rgba(0,60,160,0.14)",
+  borderWidth: 1,
+  borderColor: "rgba(40,100,220,0.28)",
+},
+readonlyBannerText: {
+  color: "#2f6fd6",
+  fontSize: 13,
+  fontWeight: "800",
+  lineHeight: 20,
+},
 content: {
   paddingHorizontal: 16,
   paddingTop: 8,
@@ -2006,17 +2006,17 @@ pidValue: {
   disclaimerBox: {
   marginTop: 12,
   marginBottom: 16,
-  padding: 12,
+  padding: 14,
   borderRadius: 16,
-  backgroundColor: "rgba(255,43,43,0.10)",
+  backgroundColor: "rgba(255,107,107,0.12)",
   borderWidth: 1,
-  borderColor: "rgba(255,43,43,0.20)",
+  borderColor: "rgba(255,107,107,0.35)",
 },
 disclaimerText: {
-  color: "#ff9a9a",
-  fontSize: 13,
+  color: "#ff9f9f",
+  fontSize: 14,
   fontWeight: "700",
-  lineHeight: 20,
+  lineHeight: 22,
 },
 
   row2: {
@@ -2035,7 +2035,7 @@ disclaimerText: {
   borderColor: COLORS.border,
   borderRadius: 18,
   padding: 12,
-  backgroundColor: COLORS.panel2,
+  backgroundColor: "#121a29",
   marginBottom: 12,
 },
 fieldCrit: {
@@ -2118,7 +2118,7 @@ chipText: {
   paddingVertical: 12,
   fontSize: 15,
   color: COLORS.text,
-  backgroundColor: COLORS.inputBg,
+  backgroundColor: "#0f1625",
 },
 inputDisabled: {
   backgroundColor: "#0b1428",
@@ -2130,7 +2130,7 @@ selectLike: {
   borderRadius: 14,
   paddingHorizontal: 12,
   paddingVertical: 12,
-  backgroundColor: COLORS.inputBg,
+  backgroundColor: "#0f1625",
 },
 selectLikeText: {
   color: COLORS.text,
@@ -2147,7 +2147,7 @@ selectLikeText: {
 callBtn: {
   borderRadius: 14,
   backgroundColor: COLORS.primary,
-  paddingVertical: 12,
+  paddingVertical: 14,
   alignItems: "center",
 },
   callBtnText: {
@@ -2212,7 +2212,7 @@ docActionBtn: {
   borderRadius: 14,
   paddingHorizontal: 14,
   paddingVertical: 10,
-  backgroundColor: "#16213d",
+  backgroundColor: "#1a2232",
   borderWidth: 1,
   borderColor: COLORS.border,
   marginRight: 8,
@@ -2247,10 +2247,10 @@ docActionBtnDangerText: {
     marginBottom: 12,
   },
   footerBtn: {
-  borderRadius: 16,
-  paddingHorizontal: 16,
-  paddingVertical: 12,
-  backgroundColor: COLORS.panel2,
+  borderRadius: 14,
+  paddingHorizontal: 18,
+  paddingVertical: 14,
+  backgroundColor: "#1a2232",
   borderWidth: 1,
   borderColor: COLORS.border,
   marginRight: 8,
@@ -2262,9 +2262,9 @@ footerBtnText: {
   fontWeight: "900",
 },
 footerBtnPrimary: {
-  borderRadius: 16,
-  paddingHorizontal: 16,
-  paddingVertical: 12,
+  borderRadius: 14,
+  paddingHorizontal: 18,
+  paddingVertical: 14,
   backgroundColor: COLORS.primary,
   marginRight: 8,
   marginBottom: 8,
@@ -2350,9 +2350,9 @@ modalOptionText: {
 langDropdown: {
   borderWidth: 1,
   borderColor: COLORS.border,
-  borderRadius: 14,
-  paddingHorizontal: 14,
-  paddingVertical: 10,
+  borderRadius: 999,
+  paddingHorizontal: 18,
+  paddingVertical: 12,
   backgroundColor: COLORS.panel2,
   marginRight: 8,
 },
@@ -2366,7 +2366,7 @@ headerBtnDanger: {
   backgroundColor: COLORS.primary,
 },
 headerBtnSoft: {
-  backgroundColor: COLORS.panel2,
+  backgroundColor: "#1a2232",
   borderWidth: 1,
   borderColor: COLORS.border,
 },
@@ -2376,7 +2376,7 @@ headerBtnSoftText: {
   fontSize: 13,
 },
 headerBtnWhite: {
-  backgroundColor: COLORS.panel2,
+  backgroundColor: "#1a2232",
   borderWidth: 1,
   borderColor: COLORS.border,
 },
