@@ -6,9 +6,14 @@ const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || "";
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || "";
 
 class ExpoSecureStoreAdapter {
-  getItem(key: string) {
-    return SecureStore.getItemAsync(key);
+  async getItem(key: string) {
+  try {
+    return await SecureStore.getItemAsync(key);
+  } catch {
+    await SecureStore.deleteItemAsync(key);
+    return null;
   }
+}
 
   setItem(key: string, value: string) {
     return SecureStore.setItemAsync(key, value);
@@ -21,9 +26,10 @@ class ExpoSecureStoreAdapter {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: new ExpoSecureStoreAdapter(),
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false
-  }
+  storage: new ExpoSecureStoreAdapter(),
+  autoRefreshToken: true,
+  persistSession: true,
+  detectSessionInUrl: false,
+  debug: false
+}
 });
