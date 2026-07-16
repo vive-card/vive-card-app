@@ -47,6 +47,43 @@ type MedicalDocumentViewRow = MedicalDocumentRow & {
 
 type LangKey = "de" | "it" | "fr" | "es" | "en";
 
+type AppProfileFormValues = ProfileFormValues & {
+  profileImagePath?: string;
+};
+
+type VaccineGroup = {
+  title: string;
+  items: string[];
+};
+
+const VACCINE_GROUPS: VaccineGroup[] = [
+  {
+    title: "Basisimpfungen",
+    items: [
+      "Diphtherie", "Tetanus", "Pertussis / Keuchhusten",
+      "Poliomyelitis / Kinderlähmung", "Haemophilus influenzae Typ b / Hib",
+      "Hepatitis B", "Masern", "Mumps", "Röteln",
+      "Masern–Mumps–Röteln / MMR", "Varizellen / Windpocken",
+      "HPV", "Pneumokokken",
+    ],
+  },
+  {
+    title: "Weitere Impfungen",
+    items: [
+      "Rotaviren", "Meningokokken B", "Meningokokken ACWY",
+      "Influenza / Grippe", "COVID-19", "Herpes Zoster / Gürtelrose",
+      "RSV", "FSME / Zeckenenzephalitis",
+    ],
+  },
+  {
+    title: "Reise- und Risikoimpfungen",
+    items: [
+      "Hepatitis A", "Tollwut", "Gelbfieber", "Typhus", "Cholera",
+      "Japanische Enzephalitis", "Dengue", "Mpox", "Tuberkulose / BCG",
+    ],
+  },
+];
+
 const BLOOD_OPTIONS: Record<LangKey, string[]> = {
   de: ["", "0 negativ", "0 positiv", "A negativ", "A positiv", "B negativ", "B positiv", "AB negativ", "AB positiv"],
   it: ["", "0 negativo", "0 positivo", "A negativo", "A positivo", "B negativo", "B positivo", "AB negativo", "AB positivo"],
@@ -150,6 +187,17 @@ ok_chip: "ok",
 emergency_contact_fallback_1: "☎️ Notfallkontakt 1",
 emergency_contact_fallback_2: "☎️ Notfallkontakt 2",
 document_default_name: "Dokument",
+profile_image: "📷 Profilbild",
+profile_image_saved: "Profilbild wurde gespeichert.",
+profile_image_failed: "Profilbild konnte nicht gespeichert werden.",
+select_vaccine: "Impfung auswählen",
+custom_vaccine: "Impfung manuell eingeben",
+add: "+ Hinzufügen",
+rename: "✏️ Beschriftung ändern",
+rename_title: "Neue Beschriftung",
+rename_placeholder: "Dokumentbezeichnung",
+rename_saved: "Beschriftung wurde geändert.",
+rename_invalid: "Die Beschriftung muss 1 bis 120 Zeichen enthalten.",
   check_ok: "OK",
   },
   it: {
@@ -244,6 +292,17 @@ ok_chip: "ok",
 emergency_contact_fallback_1: "☎️ Contatto d’emergenza 1",
 emergency_contact_fallback_2: "☎️ Contatto d’emergenza 2",
 document_default_name: "Documento",
+profile_image: "📷 Foto profilo",
+profile_image_saved: "Foto profilo salvata.",
+profile_image_failed: "Impossibile salvare la foto profilo.",
+select_vaccine: "Seleziona vaccino",
+custom_vaccine: "Inserisci vaccino manualmente",
+add: "+ Aggiungi",
+rename: "✏️ Modifica etichetta",
+rename_title: "Nuova etichetta",
+rename_placeholder: "Nome documento",
+rename_saved: "Etichetta modificata.",
+rename_invalid: "L’etichetta deve contenere da 1 a 120 caratteri.",
     check_ok: "OK",
   },
   fr: {
@@ -339,6 +398,17 @@ ok_chip: "ok",
 emergency_contact_fallback_1: "☎️ Contact d’urgence 1",
 emergency_contact_fallback_2: "☎️ Contact d’urgence 2",
 document_default_name: "Document",
+profile_image: "📷 Photo de profil",
+profile_image_saved: "Photo de profil enregistrée.",
+profile_image_failed: "La photo de profil n’a pas pu être enregistrée.",
+select_vaccine: "Choisir un vaccin",
+custom_vaccine: "Saisir un vaccin manuellement",
+add: "+ Ajouter",
+rename: "✏️ Modifier le libellé",
+rename_title: "Nouveau libellé",
+rename_placeholder: "Nom du document",
+rename_saved: "Libellé modifié.",
+rename_invalid: "Le libellé doit contenir entre 1 et 120 caractères.",
     check_ok: "OK",
   },
   es: {
@@ -434,6 +504,17 @@ ok_chip: "ok",
 emergency_contact_fallback_1: "☎️ Contacto de emergencia 1",
 emergency_contact_fallback_2: "☎️ Contacto de emergencia 2",
 document_default_name: "Documento",
+profile_image: "📷 Foto de perfil",
+profile_image_saved: "Foto de perfil guardada.",
+profile_image_failed: "No se pudo guardar la foto de perfil.",
+select_vaccine: "Seleccionar vacuna",
+custom_vaccine: "Introducir vacuna manualmente",
+add: "+ Añadir",
+rename: "✏️ Cambiar etiqueta",
+rename_title: "Nueva etiqueta",
+rename_placeholder: "Nombre del documento",
+rename_saved: "Etiqueta modificada.",
+rename_invalid: "La etiqueta debe tener entre 1 y 120 caracteres.",
     check_ok: "OK",
   },
   en: {
@@ -529,6 +610,17 @@ ok_chip: "ok",
 emergency_contact_fallback_1: "☎️ Emergency contact 1",
 emergency_contact_fallback_2: "☎️ Emergency contact 2",
 document_default_name: "Document",
+profile_image: "📷 Profile photo",
+profile_image_saved: "Profile photo saved.",
+profile_image_failed: "Profile photo could not be saved.",
+select_vaccine: "Select vaccine",
+custom_vaccine: "Enter vaccine manually",
+add: "+ Add",
+rename: "✏️ Change label",
+rename_title: "New label",
+rename_placeholder: "Document name",
+rename_saved: "Label changed.",
+rename_invalid: "The label must contain 1 to 120 characters.",
     check_ok: "OK",
   },
 };
@@ -598,6 +690,13 @@ export default function CardScreen({ navigation }: any) {
   const [editable, setEditable] = useState(false);
   const [emergencyVisible, setEmergencyVisible] = useState(false);
   const [bloodPickerVisible, setBloodPickerVisible] = useState(false);
+  const [vaccinePickerVisible, setVaccinePickerVisible] = useState(false);
+  const [customVaccine, setCustomVaccine] = useState("");
+  const [profileImageUploading, setProfileImageUploading] = useState(false);
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+  const [renameDocumentItem, setRenameDocumentItem] = useState<MedicalDocumentViewRow | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [renameSaving, setRenameSaving] = useState(false);
 
   const [statusText, setStatusText] = useState("");
   const [statusKind, setStatusKind] = useState<"ok" | "warn" | "err" | "">("");
@@ -605,7 +704,7 @@ export default function CardScreen({ navigation }: any) {
   const [userId, setUserId] = useState<string | null>(null);
   const [card, setCard] = useState<CardRow | null>(null);
   const [profile, setProfile] = useState<EmergencyCardRow | null>(null);
-  const [form, setForm] = useState<ProfileFormValues>(initialProfileForm);
+  const [form, setForm] = useState<AppProfileFormValues>({ ...initialProfileForm });
   const [documents, setDocuments] = useState<MedicalDocumentViewRow[]>([]);
   const [langPickerVisible, setLangPickerVisible] = useState(false);
   
@@ -617,8 +716,26 @@ export default function CardScreen({ navigation }: any) {
     []
   );
 
-  const setField = useCallback((key: keyof ProfileFormValues, value: string) => {
+  const setField = useCallback((key: keyof AppProfileFormValues, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }, []);
+
+  const selectedVaccines = useMemo(
+    () => String(form.vaccines || "").split("\n").map((v) => v.trim()).filter(Boolean),
+    [form.vaccines]
+  );
+
+  const loadProfileImage = useCallback(async (filePath?: string | null) => {
+    if (!filePath) {
+      setProfileImageUrl(null);
+      return;
+    }
+
+    const { data, error } = await supabase.storage
+      .from("profile-images")
+      .createSignedUrl(filePath, 60 * 60);
+
+    setProfileImageUrl(error || !data?.signedUrl ? null : data.signedUrl);
   }, []);
 
   const checkCardBlocked = useCallback(
@@ -707,8 +824,9 @@ export default function CardScreen({ navigation }: any) {
   setCard(result.card || null);
   setProfile(result.profile || null);
 
-  const mappedForm = mapEmergencyDataToForm(result.profile);
-  setForm(mappedForm ?? initialProfileForm);
+  const mappedForm = (mapEmergencyDataToForm(result.profile) ?? initialProfileForm) as AppProfileFormValues;
+  setForm(mappedForm);
+  await loadProfileImage(mappedForm.profileImagePath);
 
   if (result.card?.public_id) {
     const blocked = await checkCardBlocked(result.card.public_id);
@@ -723,7 +841,7 @@ export default function CardScreen({ navigation }: any) {
   } else {
     setDocuments([]);
   }
-}, [T, checkCardBlocked, loadDocuments, setStatus]);
+}, [T, checkCardBlocked, loadDocuments, loadProfileImage, setStatus]);
   
   useEffect(() => {
     (async () => {
@@ -762,6 +880,104 @@ export default function CardScreen({ navigation }: any) {
       return db - da;
     });
   }, [documents]);
+
+  const addVaccine = useCallback((name: string) => {
+    const clean = name.trim();
+    if (!clean) return;
+
+    const exists = selectedVaccines.some((item) => item.toLowerCase() === clean.toLowerCase());
+    if (!exists) setField("vaccines", [...selectedVaccines, clean].join("\n"));
+    setCustomVaccine("");
+    setVaccinePickerVisible(false);
+  }, [selectedVaccines, setField]);
+
+  const removeVaccine = useCallback((name: string) => {
+    setField("vaccines", selectedVaccines.filter((item) => item !== name).join("\n"));
+  }, [selectedVaccines, setField]);
+
+  const chooseProfileImage = async () => {
+    if (!editable || !card?.public_id || !userId) return;
+
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert(T("library_title"), T("library_permission_needed"));
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.82,
+      });
+      if (result.canceled) return;
+
+      const asset = result.assets?.[0];
+      if (!asset?.uri) return;
+      if (asset.fileSize && asset.fileSize > 5 * 1024 * 1024) {
+        throw new Error("Das Profilbild darf maximal 5 MB groß sein.");
+      }
+
+      setProfileImageUploading(true);
+      const mimeType = asset.mimeType || "image/jpeg";
+      const ext = guessExtension(asset.fileName || "profile.jpg", mimeType);
+      const newPath = `${userId}/${card.public_id}/profile-${Date.now()}.${ext}`;
+      const bytes = await uriToArrayBuffer(asset.uri);
+
+      const { error: uploadError } = await supabase.storage
+        .from("profile-images")
+        .upload(newPath, bytes, { contentType: mimeType, upsert: false });
+      if (uploadError) throw uploadError;
+
+      const nextForm: AppProfileFormValues = { ...form, profileImagePath: newPath };
+      try {
+        await saveCurrentUserCardProfile(card, userId, nextForm);
+      } catch (saveError) {
+        await supabase.storage.from("profile-images").remove([newPath]);
+        throw saveError;
+      }
+
+      const oldPath = form.profileImagePath;
+      setForm(nextForm);
+      await loadProfileImage(newPath);
+      if (oldPath && oldPath !== newPath) {
+        await supabase.storage.from("profile-images").remove([oldPath]);
+      }
+      setStatus(T("profile_image_saved"), "ok");
+    } catch (e: any) {
+      setStatus(e?.message || T("profile_image_failed"), "err");
+    } finally {
+      setProfileImageUploading(false);
+    }
+  };
+
+  const saveDocumentRename = async () => {
+    const cleanName = renameValue.trim();
+    if (!renameDocumentItem || cleanName.length < 1 || cleanName.length > 120) {
+      setStatus(T("rename_invalid"), "warn");
+      return;
+    }
+
+    try {
+      setRenameSaving(true);
+      const { error } = await supabase
+        .from("medical_documents")
+        .update({ file_name: cleanName })
+        .eq("id", renameDocumentItem.id)
+        .eq("public_id", renameDocumentItem.public_id);
+      if (error) throw error;
+
+      setRenameDocumentItem(null);
+      setRenameValue("");
+      await loadDocuments(card?.public_id || null);
+      setStatus(T("rename_saved"), "ok");
+    } catch (e: any) {
+      setStatus(e?.message || T("status_error"), "err");
+    } finally {
+      setRenameSaving(false);
+    }
+  };
 
   const toggleEdit = async () => {
     if (!card?.public_id) return;
@@ -854,9 +1070,13 @@ export default function CardScreen({ navigation }: any) {
       }
 
       navigation?.navigate?.("DocumentViewer", {
-        url: data.signedUrl,
-        fileName: doc.file_name || T("document_default_name"),
-        mimeType: doc.mime_type || "",
+        doc: {
+          id: doc.id,
+          file_name: doc.file_name || T("document_default_name"),
+          file_path: doc.file_path,
+          mime_type: doc.mime_type || "",
+          signed_url: data.signedUrl,
+        },
       });
     } catch (e: any) {
       setStatus(e?.message || T("status_error"), "err");
@@ -1146,9 +1366,30 @@ const callNumber = async (number?: string | null) => {
 
         <View style={styles.cardWrap}>
           <View style={styles.headline}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.headlineTitle}>{T("title")}</Text>
-              <Text style={styles.headlineSub}>{T("subtitle")}</Text>
+            <View style={styles.profileHead}>
+              <View style={styles.profileImageWrap}>
+                <View style={styles.profileImageCircle}>
+                  {profileImageUrl ? (
+                    <Image source={{ uri: profileImageUrl }} style={styles.profileImage} />
+                  ) : (
+                    <Text style={styles.profileImagePlaceholder}>👤</Text>
+                  )}
+                </View>
+                <TouchableOpacity
+                  style={[styles.profileImageButton, (!editable || profileImageUploading) && styles.buttonDisabled]}
+                  onPress={chooseProfileImage}
+                  disabled={!editable || profileImageUploading}
+                >
+                  <Text style={styles.profileImageButtonText}>
+                    {profileImageUploading ? "…" : T("profile_image")}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={{ flex: 1 }}>
+                <Text style={styles.headlineTitle}>{T("title")}</Text>
+                <Text style={styles.headlineSub}>{T("subtitle")}</Text>
+              </View>
             </View>
 
             <View style={styles.pidBox}>
@@ -1250,14 +1491,45 @@ const callNumber = async (number?: string | null) => {
 
             <FieldBox variant="ok">
               <FieldLabel title={T("vaccines")} chip={T("ok_chip")} chipVariant="ok" />
-              <TextInput
-                style={[styles.input, styles.textarea]}
-                value={form.vaccines}
-                onChangeText={(v) => setField("vaccines", v)}
-                editable={editable}
-                multiline
-                placeholderTextColor="#7e8797"
-              />
+              <TouchableOpacity
+                style={[styles.selectLike, !editable && styles.inputDisabled]}
+                onPress={() => editable && setVaccinePickerVisible(true)}
+                disabled={!editable}
+              >
+                <Text style={styles.selectLikeText}>{T("select_vaccine")}</Text>
+              </TouchableOpacity>
+
+              <View style={styles.vaccineInputRow}>
+                <TextInput
+                  style={[styles.input, styles.vaccineCustomInput]}
+                  value={customVaccine}
+                  onChangeText={setCustomVaccine}
+                  editable={editable}
+                  placeholder={T("custom_vaccine")}
+                  placeholderTextColor="#7e8797"
+                  onSubmitEditing={() => addVaccine(customVaccine)}
+                />
+                <TouchableOpacity
+                  style={[styles.vaccineAddBtn, !editable && styles.buttonDisabled]}
+                  onPress={() => addVaccine(customVaccine)}
+                  disabled={!editable}
+                >
+                  <Text style={styles.vaccineAddBtnText}>{T("add")}</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.vaccinesList}>
+                {selectedVaccines.map((vaccine) => (
+                  <View key={vaccine} style={styles.vaccineItem}>
+                    <Text style={styles.vaccineItemText}>{vaccine}</Text>
+                    {editable ? (
+                      <TouchableOpacity style={styles.vaccineRemove} onPress={() => removeVaccine(vaccine)}>
+                        <Text style={styles.vaccineRemoveText}>×</Text>
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
+                ))}
+              </View>
             </FieldBox>
           </View>
 
@@ -1419,6 +1691,17 @@ const callNumber = async (number?: string | null) => {
             <Text style={styles.docName} numberOfLines={2}>
               {doc.file_name || T("file")}
             </Text>
+            {editable ? (
+              <TouchableOpacity
+                style={styles.docRenameBtn}
+                onPress={() => {
+                  setRenameDocumentItem(doc);
+                  setRenameValue(doc.file_name || T("document_default_name"));
+                }}
+              >
+                <Text style={styles.docRenameBtnText}>{T("rename")}</Text>
+              </TouchableOpacity>
+            ) : null}
             <Text style={styles.docType}>
               {isImageMime(doc.mime_type) ? T("image") : T("file")}
               {doc.file_size ? ` • ${formatFileSize(doc.file_size)}` : ""}
@@ -1569,6 +1852,64 @@ const callNumber = async (number?: string | null) => {
 </Modal>
       
       <Modal
+        visible={vaccinePickerVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setVaccinePickerVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>{T("select_vaccine")}</Text>
+            <ScrollView style={{ maxHeight: 440 }}>
+              {VACCINE_GROUPS.map((group) => (
+                <View key={group.title}>
+                  <Text style={styles.vaccineGroupTitle}>{group.title}</Text>
+                  {group.items.map((item) => (
+                    <TouchableOpacity key={item} style={styles.modalOption} onPress={() => addVaccine(item)}>
+                      <Text style={styles.modalOptionText}>{item}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ))}
+            </ScrollView>
+            <TouchableOpacity style={[styles.footerBtn, { marginTop: 12 }]} onPress={() => setVaccinePickerVisible(false)}>
+              <Text style={styles.footerBtnText}>{T("cancel")}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={!!renameDocumentItem}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setRenameDocumentItem(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>{T("rename_title")}</Text>
+            <TextInput
+              style={styles.input}
+              value={renameValue}
+              onChangeText={setRenameValue}
+              placeholder={T("rename_placeholder")}
+              placeholderTextColor="#7e8797"
+              maxLength={120}
+              autoFocus
+            />
+            <View style={styles.renameActions}>
+              <TouchableOpacity style={styles.footerBtn} onPress={() => setRenameDocumentItem(null)} disabled={renameSaving}>
+                <Text style={styles.footerBtnText}>{T("cancel")}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.footerBtnPrimary, renameSaving && styles.buttonDisabled]} onPress={saveDocumentRename} disabled={renameSaving}>
+                <Text style={styles.footerBtnPrimaryText}>{renameSaving ? "…" : T("save")}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
         visible={emergencyVisible}
         animationType="slide"
         presentationStyle="fullScreen"
@@ -1583,7 +1924,11 @@ const callNumber = async (number?: string | null) => {
               <Text style={styles.emergencySub}>{T("emergency_mode_sub")}</Text>
             </View>
 
-            <View style={styles.emergencyPidWrap}>
+            <View style={styles.emergencyProfileMeta}>
+              {profileImageUrl ? (
+                <Image source={{ uri: profileImageUrl }} style={styles.emergencyProfileImage} />
+              ) : null}
+              <View style={styles.emergencyPidWrap}>
               <Text style={styles.emergencyPidLabel}>{T("profile_id")}</Text>
               <Text style={styles.emergencyPidValue}>{card.public_id}</Text>
               <Text style={[styles.emergencyPidLabel, { marginTop: 10 }]}>
@@ -1594,6 +1939,7 @@ const callNumber = async (number?: string | null) => {
                   ? new Date(profile.updated_at).toLocaleString()
                   : "—"}
               </Text>
+              </View>
             </View>
           </View>
 
@@ -1961,6 +2307,46 @@ brandWrap: {
 headline: {
   marginBottom: 10,
 },
+profileHead: {
+  flexDirection: "row",
+  alignItems: "center",
+},
+profileImageWrap: {
+  alignItems: "center",
+  marginRight: 14,
+},
+profileImageCircle: {
+  width: 82,
+  height: 82,
+  borderRadius: 41,
+  backgroundColor: "#f0f3f7",
+  borderWidth: 3,
+  borderColor: "#ffffff",
+  alignItems: "center",
+  justifyContent: "center",
+  overflow: "hidden",
+},
+profileImage: {
+  width: "100%",
+  height: "100%",
+},
+profileImagePlaceholder: {
+  fontSize: 32,
+},
+profileImageButton: {
+  marginTop: 7,
+  borderWidth: 1,
+  borderColor: COLORS.border,
+  backgroundColor: "#ffffff",
+  borderRadius: 999,
+  paddingHorizontal: 9,
+  paddingVertical: 6,
+},
+profileImageButtonText: {
+  color: "#101318",
+  fontSize: 11,
+  fontWeight: "900",
+},
 
 pidBox: {
   marginTop: 12,
@@ -2141,6 +2527,77 @@ selectLikeText: {
     textAlignVertical: "top",
   },
 
+  vaccineInputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+  },
+  vaccineCustomInput: {
+    flex: 1,
+    marginRight: 8,
+  },
+  vaccineAddBtn: {
+    minHeight: 46,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  vaccineAddBtnText: {
+    color: "#101318",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  vaccinesList: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 10,
+  },
+  vaccineItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 999,
+    backgroundColor: "rgba(30,138,74,.10)",
+    borderWidth: 1,
+    borderColor: "rgba(30,138,74,.25)",
+    paddingLeft: 10,
+    paddingRight: 6,
+    paddingVertical: 7,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  vaccineItemText: {
+    color: "#70d49a",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  vaccineRemove: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "rgba(176,24,24,.22)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 8,
+  },
+  vaccineRemoveText: {
+    color: "#ff8b8b",
+    fontSize: 16,
+    fontWeight: "900",
+    lineHeight: 18,
+  },
+  vaccineGroupTitle: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    fontWeight: "900",
+    textTransform: "uppercase",
+    marginTop: 12,
+    marginBottom: 4,
+  },
+
   contactsWrap: {
     width: "100%",
   },
@@ -2202,6 +2659,21 @@ docName: {
   fontSize: 14,
   fontWeight: "900",
   marginBottom: 4,
+},
+docRenameBtn: {
+  alignSelf: "flex-start",
+  borderRadius: 9,
+  paddingHorizontal: 9,
+  paddingVertical: 6,
+  backgroundColor: "#ffffff",
+  borderWidth: 1,
+  borderColor: COLORS.border,
+  marginBottom: 6,
+},
+docRenameBtnText: {
+  color: "#101318",
+  fontSize: 11,
+  fontWeight: "900",
 },
 docType: {
   color: COLORS.textSoft,
@@ -2413,6 +2885,24 @@ headerBtnWhiteText: {
     marginTop: 4,
     lineHeight: 18,
     maxWidth: 240,
+  },
+  renameActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginTop: 12,
+  },
+  emergencyProfileMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: 12,
+  },
+  emergencyProfileImage: {
+    width: 78,
+    height: 78,
+    borderRadius: 39,
+    borderWidth: 3,
+    borderColor: "rgba(255,255,255,.8)",
+    marginRight: 12,
   },
   emergencyPidWrap: {
     alignItems: "flex-end",
