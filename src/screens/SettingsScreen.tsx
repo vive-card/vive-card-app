@@ -359,7 +359,14 @@ export default function SettingsScreen({ navigation }: any) {
           style={[styles.langBtn, lang === "de" && styles.langBtnActive]}
           onPress={() => setLang("de")}
         >
-          <Text style={styles.langBtnText}>DE</Text>
+          <Text
+  style={[
+    styles.langBtnText,
+    lang === "de" && styles.langBtnTextActive,
+  ]}
+>
+  DE
+</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -470,113 +477,187 @@ export default function SettingsScreen({ navigation }: any) {
   );
 }
 
+const COLORS = {
+  bg: "#f4f6f8",
+  panel: "#ffffff",
+  panelSoft: "#fbfcfe",
+
+  border: "#e7ebf0",
+  borderStrong: "rgba(16,19,24,0.14)",
+
+  text: "#101318",
+  textSoft: "#4b5563",
+  textMuted: "#687386",
+
+  primary: "#b01818",
+  primaryDark: "#861212",
+
+  dangerSoft: "rgba(176,24,24,0.08)",
+  dangerBorder: "rgba(176,24,24,0.25)",
+
+  blueSoft: "rgba(31,111,235,0.08)",
+};
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#06080d",
+    backgroundColor: COLORS.bg,
   },
+
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#06080d",
+    backgroundColor: COLORS.bg,
     padding: 24,
   },
+
   loadingText: {
     marginTop: 12,
-    color: "#aeb6c4",
+    color: COLORS.textSoft,
     fontSize: 15,
+    fontWeight: "700",
   },
+
   title: {
-    color: "#fff",
+    color: COLORS.text,
     fontSize: 34,
     fontWeight: "900",
     marginBottom: 16,
+    letterSpacing: -0.4,
   },
+
   section: {
-    color: "#fff",
+    color: COLORS.text,
     fontSize: 18,
-    fontWeight: "800",
+    fontWeight: "900",
     marginBottom: 12,
   },
+
   box: {
-    backgroundColor: "#10141f",
+    backgroundColor: COLORS.panel,
     padding: 16,
     borderRadius: 16,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: COLORS.border,
+
+    shadowColor: "#000000",
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.07,
+    shadowRadius: 16,
+    elevation: 3,
   },
+
   label: {
-    color: "#888",
+    color: COLORS.textMuted,
     fontSize: 12,
+    fontWeight: "900",
     marginTop: 10,
+    marginBottom: 5,
     textTransform: "uppercase",
     letterSpacing: 0.4,
   },
+
   value: {
-    color: "#fff",
+    color: COLORS.text,
     fontSize: 16,
+    fontWeight: "700",
+    lineHeight: 22,
   },
+
   valueMono: {
-    color: "#fff",
+    color: COLORS.text,
     fontSize: 18,
-    fontWeight: "800",
+    fontWeight: "900",
     letterSpacing: 1,
   },
+
   button: {
-    backgroundColor: "#1a2232",
-    padding: 14,
+    backgroundColor: "#ffffff",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     borderRadius: 12,
     marginTop: 10,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: COLORS.border,
   },
+
   buttonText: {
-    color: "#fff",
-    fontWeight: "700",
+    color: COLORS.text,
+    fontWeight: "900",
     textAlign: "center",
+    fontSize: 15,
   },
+
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
+
   logout: {
-    backgroundColor: "#2a1114",
-    padding: 14,
+    backgroundColor: "#fff0f0",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(176,24,24,0.20)",
   },
+
   logoutText: {
-    color: "#ff6b6b",
+    color: COLORS.primary,
     textAlign: "center",
-    fontWeight: "800",
+    fontWeight: "900",
+    fontSize: 15,
   },
+
   error: {
-    color: "#ff6b6b",
-    marginBottom: 10,
+    color: "#7a1212",
+    backgroundColor: COLORS.dangerSoft,
+    borderWidth: 1,
+    borderColor: COLORS.dangerBorder,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 20,
   },
+
   langRow: {
     flexDirection: "row",
-    gap: 8,
-    marginBottom: 18,
     flexWrap: "wrap",
+    marginHorizontal: -4,
+    marginBottom: 18,
   },
+
   langBtn: {
-    backgroundColor: "#1a2232",
-    borderRadius: 999,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    backgroundColor: "#ffffff",
+    borderRadius: 10,
+    paddingVertical: 9,
+    paddingHorizontal: 13,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: COLORS.border,
+    marginHorizontal: 4,
+    marginBottom: 8,
   },
+
   langBtnActive: {
-    backgroundColor: "#e10600",
-    borderColor: "#e10600",
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
   },
+
   langBtnText: {
-    color: "#ffffff",
+    color: COLORS.text,
     fontSize: 13,
-    fontWeight: "800",
+    fontWeight: "900",
+  },
+
+  langBtnTextActive: {
+    color: "#ffffff",
   },
 });
