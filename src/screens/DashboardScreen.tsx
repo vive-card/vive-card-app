@@ -483,7 +483,14 @@ const onRefresh = useCallback(async () => {
     style={[styles.langBtn, lang === "de" && styles.langBtnActive]}
     onPress={() => setLang("de")}
   >
-    <Text style={styles.langBtnText}>DE</Text>
+    <Text
+  style={[
+    styles.langBtnText,
+    lang === "de" && styles.langBtnTextActive,
+  ]}
+>
+  DE
+</Text>
   </TouchableOpacity>
 
   <TouchableOpacity
@@ -701,185 +708,283 @@ const onRefresh = useCallback(async () => {
   );
 }
 
+const COLORS = {
+  bg: "#f4f6f8",
+  panel: "#ffffff",
+  panelSoft: "#fbfcfe",
+
+  border: "#e7ebf0",
+  borderStrong: "rgba(16,19,24,0.14)",
+
+  text: "#101318",
+  textSoft: "#4b5563",
+  textMuted: "#687386",
+
+  primary: "#b01818",
+  primaryDark: "#861212",
+
+  dangerSoft: "rgba(176,24,24,0.08)",
+  dangerBorder: "rgba(176,24,24,0.25)",
+
+  blueSoft: "rgba(31,111,235,0.08)",
+};
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#06080d",
+    backgroundColor: COLORS.bg,
   },
+
   content: {
-    padding: 20,
+    paddingHorizontal: 16,
+    paddingTop: 20,
     paddingBottom: 40,
   },
+
   loadingWrap: {
     flex: 1,
-    backgroundColor: "#06080d",
+    backgroundColor: COLORS.bg,
     alignItems: "center",
     justifyContent: "center",
     padding: 24,
   },
+
   loadingText: {
     marginTop: 12,
-    color: "#aeb6c4",
+    color: COLORS.textSoft,
     fontSize: 15,
+    fontWeight: "700",
   },
+
   title: {
-    color: "#ffffff",
-    fontSize: 38,
+    color: COLORS.text,
+    fontSize: 34,
     fontWeight: "900",
-    marginTop: 8,
+    marginTop: 4,
+    letterSpacing: -0.5,
   },
+
   subtitle: {
-    color: "#98a2b3",
-    fontSize: 18,
+    color: COLORS.textSoft,
+    fontSize: 16,
+    fontWeight: "600",
     marginTop: 4,
     marginBottom: 18,
+    lineHeight: 22,
   },
+
   errorBox: {
-    backgroundColor: "rgba(255,107,107,0.12)",
+    backgroundColor: COLORS.dangerSoft,
     borderWidth: 1,
-    borderColor: "rgba(255,107,107,0.35)",
-    borderRadius: 16,
+    borderColor: COLORS.dangerBorder,
+    borderRadius: 12,
     padding: 14,
     marginBottom: 14,
   },
+
   errorText: {
-    color: "#ff9f9f",
+    color: "#7a1212",
     fontSize: 14,
+    fontWeight: "700",
     lineHeight: 20,
   },
+
   cardBox: {
-    backgroundColor: "#10141f",
+    backgroundColor: COLORS.panel,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    borderRadius: 20,
+    borderColor: COLORS.border,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 14,
+
+    shadowColor: "#000000",
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.07,
+    shadowRadius: 16,
+    elevation: 3,
   },
+
   rowBetween: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
+
   sectionTitle: {
-    color: "#ffffff",
-    fontSize: 20,
-    fontWeight: "800",
+    color: COLORS.text,
+    fontSize: 19,
+    fontWeight: "900",
     marginBottom: 14,
   },
+
   sectionText: {
-    color: "#aeb6c4",
+    color: COLORS.textSoft,
     fontSize: 15,
+    fontWeight: "600",
     lineHeight: 22,
     marginBottom: 12,
   },
+
   statusBadge: {
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 999,
+    marginLeft: 12,
   },
+
   statusBadgeText: {
     color: "#ffffff",
     fontSize: 12,
-    fontWeight: "800",
+    fontWeight: "900",
   },
+
   infoBlock: {
-    marginBottom: 14,
+    backgroundColor: COLORS.panelSoft,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
   },
+
   infoRow: {
     flexDirection: "row",
-    gap: 12,
+    marginHorizontal: -6,
     marginBottom: 4,
   },
+
   infoCol: {
     flex: 1,
+    backgroundColor: COLORS.panelSoft,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 12,
+    padding: 12,
+    marginHorizontal: 6,
     marginBottom: 10,
   },
+
   label: {
-    color: "#8f98a8",
+    color: COLORS.textMuted,
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: "900",
     marginBottom: 6,
     textTransform: "uppercase",
     letterSpacing: 0.4,
   },
+
   value: {
-    color: "#ffffff",
+    color: COLORS.text,
     fontSize: 16,
+    fontWeight: "700",
     lineHeight: 22,
   },
+
   valueSmall: {
-    color: "#d7dce5",
+    color: COLORS.textSoft,
     fontSize: 14,
+    fontWeight: "600",
     lineHeight: 20,
   },
+
   valueMono: {
-    color: "#ffffff",
+    color: COLORS.text,
     fontSize: 18,
-    fontWeight: "800",
+    fontWeight: "900",
     letterSpacing: 1,
   },
+
   langRow: {
     flexDirection: "row",
-    gap: 8,
+    marginHorizontal: -4,
     marginBottom: 18,
     flexWrap: "wrap",
   },
+
   langBtn: {
-    backgroundColor: "#1a2232",
-    borderRadius: 999,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    backgroundColor: "#ffffff",
+    borderRadius: 10,
+    paddingVertical: 9,
+    paddingHorizontal: 13,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: COLORS.border,
+    marginHorizontal: 4,
+    marginBottom: 8,
   },
+
   langBtnActive: {
-    backgroundColor: "#e10600",
-    borderColor: "#e10600",
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
   },
+
   langBtnText: {
-    color: "#ffffff",
+    color: COLORS.text,
     fontSize: 13,
-    fontWeight: "800",
+    fontWeight: "900",
   },
+
   buttonRow: {
     flexDirection: "row",
-    gap: 10,
+    marginHorizontal: -5,
     marginTop: 4,
     flexWrap: "wrap",
   },
+
   primaryButton: {
-    backgroundColor: "#e10600",
-    borderRadius: 14,
+    backgroundColor: COLORS.primary,
+    borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 18,
     flexGrow: 1,
     minWidth: 150,
     alignItems: "center",
+    marginHorizontal: 5,
+    marginBottom: 10,
+
+    shadowColor: COLORS.primaryDark,
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.16,
+    shadowRadius: 7,
+    elevation: 2,
   },
+
   primaryButtonText: {
     color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "800",
+    fontSize: 15,
+    fontWeight: "900",
   },
+
   secondaryButton: {
-    backgroundColor: "#1a2232",
-    borderRadius: 14,
+    backgroundColor: "#ffffff",
+    borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 18,
     flexGrow: 1,
     minWidth: 150,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: COLORS.border,
+    marginHorizontal: 5,
+    marginBottom: 10,
   },
+
   secondaryButtonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "700",
+    color: COLORS.text,
+    fontSize: 15,
+    fontWeight: "900",
   },
+langBtnTextActive: {
+  color: "#ffffff",
+},
   linkText: {
-    color: "#ff3b30",
+    color: COLORS.primary,
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "900",
   },
 });
