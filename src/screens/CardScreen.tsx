@@ -2140,309 +2140,440 @@ function EmergencyCard({
   );
 }
 const COLORS = {
-  bg: "#06080d",
-  panel: "#10141f",
-  panel2: "#1a2232",
-  border: "rgba(255,255,255,0.08)",
-  text: "#ffffff",
-  textSoft: "#aeb6c4",
-  textMuted: "#8f98a8",
-  primary: "#e10600",
-  primaryDark: "#b80500",
-  dangerSoft: "rgba(255,107,107,0.12)",
-  blueSoft: "rgba(30,80,180,0.14)",
-  inputBg: "#111827",
-  inputBorder: "rgba(255,255,255,0.08)",
-};
-const styles = StyleSheet.create({
-safe: {
-  flex: 1,
-  backgroundColor: COLORS.bg,
-},
-screen: {
-  flex: 1,
-  backgroundColor: COLORS.bg,
-},
-loadingWrap: {
-  flex: 1,
-  backgroundColor: COLORS.bg,
-  justifyContent: "center",
-  alignItems: "center",
-  padding: 24,
-},
-loadingText: {
-  marginTop: 12,
-  color: COLORS.textSoft,
-  fontSize: 15,
-  fontWeight: "700",
-},
-emptyWrap: {
-  flex: 1,
-  backgroundColor: COLORS.bg,
-  justifyContent: "center",
-  alignItems: "center",
-  padding: 24,
-},
-emptyTitle: {
-  color: COLORS.text,
-  fontSize: 28,
-  fontWeight: "900",
-  marginBottom: 8,
-  textAlign: "center",
-},
-emptyText: {
-  color: COLORS.textSoft,
-  fontSize: 15,
-  textAlign: "center",
-  lineHeight: 22,
-},
+  // Hauptoberfläche
+  bg: "#f4f6f8",
+  panel: "#ffffff",
+  panel2: "#fbfcfe",
 
-topbar: {
-  backgroundColor: "#06080d",
-  borderBottomWidth: 1,
-  borderBottomColor: "rgba(255,255,255,0.03)",
-},
-brandText: {
-  color: COLORS.text,
-  fontSize: 18,
-  fontWeight: "900",
-  letterSpacing: 1,
-},
-dot: {
-  width: 10,
-  height: 10,
-  borderRadius: 5,
-  backgroundColor: COLORS.primary,
-  marginRight: 10,
-},
+  // Rahmen
+  border: "#e7ebf0",
+  borderStrong: "rgba(16,19,24,0.14)",
+
+  // Texte
+  text: "#101318",
+  textSoft: "#4b5563",
+  textMuted: "#687386",
+
+  // Markenfarben
+  primary: "#b01818",
+  primaryDark: "#861212",
+
+  // Statusfarben
+  dangerSoft: "rgba(176,24,24,0.08)",
+  blueSoft: "rgba(31,111,235,0.08)",
+
+  // Eingabefelder
+  inputBg: "#fbfcfe",
+  inputDisabledBg: "#f1f3f5",
+  inputBorder: "rgba(16,19,24,0.10)",
+};
+
+const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: COLORS.bg,
+  },
+
+  screen: {
+    flex: 1,
+    backgroundColor: COLORS.bg,
+  },
+
+  loadingWrap: {
+    flex: 1,
+    backgroundColor: COLORS.bg,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+
+  loadingText: {
+    marginTop: 12,
+    color: COLORS.textSoft,
+    fontSize: 15,
+    fontWeight: "700",
+  },
+
+  emptyWrap: {
+    flex: 1,
+    backgroundColor: COLORS.bg,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+
+  emptyTitle: {
+    color: COLORS.text,
+    fontSize: 28,
+    fontWeight: "900",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+
+  emptyText: {
+    color: COLORS.textSoft,
+    fontSize: 15,
+    textAlign: "center",
+    lineHeight: 22,
+  },
+
+  // =========================
+  // TOPBAR
+  // =========================
+
+  topbar: {
+    backgroundColor: "#ffffff",
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+
+    shadowColor: "#000000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+
+  topbarInner: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+
+  brandWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+
+  dot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: COLORS.primary,
+    marginRight: 10,
+  },
+
+  brandText: {
+    color: COLORS.text,
+    fontSize: 18,
+    fontWeight: "900",
+    letterSpacing: 1,
+  },
+
   actionsRow: {
     alignItems: "center",
     paddingRight: 8,
   },
+
   langChip: {
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: "#e7ebf0",
-    backgroundColor: "#fff",
+    borderColor: COLORS.border,
+    backgroundColor: "#ffffff",
     marginRight: 8,
   },
+
   langChipActive: {
     backgroundColor: "#2a3a57",
     borderColor: "#2a3a57",
   },
+
   langChipText: {
     fontSize: 13,
     fontWeight: "800",
-    color: "#101318",
+    color: COLORS.text,
   },
+
   langChipTextActive: {
-    color: "#fff",
+    color: "#ffffff",
   },
+
+  langDropdown: {
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: "#ffffff",
+    marginRight: 8,
+  },
+
+  langDropdownText: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: COLORS.text,
+  },
+
   headerBtn: {
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 10,
     marginRight: 8,
   },
+
   headerBtnDanger: {
-    backgroundColor: "#b01818",
+    backgroundColor: COLORS.primary,
   },
+
   headerBtnDangerText: {
-    color: "#fff",
+    color: "#ffffff",
     fontWeight: "900",
     fontSize: 13,
   },
+
   headerBtnSoft: {
     backgroundColor: "#f0f3f7",
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
+
   headerBtnSoftText: {
-    color: "#101318",
+    color: COLORS.text,
     fontWeight: "900",
     fontSize: 13,
   },
+
   headerBtnWhite: {
-    backgroundColor: "#fff",
+    backgroundColor: "#ffffff",
     borderWidth: 1,
-    borderColor: "#e7ebf0",
+    borderColor: COLORS.border,
   },
+
   headerBtnWhiteText: {
-    color: "#101318",
+    color: COLORS.text,
     fontWeight: "800",
     fontSize: 13,
   },
 
-readonlyBanner: {
-  marginBottom: 12,
-  padding: 14,
-  borderRadius: 16,
-  backgroundColor: "rgba(0,60,160,0.14)",
-  borderWidth: 1,
-  borderColor: "rgba(40,100,220,0.28)",
-},
-readonlyBannerText: {
-  color: "#2f6fd6",
-  fontSize: 13,
-  fontWeight: "800",
-  lineHeight: 20,
-},
-content: {
-  paddingHorizontal: 16,
-  paddingTop: 8,
-  paddingBottom: 40,
-},
+  // =========================
+  // CONTENT
+  // =========================
 
-topbarInner: {
-  paddingHorizontal: 16,
-  paddingVertical: 14,
-},
+  content: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 40,
+  },
 
-brandWrap: {
-  flexDirection: "row",
-  alignItems: "center",
-  marginBottom: 12,
-},
+  readonlyBanner: {
+    marginBottom: 12,
+    padding: 14,
+    borderRadius: 12,
+    backgroundColor: "rgba(31,111,235,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(31,111,235,0.20)",
+  },
 
-headline: {
-  marginBottom: 10,
-},
-profileHead: {
-  flexDirection: "row",
-  alignItems: "center",
-},
-profileImageWrap: {
-  alignItems: "center",
-  marginRight: 14,
-},
-profileImageCircle: {
-  width: 82,
-  height: 82,
-  borderRadius: 41,
-  backgroundColor: "#f0f3f7",
-  borderWidth: 3,
-  borderColor: "#ffffff",
-  alignItems: "center",
-  justifyContent: "center",
-  overflow: "hidden",
-},
-profileImage: {
-  width: "100%",
-  height: "100%",
-},
-profileImagePlaceholder: {
-  fontSize: 32,
-},
-profileImageButton: {
-  marginTop: 7,
-  borderWidth: 1,
-  borderColor: COLORS.border,
-  backgroundColor: "#ffffff",
-  borderRadius: 999,
-  paddingHorizontal: 9,
-  paddingVertical: 6,
-},
-profileImageButtonText: {
-  color: "#101318",
-  fontSize: 11,
-  fontWeight: "900",
-},
+  readonlyBannerText: {
+    color: "#1b4f9b",
+    fontSize: 13,
+    fontWeight: "800",
+    lineHeight: 20,
+  },
 
-pidBox: {
-  marginTop: 12,
-},
-
-halfField: {
-  width: "48.5%",
-},
-
-fullField: {
-  width: "100%",
-},
   cardWrap: {
-  backgroundColor: COLORS.panel,
-  borderWidth: 1,
-  borderColor: COLORS.border,
-  borderRadius: 24,
-  padding: 18,
-},
-headlineTitle: {
-  color: COLORS.text,
-  fontSize: 30,
-  fontWeight: "900",
-},
-headlineSub: {
-  color: COLORS.textSoft,
-  marginTop: 4,
-  fontWeight: "600",
-  fontSize: 15,
-},
-pidLabel: {
-  color: COLORS.textMuted,
-  fontSize: 12,
-  fontWeight: "800",
-},
-pidValue: {
-  color: COLORS.text,
-  fontSize: 16,
-  fontWeight: "900",
-  marginTop: 2,
-},
+    backgroundColor: COLORS.panel,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 16,
+    padding: 16,
+
+    shadowColor: "#000000",
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 4,
+  },
+
+  // =========================
+  // HEADLINE / PROFILE
+  // =========================
+
+  headline: {
+    marginBottom: 10,
+  },
+
+  profileHead: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  profileImageWrap: {
+    alignItems: "center",
+    marginRight: 14,
+  },
+
+  profileImageCircle: {
+    width: 82,
+    height: 82,
+    borderRadius: 41,
+    backgroundColor: "#f0f3f7",
+    borderWidth: 3,
+    borderColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+
+    shadowColor: "#000000",
+    shadowOffset: {
+      width: 0,
+      height: 5,
+    },
+    shadowOpacity: 0.14,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+
+  profileImage: {
+    width: "100%",
+    height: "100%",
+  },
+
+  profileImagePlaceholder: {
+    fontSize: 32,
+  },
+
+  profileImageButton: {
+    marginTop: 7,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: "#ffffff",
+    borderRadius: 999,
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+  },
+
+  profileImageButtonText: {
+    color: COLORS.text,
+    fontSize: 11,
+    fontWeight: "900",
+  },
+
+  headlineTitle: {
+    color: COLORS.text,
+    fontSize: 28,
+    fontWeight: "900",
+  },
+
+  headlineSub: {
+    color: COLORS.textSoft,
+    marginTop: 4,
+    fontWeight: "600",
+    fontSize: 15,
+    lineHeight: 21,
+  },
+
+  pidBox: {
+    marginTop: 12,
+  },
+
+  pidLabel: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    fontWeight: "800",
+  },
+
+  pidValue: {
+    color: COLORS.text,
+    fontSize: 16,
+    fontWeight: "900",
+    marginTop: 2,
+  },
+
+  // =========================
+  // DISCLAIMER
+  // =========================
 
   disclaimerBox: {
-  marginTop: 12,
-  marginBottom: 16,
-  padding: 14,
-  borderRadius: 16,
-  backgroundColor: "rgba(255,107,107,0.12)",
-  borderWidth: 1,
-  borderColor: "rgba(255,107,107,0.35)",
-},
-disclaimerText: {
-  color: "#ff9f9f",
-  fontSize: 14,
-  fontWeight: "700",
-  lineHeight: 22,
-},
+    marginTop: 12,
+    marginBottom: 16,
+    padding: 14,
+    borderRadius: 12,
+    backgroundColor: "rgba(176,24,24,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(176,24,24,0.25)",
+  },
+
+  disclaimerText: {
+    color: "#7a1212",
+    fontSize: 13,
+    fontWeight: "700",
+    lineHeight: 20,
+  },
+
+  // =========================
+  // LAYOUT
+  // =========================
 
   row2: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
   },
+
   grid2: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
   },
- field: {
-  width: "100%",
-  borderWidth: 1,
-  borderColor: COLORS.border,
-  borderRadius: 18,
-  padding: 12,
-  backgroundColor: "#121a29",
-  marginBottom: 12,
-},
-fieldCrit: {
-  borderColor: "rgba(255,43,43,0.35)",
-},
-fieldWarn: {
-  borderColor: "rgba(255,184,77,0.35)",
-},
-fieldOk: {
-  borderColor: "rgba(72,187,120,0.35)",
-},
+
+  halfField: {
+    width: "48.5%",
+  },
+
+  fullField: {
+    width: "100%",
+  },
+
+  contactsWrap: {
+    width: "100%",
+  },
+
+  // =========================
+  // FIELD BOXES
+  // =========================
+
+  field: {
+    width: "100%",
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 12,
+    padding: 12,
+    backgroundColor: "#ffffff",
+    marginBottom: 12,
+  },
+
+  fieldCrit: {
+    borderColor: "rgba(176,24,24,0.55)",
+    backgroundColor: "#ffffff",
+  },
+
+  fieldWarn: {
+    borderColor: "rgba(211,155,34,0.60)",
+    backgroundColor: "#ffffff",
+  },
+
+  fieldOk: {
+    borderColor: "rgba(30,138,74,0.45)",
+    backgroundColor: "#ffffff",
+  },
 
   sectionTitle: {
-  marginTop: 14,
-  marginBottom: 10,
-  color: COLORS.text,
-  fontSize: 13,
-  fontWeight: "900",
-  textTransform: "uppercase",
-  letterSpacing: 0.5,
-},
+    marginTop: 14,
+    marginBottom: 10,
+    color: "#2a3340",
+    fontSize: 12,
+    fontWeight: "900",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
 
   labelRow: {
     flexDirection: "row",
@@ -2450,95 +2581,124 @@ fieldOk: {
     alignItems: "center",
     marginBottom: 8,
   },
-  labelText: {
-  color: COLORS.textMuted,
-  fontSize: 12,
-  fontWeight: "900",
-  textTransform: "uppercase",
-  flex: 1,
-  marginRight: 8,
-},
 
-chip: {
-  borderRadius: 999,
-  backgroundColor: "rgba(255,255,255,0.06)",
-  borderWidth: 1,
-  borderColor: COLORS.border,
-  paddingHorizontal: 10,
-  paddingVertical: 4,
-},
-chipText: {
-  color: COLORS.textSoft,
-  fontSize: 11,
-  fontWeight: "900",
-  textTransform: "uppercase",
-},
+  labelText: {
+    color: COLORS.textSoft,
+    fontSize: 12,
+    fontWeight: "900",
+    textTransform: "uppercase",
+    flex: 1,
+    marginRight: 8,
+  },
+
+  // =========================
+  // CHIPS
+  // =========================
+
+  chip: {
+    borderRadius: 999,
+    backgroundColor: "#f0f3f7",
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+
+  chipText: {
+    color: COLORS.textSoft,
+    fontSize: 11,
+    fontWeight: "900",
+    textTransform: "uppercase",
+  },
+
   chipCrit: {
-    backgroundColor: "rgba(176,24,24,.08)",
-    borderColor: "rgba(176,24,24,.18)",
+    backgroundColor: "rgba(176,24,24,0.08)",
+    borderColor: "rgba(176,24,24,0.18)",
   },
+
   chipWarn: {
-    backgroundColor: "rgba(211,155,34,.10)",
-    borderColor: "rgba(211,155,34,.22)",
+    backgroundColor: "rgba(211,155,34,0.10)",
+    borderColor: "rgba(211,155,34,0.22)",
   },
+
   chipOk: {
-    backgroundColor: "rgba(30,138,74,.10)",
-    borderColor: "rgba(30,138,74,.18)",
+    backgroundColor: "rgba(30,138,74,0.10)",
+    borderColor: "rgba(30,138,74,0.18)",
   },
+
   chipTextCrit: {
     color: "#b01818",
   },
+
   chipTextWarn: {
     color: "#7a5400",
   },
+
   chipTextOk: {
     color: "#1e8a4a",
   },
 
+  // =========================
+  // INPUTS
+  // =========================
+
   input: {
-  width: "100%",
-  borderWidth: 1,
-  borderColor: COLORS.inputBorder,
-  borderRadius: 14,
-  paddingHorizontal: 12,
-  paddingVertical: 12,
-  fontSize: 15,
-  color: COLORS.text,
-  backgroundColor: "#0f1625",
-},
-inputDisabled: {
-  backgroundColor: "#0b1428",
-  borderColor: COLORS.inputBorder,
-},
-selectLike: {
-  borderWidth: 1,
-  borderColor: COLORS.inputBorder,
-  borderRadius: 14,
-  paddingHorizontal: 12,
-  paddingVertical: 12,
-  backgroundColor: "#0f1625",
-},
-selectLikeText: {
-  color: COLORS.text,
-  fontSize: 15,
-},
+    width: "100%",
+    borderWidth: 1,
+    borderColor: COLORS.inputBorder,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: COLORS.text,
+    backgroundColor: COLORS.inputBg,
+    fontWeight: "600",
+  },
+
+  inputDisabled: {
+    backgroundColor: COLORS.inputDisabledBg,
+    borderColor: "rgba(16,19,24,0.06)",
+    opacity: 1,
+  },
+
+  selectLike: {
+    borderWidth: 1,
+    borderColor: COLORS.inputBorder,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: COLORS.inputBg,
+  },
+
+  selectLikeText: {
+    color: COLORS.text,
+    fontSize: 15,
+    fontWeight: "600",
+  },
+
   textarea: {
     minHeight: 70,
     textAlignVertical: "top",
   },
+
+  // =========================
+  // VACCINES
+  // =========================
 
   vaccineInputRow: {
     flexDirection: "row",
     alignItems: "center",
     marginTop: 8,
   },
+
   vaccineCustomInput: {
     flex: 1,
     marginRight: 8,
   },
+
   vaccineAddBtn: {
     minHeight: 46,
-    borderRadius: 12,
+    borderRadius: 10,
     paddingHorizontal: 12,
     alignItems: "center",
     justifyContent: "center",
@@ -2546,49 +2706,56 @@ selectLikeText: {
     borderWidth: 1,
     borderColor: COLORS.border,
   },
+
   vaccineAddBtnText: {
-    color: "#101318",
+    color: COLORS.text,
     fontSize: 12,
     fontWeight: "900",
   },
+
   vaccinesList: {
     flexDirection: "row",
     flexWrap: "wrap",
     marginTop: 10,
   },
+
   vaccineItem: {
     flexDirection: "row",
     alignItems: "center",
     borderRadius: 999,
-    backgroundColor: "rgba(30,138,74,.10)",
+    backgroundColor: "rgba(30,138,74,0.10)",
     borderWidth: 1,
-    borderColor: "rgba(30,138,74,.25)",
+    borderColor: "rgba(30,138,74,0.25)",
     paddingLeft: 10,
     paddingRight: 6,
     paddingVertical: 7,
     marginRight: 8,
     marginBottom: 8,
   },
+
   vaccineItemText: {
-    color: "#70d49a",
+    color: "#176c3a",
     fontSize: 13,
     fontWeight: "800",
   },
+
   vaccineRemove: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: "rgba(176,24,24,.22)",
+    backgroundColor: "rgba(176,24,24,0.12)",
     alignItems: "center",
     justifyContent: "center",
     marginLeft: 8,
   },
+
   vaccineRemoveText: {
-    color: "#ff8b8b",
+    color: "#b01818",
     fontSize: 16,
     fontWeight: "900",
     lineHeight: 18,
   },
+
   vaccineGroupTitle: {
     color: COLORS.textMuted,
     fontSize: 12,
@@ -2598,190 +2765,261 @@ selectLikeText: {
     marginBottom: 4,
   },
 
-  contactsWrap: {
-    width: "100%",
+  // =========================
+  // CONTACTS
+  // =========================
+
+  callBtn: {
+    borderRadius: 12,
+    backgroundColor: "#1f4fb8",
+    paddingVertical: 14,
+    alignItems: "center",
   },
-callBtn: {
-  borderRadius: 14,
-  backgroundColor: COLORS.primary,
-  paddingVertical: 14,
-  alignItems: "center",
-},
+
   callBtnText: {
-    color: "#fff",
+    color: "#ffffff",
     fontSize: 15,
     fontWeight: "900",
   },
 
+  // =========================
+  // DOCUMENTS
+  // =========================
+
   docsGrid: {
     marginTop: 4,
   },
+
   docToolbar: {
     flexDirection: "row",
     flexWrap: "wrap",
     marginBottom: 12,
   },
+
   docsLoading: {
     paddingVertical: 20,
     alignItems: "center",
   },
- docEmpty: {
-  borderWidth: 1,
-  borderStyle: "dashed",
-  borderColor: COLORS.border,
-  borderRadius: 16,
-  backgroundColor: COLORS.panel2,
-  padding: 12,
-},
-docEmptyText: {
-  color: COLORS.textSoft,
-  fontSize: 12,
-  fontWeight: "700",
-},
-docItem: {
-  borderWidth: 1,
-  borderColor: COLORS.border,
-  borderRadius: 18,
-  backgroundColor: COLORS.panel2,
-  padding: 12,
-  marginBottom: 10,
-},
-docThumb: {
-  width: 72,
-  height: 72,
-  borderRadius: 12,
-  overflow: "hidden",
-  backgroundColor: "#16213d",
-  marginRight: 12,
-},
-docName: {
-  color: COLORS.text,
-  fontSize: 14,
-  fontWeight: "900",
-  marginBottom: 4,
-},
-docRenameBtn: {
-  alignSelf: "flex-start",
-  borderRadius: 9,
-  paddingHorizontal: 9,
-  paddingVertical: 6,
-  backgroundColor: "#ffffff",
-  borderWidth: 1,
-  borderColor: COLORS.border,
-  marginBottom: 6,
-},
-docRenameBtnText: {
-  color: "#101318",
-  fontSize: 11,
-  fontWeight: "900",
-},
-docType: {
-  color: COLORS.textSoft,
-  fontSize: 12,
-  fontWeight: "700",
-},
-docActionBtn: {
-  borderRadius: 14,
-  paddingHorizontal: 14,
-  paddingVertical: 10,
-  backgroundColor: "#1a2232",
-  borderWidth: 1,
-  borderColor: COLORS.border,
-  marginRight: 8,
-  marginBottom: 8,
-},
-docActionBtnText: {
-  color: COLORS.text,
-  fontSize: 14,
-  fontWeight: "900",
-},
-docActionBtnDanger: {
-  borderRadius: 14,
-  paddingHorizontal: 14,
-  paddingVertical: 10,
-  backgroundColor: COLORS.dangerSoft,
-  borderWidth: 1,
-  borderColor: "rgba(255,43,43,0.20)",
-  marginBottom: 8,
-},
-docActionBtnDangerText: {
-  color: "#ff6b6b",
-  fontSize: 14,
-  fontWeight: "900",
-},
+
+  docEmpty: {
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: COLORS.border,
+    borderRadius: 12,
+    backgroundColor: "#fbfcfe",
+    padding: 12,
+  },
+
+  docEmptyText: {
+    color: COLORS.textSoft,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+
+  docItem: {
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 12,
+    backgroundColor: "#fbfcfe",
+    padding: 12,
+    marginBottom: 10,
+  },
+
+  docLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  docThumb: {
+    width: 72,
+    height: 72,
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: "#f0f3f7",
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginRight: 12,
+  },
+
+  docThumbImage: {
+    width: "100%",
+    height: "100%",
+  },
+
+  docThumbFallback: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  docThumbFallbackText: {
+    fontSize: 30,
+  },
+
+  docMeta: {
+    flex: 1,
+    minWidth: 0,
+  },
+
+  docName: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: "900",
+    marginBottom: 4,
+  },
+
+  docRenameBtn: {
+    alignSelf: "flex-start",
+    borderRadius: 9,
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: 6,
+  },
+
+  docRenameBtnText: {
+    color: COLORS.text,
+    fontSize: 11,
+    fontWeight: "900",
+  },
+
+  docType: {
+    color: COLORS.textSoft,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+
+  docActions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 12,
+  },
+
+  docActionBtn: {
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+
+  docActionBtnText: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: "900",
+  },
+
+  docActionBtnDanger: {
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: "#fff0f0",
+    borderWidth: 1,
+    borderColor: "rgba(176,24,24,0.20)",
+    marginBottom: 8,
+  },
+
+  docActionBtnDangerText: {
+    color: "#b01818",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+
+  // =========================
+  // FOOTER
+  // =========================
 
   footer: {
     marginTop: 14,
   },
+
   footerLeft: {
     flexDirection: "row",
     flexWrap: "wrap",
     marginBottom: 12,
   },
+
   footerBtn: {
-  borderRadius: 14,
-  paddingHorizontal: 18,
-  paddingVertical: 14,
-  backgroundColor: "#1a2232",
-  borderWidth: 1,
-  borderColor: COLORS.border,
-  marginRight: 8,
-  marginBottom: 8,
-},
-footerBtnText: {
-  color: COLORS.text,
-  fontSize: 14,
-  fontWeight: "900",
-},
-footerBtnPrimary: {
-  borderRadius: 14,
-  paddingHorizontal: 18,
-  paddingVertical: 14,
-  backgroundColor: COLORS.primary,
-  marginRight: 8,
-  marginBottom: 8,
-},
-footerBtnPrimaryText: {
-  color: "#fff",
-  fontSize: 14,
-  fontWeight: "900",
-},
-footerBtnDanger: {
-  borderRadius: 16,
-  paddingHorizontal: 16,
-  paddingVertical: 12,
-  backgroundColor: COLORS.dangerSoft,
-  borderWidth: 1,
-  borderColor: "rgba(255,43,43,0.20)",
-  marginBottom: 8,
-},
-footerBtnDangerText: {
-  color: "#ff6b6b",
-  fontSize: 14,
-  fontWeight: "900",
-},
+    borderRadius: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+
+  footerBtnText: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: "900",
+  },
+
+  footerBtnPrimary: {
+    borderRadius: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    backgroundColor: "#2a3a57",
+    marginRight: 8,
+    marginBottom: 8,
+  },
+
+  footerBtnPrimaryText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+
+  footerBtnDanger: {
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#fff0f0",
+    borderWidth: 1,
+    borderColor: "rgba(176,24,24,0.20)",
+    marginBottom: 8,
+  },
+
+  footerBtnDangerText: {
+    color: "#b01818",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+
   footerStatusWrap: {},
+
   lastUpdateText: {
-  color: COLORS.textMuted,
-  fontSize: 12,
-  fontWeight: "700",
-  marginBottom: 4,
-},
-lastUpdateValue: {
-  color: COLORS.text,
-  fontWeight: "800",
-},
-statusText: {
-  fontSize: 12,
-  fontWeight: "800",
-  color: COLORS.textSoft,
-},
+    color: COLORS.textMuted,
+    fontSize: 12,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+
+  lastUpdateValue: {
+    color: COLORS.text,
+    fontWeight: "800",
+  },
+
+  statusText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: COLORS.textSoft,
+  },
+
   statusOk: {
     color: "#1e8a4a",
   },
+
   statusWarn: {
     color: "#7a5400",
   },
+
   statusErr: {
     color: "#b01818",
   },
@@ -2790,95 +3028,89 @@ statusText: {
     opacity: 0.5,
   },
 
+  // =========================
+  // MODALS
+  // =========================
+
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.50)",
     justifyContent: "center",
     padding: 20,
   },
- modalCard: {
-  backgroundColor: COLORS.panel,
-  borderRadius: 20,
-  padding: 16,
-  borderWidth: 1,
-  borderColor: COLORS.border,
-},
-modalTitle: {
-  color: COLORS.text,
-  fontSize: 18,
-  fontWeight: "900",
-  marginBottom: 12,
-},
-modalOption: {
-  paddingVertical: 14,
-  borderBottomWidth: 1,
-  borderBottomColor: COLORS.border,
-},
-modalOptionText: {
-  color: COLORS.text,
-  fontSize: 16,
-  fontWeight: "700",
-},
-langDropdown: {
-  borderWidth: 1,
-  borderColor: COLORS.border,
-  borderRadius: 999,
-  paddingHorizontal: 18,
-  paddingVertical: 12,
-  backgroundColor: COLORS.panel2,
-  marginRight: 8,
-},
 
-langDropdownText: {
-  fontSize: 14,
-  fontWeight: "900",
-  color: COLORS.text,
-},
-headerBtnDanger: {
-  backgroundColor: COLORS.primary,
-},
-headerBtnSoft: {
-  backgroundColor: "#1a2232",
-  borderWidth: 1,
-  borderColor: COLORS.border,
-},
-headerBtnSoftText: {
-  color: COLORS.text,
-  fontWeight: "900",
-  fontSize: 13,
-},
-headerBtnWhite: {
-  backgroundColor: "#1a2232",
-  borderWidth: 1,
-  borderColor: COLORS.border,
-},
-headerBtnWhiteText: {
-  color: COLORS.text,
-  fontWeight: "800",
-  fontSize: 13,
-},
+  modalCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+
+    shadowColor: "#000000",
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+
+  modalTitle: {
+    color: COLORS.text,
+    fontSize: 18,
+    fontWeight: "900",
+    marginBottom: 12,
+  },
+
+  modalOption: {
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+
+  modalOptionText: {
+    color: COLORS.text,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+
+  renameActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginTop: 12,
+  },
+
+  // =========================
+  // EMERGENCY MODE
+  // Bleibt absichtlich rot/dunkel
+  // =========================
+
   emergencyScreen: {
     flex: 1,
     backgroundColor: "#8c1414",
     paddingHorizontal: 16,
     paddingTop: 10,
   },
+
   emergencyTop: {
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,.16)",
+    borderBottomColor: "rgba(255,255,255,0.16)",
     paddingBottom: 12,
     marginBottom: 12,
   },
+
   emergencyTitle: {
-    color: "#fff",
+    color: "#ffffff",
     fontSize: 22,
     fontWeight: "900",
   },
+
   emergencySub: {
-    color: "#fff",
+    color: "#ffffff",
     opacity: 0.92,
     fontSize: 12,
     fontWeight: "800",
@@ -2886,136 +3118,150 @@ headerBtnWhiteText: {
     lineHeight: 18,
     maxWidth: 240,
   },
-  renameActions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    marginTop: 12,
-  },
+
   emergencyProfileMeta: {
     flexDirection: "row",
     alignItems: "center",
     marginLeft: 12,
   },
+
   emergencyProfileImage: {
     width: 78,
     height: 78,
     borderRadius: 39,
     borderWidth: 3,
-    borderColor: "rgba(255,255,255,.8)",
+    borderColor: "rgba(255,255,255,0.8)",
     marginRight: 12,
   },
+
   emergencyPidWrap: {
     alignItems: "flex-end",
   },
+
   emergencyPidLabel: {
-    color: "#fff",
+    color: "#ffffff",
     fontSize: 12,
     fontWeight: "900",
     opacity: 0.9,
   },
+
   emergencyPidValue: {
-    color: "#fff",
+    color: "#ffffff",
     fontSize: 13,
     fontWeight: "900",
     marginTop: 2,
   },
+
   emergencyCloseBtn: {
     alignSelf: "flex-end",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,.24)",
-    backgroundColor: "rgba(0,0,0,.14)",
+    borderColor: "rgba(255,255,255,0.24)",
+    backgroundColor: "rgba(0,0,0,0.14)",
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 10,
     marginBottom: 12,
   },
+
   emergencyCloseBtnText: {
-    color: "#fff",
+    color: "#ffffff",
     fontSize: 14,
     fontWeight: "900",
   },
+
   emergencyActions: {
     flexDirection: "row",
     flexWrap: "wrap",
     marginBottom: 12,
   },
+
   emergencyActionBtn: {
     flex: 1,
     minWidth: 140,
     borderRadius: 14,
-    backgroundColor: "rgba(0,0,0,.18)",
+    backgroundColor: "rgba(0,0,0,0.18)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,.20)",
+    borderColor: "rgba(255,255,255,0.20)",
     paddingVertical: 14,
     alignItems: "center",
     marginRight: 8,
     marginBottom: 8,
   },
+
   emergencyActionBtnPrimary: {
-    backgroundColor: "rgba(255,255,255,.18)",
+    backgroundColor: "rgba(255,255,255,0.18)",
   },
+
   emergencyActionBtnText: {
-    color: "#fff",
+    color: "#ffffff",
     fontSize: 17,
-    fontWeight: "950",
+    fontWeight: "900",
   },
 
   emergencyDocsAlert: {
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,.24)",
-    backgroundColor: "rgba(0,0,0,.14)",
+    borderColor: "rgba(255,255,255,0.24)",
+    backgroundColor: "rgba(0,0,0,0.14)",
     borderRadius: 14,
     padding: 12,
     marginBottom: 12,
   },
+
   emergencyDocsHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
+
   emergencyDocsTitle: {
-    color: "#fff",
+    color: "#ffffff",
     fontSize: 12,
     fontWeight: "900",
     textTransform: "uppercase",
   },
+
   emergencyDocsBadge: {
     minWidth: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,.16)",
+    backgroundColor: "rgba(255,255,255,0.16)",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 10,
   },
+
   emergencyDocsBadgeText: {
-    color: "#fff",
+    color: "#ffffff",
     fontSize: 13,
-    fontWeight: "950",
+    fontWeight: "900",
   },
+
   emergencyDocsText: {
-    color: "#fff",
+    color: "#ffffff",
     fontSize: 14,
     fontWeight: "800",
     marginTop: 8,
     lineHeight: 20,
   },
+
   emergencyDocRow: {
     borderRadius: 14,
-    backgroundColor: "rgba(0,0,0,.18)",
+    backgroundColor: "rgba(0,0,0,0.18)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,.20)",
+    borderColor: "rgba(255,255,255,0.20)",
     padding: 14,
     marginBottom: 10,
   },
+
   emergencyDocRowText: {
-    color: "#fff",
+    color: "#ffffff",
     fontSize: 14,
     fontWeight: "900",
     marginBottom: 6,
   },
+
   emergencyDocRowOpen: {
-    color: "#fff",
+    color: "#ffffff",
     fontSize: 13,
     fontWeight: "900",
     opacity: 0.9,
@@ -3026,28 +3272,32 @@ headerBtnWhiteText: {
     flexWrap: "wrap",
     justifyContent: "space-between",
   },
+
   emergencyCard: {
     width: "48.5%",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,.18)",
-    backgroundColor: "rgba(255,255,255,.10)",
+    borderColor: "rgba(255,255,255,0.18)",
+    backgroundColor: "rgba(255,255,255,0.10)",
     borderRadius: 14,
     padding: 12,
     marginBottom: 12,
   },
+
   emergencyCardCritical: {
-    backgroundColor: "rgba(120,0,0,.20)",
-    borderColor: "rgba(255,255,255,.28)",
+    backgroundColor: "rgba(120,0,0,0.20)",
+    borderColor: "rgba(255,255,255,0.28)",
   },
+
   emergencyCardLabel: {
-    color: "#fff",
+    color: "#ffffff",
     fontSize: 12,
     fontWeight: "900",
     marginBottom: 8,
     textTransform: "uppercase",
   },
+
   emergencyCardValue: {
-    color: "#fff",
+    color: "#ffffff",
     fontSize: 17,
     fontWeight: "900",
     lineHeight: 23,
@@ -3057,39 +3307,44 @@ headerBtnWhiteText: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,.18)",
-    backgroundColor: "rgba(0,0,0,.14)",
+    borderColor: "rgba(255,255,255,0.18)",
+    backgroundColor: "rgba(0,0,0,0.14)",
     borderRadius: 14,
     padding: 12,
     marginBottom: 10,
   },
+
   emergencyContactName: {
-    color: "#fff",
+    color: "#ffffff",
     fontSize: 14,
-    fontWeight: "950",
+    fontWeight: "900",
     marginBottom: 4,
   },
+
   emergencyContactPhone: {
-    color: "#fff",
+    color: "#ffffff",
     fontSize: 13,
     fontWeight: "900",
   },
+
   emergencyContactBtn: {
     marginLeft: 12,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,.20)",
-    backgroundColor: "rgba(255,255,255,.10)",
+    borderColor: "rgba(255,255,255,0.20)",
+    backgroundColor: "rgba(255,255,255,0.10)",
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
+
   emergencyContactBtnText: {
-    color: "#fff",
+    color: "#ffffff",
     fontSize: 13,
-    fontWeight: "950",
+    fontWeight: "900",
   },
+
   emergencyHint: {
-    color: "#fff",
+    color: "#ffffff",
     fontSize: 12,
     fontWeight: "800",
     opacity: 0.92,
