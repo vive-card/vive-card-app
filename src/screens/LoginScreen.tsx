@@ -8,670 +8,1128 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import { supabase } from "../lib/supabase";
 
 const SUPABASE_URL = "https://uyrvuekhvczbjvpbequv.supabase.co";
+
 const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5cnZ1ZWtodmN6Ymp2cGJlcXV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzNjA1OTAsImV4cCI6MjA4NjkzNjU5MH0.-6Fia8CGlMxKf6xPGAZK-kFfUXtCtqXH7etfFtMJ1OU";
 
 const LANG_OPTIONS = ["de", "it", "fr", "es", "en"] as const;
+
 type Lang = (typeof LANG_OPTIONS)[number];
+
+type MessageState = {
+  text: string;
+  type: "" | "ok" | "err";
+};
+
+const LANGUAGE_NAMES: Record<Lang, string> = {
+  de: "Deutsch 🇩🇪",
+  it: "Italiano 🇮🇹",
+  fr: "Français 🇫🇷",
+  es: "Español 🇪🇸",
+  en: "English 🇬🇧",
+};
 
 const I18N: Record<Lang, Record<string, string>> = {
   de: {
-    pill: "🔒 Login / VIVE CARD aktivieren",
+    pill: "🔒 Login / VIVE CARD",
     email_label: "E-Mail",
     pw_label: "Passwort",
     pw_toggle: "ANZEIGEN",
     pw_hide: "VERBERGEN",
     forgot_pw: "Passwort vergessen?",
-    security_hint: "Sicherheit: Teile deine Login-Daten nie mit Dritten.",
-    rescue_note:
-      "Empfehlung: E-Mail + Passwort nicht im Gerät speichern. Für Einsatzkräfte gibt es eine separate Notfallansicht.",
-    reset_title: "Passwort zurücksetzen (über E-Mail Link bestätigt)",
+
+    reset_title: "Passwort zurücksetzen",
     new_pw_label: "Neues Passwort",
     new_pw2_label: "Neues Passwort wiederholen",
     btn_reset_pw: "Passwort ändern",
     reset_hint:
       "Hinweis: Nach dem Ändern kannst du dich direkt einloggen.",
+
     btn_login: "Login",
-    btn_signup: "Sign up",
+    btn_signup: "Konto erstellen",
     btn_order: "VIVE CARD bestellen",
     btn_about: "Was ist VIVE CARD?",
     btn_block: "Karte sperren / deaktivieren",
+
     terms_prefix: "Ich akzeptiere die",
     terms_and: "und die",
     terms_agb: "AGB",
     terms_usage: "Nutzungsvereinbarung",
     btn_accept: "Akzeptieren & weiter",
+
     pid_label: "Karte (PUBLIC_ID)",
+    public_id_label: "PUBLIC_ID",
     claim_hint:
       "Sobald du eingeloggt bist, kann deine Karte mit deinem Konto verbunden werden.",
-    btn_claim: "Claim Card",
+    btn_claim: "Karte aktivieren",
     claim_already: "Bereits aktiviert",
-    hint:
-      "Hinweis: Prelaunch-Setup. Google Indexing ist deaktiviert (noindex + robots.txt).",
+
     link_impressum: "Impressum",
     link_privacy: "Datenschutz",
     link_agb: "AGB",
     link_usage: "Nutzungsvereinbarung",
+
     err_enter: "Bitte E-Mail und Passwort eingeben.",
     err_enter_email: "Bitte E-Mail eingeben.",
     err_login: "Login fehlgeschlagen: ",
-    err_signup: "Sign up fehlgeschlagen: ",
+    err_signup: "Konto erstellen fehlgeschlagen: ",
     err_user_missing: "Login ok, aber User fehlt. Bitte neu einloggen.",
     err_profile: "Profil konnte nicht geladen werden: ",
     err_save: "Speichern fehlgeschlagen: ",
     err_relogin: "Bitte neu einloggen.",
+
     need_terms: "Bitte AGB & Nutzungsvereinbarung akzeptieren.",
     need_privacy_claim:
       "Bitte bestätige zuerst den Datenschutzhinweis zur Kartenaktivierung.",
-    need_pid: "Bitte PUBLIC_ID eingeben und 'Claim Card' drücken.",
+    need_pid:
+      "Bitte PUBLIC_ID eingeben und anschließend die Karte aktivieren.",
+
     err_pid: "Bitte PUBLIC_ID eingeben.",
     err_login_first: "Bitte zuerst einloggen.",
-    err_claim: "Claim fehlgeschlagen: ",
-    err_claim_rpc: "Claim Fehler: RPC nicht verfügbar.",
+    err_claim: "Aktivierung fehlgeschlagen: ",
+    err_claim_rpc: "Aktivierungsfehler: RPC nicht verfügbar.",
+
     terms_ok: "AGB akzeptiert.",
     privacy_claim_ok: "Datenschutzhinweis akzeptiert.",
+
     signup_ok:
       "Konto erstellt. Bitte bestätige jetzt deine E-Mail über den Link in deinem Postfach.",
+
     err_reset: "Reset fehlgeschlagen: ",
-    reset_sent: "E-Mail zum Zurücksetzen wurde versendet. Bitte Postfach prüfen.",
+    reset_sent:
+      "E-Mail zum Zurücksetzen wurde versendet. Bitte Postfach prüfen.",
     err_pw_short: "Passwort zu kurz (mind. 6 Zeichen).",
     err_pw_match: "Passwörter stimmen nicht überein.",
     err_reset_apply: "Passwort-Änderung fehlgeschlagen: ",
     reset_ok:
       "Passwort erfolgreich geändert. Du kannst dich jetzt einloggen.",
+
     pid_detected_login:
-      "PUBLIC_ID erkannt. Bitte einloggen und dann 'Claim Card' drücken.",
+      "PUBLIC_ID erkannt. Bitte einloggen und anschließend die Karte aktivieren.",
     pid_detected: "PUBLIC_ID erkannt.",
-    claim_ok: "Claim OK.",
+    claim_ok: "VIVE CARD erfolgreich aktiviert.",
+
     err_pid_save: "PUBLIC_ID konnte nicht gespeichert werden: ",
     err_privacy_save:
       "Datenschutzzustimmung konnte nicht gespeichert werden: ",
-    banner: "PRE-LAUNCH PRIVATE VERSION",
-single_account_notice:
-  "Wichtiger Hinweis: Pro PUBLIC_ID kann nur eine E-Mail-Adresse bzw. ein Konto verwendet werden. Bitte registriere dich mit derselben E-Mail-Adresse wie bei deiner Bestellung.",
-terms_intro:
-  "Bevor du deine VIVE CARD aktivieren kannst, bestätige bitte die AGB und Nutzungsvereinbarung.",
 
-privacy_claim_title: "Datenschutzhinweis zur Kartenaktivierung",
-privacy_claim_body:
-  "Mit der Aktivierung deiner VIVE CARD können freiwillig persönliche Informationen gespeichert werden, einschliesslich möglicher Gesundheitsdaten wie z. B. Allergien, Medikamente, Blutgruppe oder Notfallhinweise.\n\nDiese Angaben werden ausschliesslich von dir bereitgestellt und verwaltet. Bitte speichere nur Daten, deren Verarbeitung du ausdrücklich wünschst.",
-privacy_claim_checkbox:
-  "Ich habe den Datenschutzhinweis zur Kartenaktivierung gelesen und bin damit einverstanden, dass von mir freiwillig eingegebene persönliche Daten – einschliesslich möglicher Gesundheitsdaten – im Rahmen meiner VIVE CARD gespeichert werden.",
-btn_accept_privacy_claim: "Datenschutzhinweis akzeptieren",
+    terms_intro:
+      "Bevor du deine VIVE CARD aktivieren kannst, bestätige bitte die AGB und Nutzungsvereinbarung.",
 
-claim_notice_title: "VIVE CARD erkannt",
-claim_notice_text:
-  "Bitte logge dich ein oder erstelle ein Konto. Danach wird deine VIVE CARD automatisch aktiviert.",
-public_id_label: "PUBLIC_ID",
+    privacy_claim_title: "Datenschutzhinweis zur Kartenaktivierung",
 
-claim_success_title: "✅ Deine VIVE CARD wurde erfolgreich aktiviert",
-claim_success_text:
-  "Deine Karte ist jetzt mit deinem Konto verbunden. Du kannst nun dein Profil und deine Notfallinformationen ausfüllen.\n\nFalls du weitere Karten bestellt hast, öffne einfach den nächsten Aktivierungslink aus deiner E-Mail und wiederhole den Vorgang.",
-btn_go_profile: "Profil ausfüllen",
+    privacy_claim_body:
+      "Mit der Aktivierung deiner VIVE CARD können freiwillig persönliche Informationen gespeichert werden, einschliesslich möglicher Gesundheitsdaten wie z. B. Allergien, Medikamente, Blutgruppe oder Notfallhinweise.\n\nDiese Angaben werden ausschliesslich von dir bereitgestellt und verwaltet.\n\nBitte speichere nur Daten, deren Verarbeitung du ausdrücklich wünschst.",
 
-signup_title: "Konto erstellen",
-signup_password_ph: "Mindestens 6 Zeichen",
-signup_password2_ph: "Passwort wiederholen",
-signup_pw2_label: "Passwort wiederholen",
-btn_signup_start: "Registrierung starten",
-signup_hint:
-  "Nach dem Klick erhältst du eine Bestätigungs-E-Mail. Danach kannst du dein Konto aktivieren und deine VIVE CARD zuordnen.",
+    privacy_claim_checkbox:
+      "Ich habe den Datenschutzhinweis zur Kartenaktivierung gelesen und bin damit einverstanden, dass von mir freiwillig eingegebene persönliche Daten – einschliesslich möglicher Gesundheitsdaten – im Rahmen meiner VIVE CARD gespeichert werden.",
 
-block_card_title: "Karte sperren / deaktivieren",
-block_card_intro:
-  "Wenn deine Karte verloren wurde oder deaktiviert werden soll, sende hier eine Sperranfrage. Bitte gib die E-Mail-Adresse und die PUBLIC_ID an, die mit der Karte verknüpft sind.",
-block_reason_label: "Grund (optional)",
-block_reason_ph: "z.B. Karte verloren, falsche Zuordnung, Konto löschen",
-btn_block_card_submit: "Sperranfrage senden",
-block_card_hint:
-  "Die Anfrage wird an den Support weitergeleitet. Danach wird die Karte manuell geprüft und gesperrt bzw. deaktiviert.",
+    btn_accept_privacy_claim: "Datenschutzhinweis akzeptieren",
 
-err_valid_email: "Bitte eine gültige E-Mail eingeben.",
-err_accept_terms_first:
-  "Bitte akzeptiere zuerst die AGB und die Nutzungsvereinbarung.",
-err_signup_failed_generic: "Registrierung fehlgeschlagen.",
-err_block_card_request: "Sperranfrage konnte nicht gesendet werden.",
-block_card_success:
-  "Deine Sperranfrage wurde erfolgreich übermittelt. Die Karte wurde sofort gesperrt und unser Support prüft den Fall schnellstmöglich.",
-err_confirm_email_first:
-  "Bitte bestätige zuerst deine E-Mail-Adresse über den Link in deinem Postfach.",
-card_status_check_failed: "Kartenstatus konnte nicht geprüft werden: ",
-card_blocked: "Diese VIVE CARD wurde gesperrt oder deaktiviert.",
+    claim_notice_title: "VIVE CARD erkannt",
+    claim_notice_text:
+      "Bitte prüfe deine PUBLIC_ID und aktiviere anschliessend deine VIVE CARD.",
 
-alert_error_title: "Fehler",
-alert_open_link_failed: "Link konnte nicht geöffnet werden",
-alert_card_activated_title: "VIVE CARD aktiviert",
-alert_card_activated_text:
-  "Deine Karte wurde aktiviert. Durch die aktive Session wechselst du nun in die App.",
+    claim_success_title:
+      "✅ Deine VIVE CARD wurde erfolgreich aktiviert",
 
-pid_ph: "z.B. PVJ2AT5B6Y",
+    claim_success_text:
+      "Deine Karte ist jetzt mit deinem Konto verbunden. Du kannst nun dein Profil und deine Notfallinformationen ausfüllen.\n\nFalls du weitere Karten bestellt hast, öffne einfach den nächsten Aktivierungslink aus deiner E-Mail und wiederhole den Vorgang.",
+
+    btn_go_profile: "Profil ausfüllen",
+
+    signup_title: "Konto erstellen",
+    signup_password_ph: "Mindestens 6 Zeichen",
+    signup_password2_ph: "Passwort wiederholen",
+    signup_pw2_label: "Passwort wiederholen",
+    btn_signup_start: "Registrierung starten",
+
+    signup_hint:
+      "Nach dem Klick erhältst du eine Bestätigungs-E-Mail. Danach kannst du dein Konto aktivieren und deine VIVE CARD zuordnen.",
+
+    block_card_title: "Karte sperren / deaktivieren",
+
+    block_card_intro:
+      "Wenn deine Karte verloren wurde oder deaktiviert werden soll, sende hier eine Sperranfrage. Bitte gib die E-Mail-Adresse und die PUBLIC_ID an, die mit der Karte verknüpft sind.",
+
+    block_reason_label: "Grund (optional)",
+
+    block_reason_ph:
+      "z. B. Karte verloren, falsche Zuordnung, Konto löschen",
+
+    btn_block_card_submit: "Sperranfrage senden",
+
+    block_card_hint:
+      "Die Anfrage wird an den Support weitergeleitet. Danach wird die Karte manuell geprüft und gesperrt bzw. deaktiviert.",
+
+    err_valid_email: "Bitte eine gültige E-Mail eingeben.",
+
+    err_accept_terms_first:
+      "Bitte akzeptiere zuerst die AGB und die Nutzungsvereinbarung.",
+
+    err_signup_failed_generic: "Registrierung fehlgeschlagen.",
+
+    err_block_card_request:
+      "Sperranfrage konnte nicht gesendet werden.",
+
+    block_card_success:
+      "Deine Sperranfrage wurde erfolgreich übermittelt. Die Karte wurde sofort gesperrt und unser Support prüft den Fall schnellstmöglich.",
+
+    err_confirm_email_first:
+      "Bitte bestätige zuerst deine E-Mail-Adresse über den Link in deinem Postfach.",
+
+    card_status_check_failed:
+      "Kartenstatus konnte nicht geprüft werden: ",
+
+    card_blocked:
+      "Diese VIVE CARD wurde gesperrt oder deaktiviert.",
+
+    alert_error_title: "Fehler",
+    alert_open_link_failed: "Link konnte nicht geöffnet werden",
+
+    alert_card_activated_title: "VIVE CARD aktiviert",
+
+    alert_card_activated_text:
+      "Deine Karte wurde aktiviert. Durch die aktive Session wechselst du nun in die App.",
+
+    pid_ph: "z. B. PVJ2AT5B6Y",
+
+    activation_guide_title:
+      "So aktivieren Sie Ihre VIVE CARD",
+
+    activation_guide_step_1:
+      "Bestellen Sie Ihre VIVE CARD.",
+
+    activation_guide_step_2:
+      "Sie erhalten eine E-Mail mit Ihrer PUBLIC_ID.",
+
+    activation_guide_step_3:
+      "Erstellen Sie über „Konto erstellen“ ein Konto.",
+
+    activation_guide_step_4:
+      "Sie erhalten eine E-Mail zur Bestätigung Ihres Kontos.",
+
+    activation_guide_step_5:
+      "Bestätigen Sie Ihre E-Mail-Adresse. Anschliessend können Sie sich anmelden.",
+
+    activation_guide_step_6:
+      "Melden Sie sich mit Ihrer E-Mail-Adresse und Ihrem Passwort an.",
+
+    activation_guide_step_7:
+      "Akzeptieren Sie den Datenschutzhinweis zur Kartenaktivierung.",
+
+    activation_guide_step_8:
+      "Geben Sie Ihre PUBLIC_ID ein und wählen Sie „Karte aktivieren“.",
+
+    activation_guide_step_9:
+      "Füllen Sie anschliessend Ihr persönliches Profil aus.",
   },
+
   it: {
-    pill: "🔒 Login / attiva VIVE CARD",
+    pill: "🔒 Login / VIVE CARD",
     email_label: "E-mail",
     pw_label: "Password",
     pw_toggle: "MOSTRA",
     pw_hide: "NASCONDI",
     forgot_pw: "Password dimenticata?",
-    security_hint: "Sicurezza: non condividere mai i dati di accesso.",
-    rescue_note:
-      "Consiglio: non salvare e-mail e password sul dispositivo. Per i soccorritori esiste una vista d’emergenza separata.",
+
     reset_title: "Reimposta password",
     new_pw_label: "Nuova password",
     new_pw2_label: "Ripeti nuova password",
     btn_reset_pw: "Cambia password",
     reset_hint:
-      "Dopo il cambio puoi accedere direttamente.",
-    btn_login: "Accedi",
-    btn_signup: "Registrati",
+      "Dopo la modifica puoi accedere direttamente.",
+
+    btn_login: "Login",
+    btn_signup: "Crea account",
     btn_order: "Ordina VIVE CARD",
-    btn_about: "Cos’è VIVE CARD?",
+    btn_about: "Cos'è VIVE CARD?",
     btn_block: "Blocca / disattiva carta",
+
     terms_prefix: "Accetto i",
-    terms_and: "e il",
-    terms_agb: "Termini",
-    terms_usage: "Contratto d’uso",
+    terms_and: "e le",
+    terms_agb: "Termini e condizioni",
+    terms_usage: "Condizioni d'uso",
     btn_accept: "Accetta e continua",
+
     pid_label: "Carta (PUBLIC_ID)",
+    public_id_label: "PUBLIC_ID",
+
     claim_hint:
-      "Dopo il login, la carta può essere collegata al tuo account.",
-    btn_claim: "Claim Card",
+      "Dopo il login puoi collegare la carta al tuo account.",
+
+    btn_claim: "Attiva carta",
     claim_already: "Già attivata",
-    hint: "Setup prelaunch. Indicizzazione Google disattivata.",
+
     link_impressum: "Note legali",
     link_privacy: "Privacy",
-    link_agb: "AGB",
-    link_usage: "Contratto d’uso",
+    link_agb: "Termini",
+    link_usage: "Condizioni d'uso",
+
     err_enter: "Inserisci e-mail e password.",
-    err_enter_email: "Inserisci e-mail.",
+    err_enter_email: "Inserisci un'e-mail.",
     err_login: "Login fallito: ",
     err_signup: "Registrazione fallita: ",
-    err_user_missing: "Login ok, ma utente mancante.",
-    err_profile: "Impossibile caricare il profilo: ",
+    err_user_missing: "Utente mancante.",
+    err_profile: "Errore caricamento profilo: ",
     err_save: "Salvataggio fallito: ",
     err_relogin: "Effettua nuovamente il login.",
-    need_terms: "Accetta prima AGB e contratto d’uso.",
+
+    need_terms: "Accetta prima i termini.",
     need_privacy_claim:
-      "Conferma prima l’informativa privacy per l’attivazione della carta.",
-    need_pid: "Inserisci la PUBLIC_ID e premi Claim Card.",
+      "Accetta prima l'informativa privacy.",
+    need_pid: "Inserisci la PUBLIC_ID.",
+
     err_pid: "Inserisci la PUBLIC_ID.",
     err_login_first: "Effettua prima il login.",
-    err_claim: "Claim fallito: ",
-    err_claim_rpc: "Errore Claim: RPC non disponibile.",
-    terms_ok: "AGB accettati.",
-    privacy_claim_ok: "Informativa privacy accettata.",
+    err_claim: "Attivazione fallita: ",
+    err_claim_rpc: "Errore RPC.",
+
+    terms_ok: "Termini accettati.",
+    privacy_claim_ok: "Privacy accettata.",
+
     signup_ok:
-      "Account creato. Conferma ora la tua e-mail tramite il link ricevuto.",
+      "Account creato. Controlla la tua e-mail per confermare il tuo account.",
+
     err_reset: "Reset fallito: ",
     reset_sent: "E-mail di reset inviata.",
-    err_pw_short: "Password troppo corta (minimo 6 caratteri).",
+    err_pw_short: "Password troppo corta.",
     err_pw_match: "Le password non coincidono.",
-    err_reset_apply: "Cambio password fallito: ",
-    reset_ok: "Password cambiata con successo.",
+    err_reset_apply: "Errore cambio password: ",
+    reset_ok: "Password aggiornata.",
+
     pid_detected_login:
-      "PUBLIC_ID riconosciuta. Effettua il login e premi Claim Card.",
-    pid_detected: "PUBLIC_ID riconosciuta.",
-    claim_ok: "Claim OK.",
-    err_pid_save: "Impossibile salvare la PUBLIC_ID: ",
-    err_privacy_save:
-      "Impossibile salvare il consenso privacy: ",
-    banner: "VERSIONE PRIVATA PRE-LANCIO",
-single_account_notice:
-  "Avviso importante: per ogni PUBLIC_ID può essere utilizzato un solo indirizzo e-mail o un solo account. Registrati con lo stesso indirizzo e-mail usato per il tuo ordine.",
-terms_intro:
-  "Prima di poter attivare la tua VIVE CARD, conferma i Termini e le Condizioni d'uso.",
+      "PUBLIC_ID rilevata. Effettua il login.",
+    pid_detected: "PUBLIC_ID rilevata.",
+    claim_ok: "Carta attivata.",
 
-privacy_claim_title: "Informativa privacy per l'attivazione della carta",
-privacy_claim_body:
-  "Con l'attivazione della tua VIVE CARD possono essere salvate volontariamente informazioni personali, inclusi possibili dati sanitari come allergie, farmaci, gruppo sanguigno o note di emergenza.\n\nQuesti dati sono forniti e gestiti esclusivamente da te. Salva solo i dati di cui desideri espressamente il trattamento.",
-privacy_claim_checkbox:
-  "Ho letto l'informativa privacy per l'attivazione della carta e accetto che i dati personali inseriti volontariamente da me – inclusi eventuali dati sanitari – vengano memorizzati nell'ambito della mia VIVE CARD.",
-btn_accept_privacy_claim: "Accetta informativa privacy",
+    err_pid_save: "Errore salvataggio PUBLIC_ID: ",
+    err_privacy_save: "Errore salvataggio privacy: ",
 
-claim_notice_title: "VIVE CARD rilevata",
-claim_notice_text:
-  "Effettua il login o crea un account. Successivamente la tua VIVE CARD verrà attivata automaticamente.",
-public_id_label: "PUBLIC_ID",
+    terms_intro:
+      "Accetta i termini prima di attivare la carta.",
 
-claim_success_title: "✅ La tua VIVE CARD è stata attivata con successo",
-claim_success_text:
-  "La tua carta è ora collegata al tuo account. Ora puoi compilare il tuo profilo e le tue informazioni di emergenza.\n\nSe hai ordinato altre carte, apri semplicemente il link di attivazione successivo ricevuto via e-mail e ripeti la procedura.",
-btn_go_profile: "Compila profilo",
+    privacy_claim_title:
+      "Informativa sulla privacy per l’attivazione della carta",
 
-signup_title: "Crea account",
-signup_password_ph: "Almeno 6 caratteri",
-signup_password2_ph: "Ripeti password",
-signup_pw2_label: "Ripeti password",
-btn_signup_start: "Avvia registrazione",
-signup_hint:
-  "Dopo il clic riceverai un'e-mail di conferma. Successivamente potrai attivare il tuo account e associare la tua VIVE CARD.",
+    privacy_claim_body:
+      "Con l’attivazione della tua VIVE CARD puoi salvare volontariamente informazioni personali, compresi eventuali dati sanitari come allergie, farmaci, gruppo sanguigno o indicazioni di emergenza.\n\nQuesti dati vengono forniti e gestiti esclusivamente da te.\n\nSalva solamente i dati di cui desideri espressamente il trattamento.",
 
-block_card_title: "Blocca / disattiva carta",
-block_card_intro:
-  "Se la tua carta è stata smarrita o deve essere disattivata, invia qui una richiesta di blocco. Indica l'indirizzo e-mail e la PUBLIC_ID collegati alla carta.",
-block_reason_label: "Motivo (opzionale)",
-block_reason_ph: "es. carta smarrita, assegnazione errata, eliminazione account",
-btn_block_card_submit: "Invia richiesta di blocco",
-block_card_hint:
-  "La richiesta verrà inoltrata al supporto. Successivamente la carta sarà verificata manualmente e bloccata o disattivata.",
+    privacy_claim_checkbox:
+      "Ho letto l’informativa sulla privacy relativa all’attivazione della carta e acconsento che i dati personali inseriti volontariamente da me – compresi eventuali dati sanitari – vengano salvati nell’ambito della mia VIVE CARD.",
 
-err_valid_email: "Inserisci un indirizzo e-mail valido.",
-err_accept_terms_first:
-  "Accetta prima i Termini e le Condizioni d'uso.",
-err_signup_failed_generic: "Registrazione fallita.",
-err_block_card_request: "Impossibile inviare la richiesta di blocco.",
-block_card_success:
-  "La tua richiesta di blocco è stata inviata con successo. La carta è stata bloccata immediatamente e il nostro supporto esaminerà il caso il prima possibile.",
-err_confirm_email_first:
-  "Conferma prima il tuo indirizzo e-mail tramite il link nella tua casella di posta.",
-card_status_check_failed: "Impossibile verificare lo stato della carta: ",
-card_blocked: "Questa VIVE CARD è stata bloccata o disattivata.",
+    btn_accept_privacy_claim:
+      "Accetta l’informativa sulla privacy",
 
-alert_error_title: "Errore",
-alert_open_link_failed: "Impossibile aprire il link",
-alert_card_activated_title: "VIVE CARD attivata",
-alert_card_activated_text:
-  "La tua carta è stata attivata. Grazie alla sessione attiva, ora entrerai nell'app.",
+    claim_notice_title: "VIVE CARD riconosciuta",
 
-pid_ph: "es. PVJ2AT5B6Y",
+    claim_notice_text:
+      "Controlla la tua PUBLIC_ID e attiva successivamente la tua VIVE CARD.",
+
+    claim_success_title:
+      "✅ La tua VIVE CARD è stata attivata",
+
+    claim_success_text:
+      "La tua carta è ora collegata al tuo account. Puoi compilare il tuo profilo e le informazioni di emergenza.",
+
+    btn_go_profile: "Completa profilo",
+
+    signup_title: "Crea account",
+    signup_password_ph: "Almeno 6 caratteri",
+    signup_password2_ph: "Ripeti password",
+    signup_pw2_label: "Ripeti password",
+    btn_signup_start: "Avvia registrazione",
+
+    signup_hint:
+      "Riceverai un'e-mail di conferma.",
+
+    block_card_title: "Blocca / disattiva carta",
+
+    block_card_intro:
+      "Invia una richiesta se la tua carta deve essere bloccata o disattivata.",
+
+    block_reason_label: "Motivo (opzionale)",
+    block_reason_ph: "es. carta smarrita",
+    btn_block_card_submit: "Invia richiesta",
+
+    block_card_hint:
+      "Il supporto esaminerà la richiesta.",
+
+    err_valid_email: "Inserisci un'e-mail valida.",
+
+    err_accept_terms_first:
+      "Accetta prima i termini.",
+
+    err_signup_failed_generic: "Registrazione fallita.",
+
+    err_block_card_request:
+      "Errore richiesta blocco.",
+
+    block_card_success:
+      "Richiesta inviata con successo.",
+
+    err_confirm_email_first:
+      "Conferma prima la tua e-mail.",
+
+    card_status_check_failed:
+      "Errore controllo carta: ",
+
+    card_blocked:
+      "Questa carta è bloccata.",
+
+    alert_error_title: "Errore",
+
+    alert_open_link_failed:
+      "Impossibile aprire il link",
+
+    alert_card_activated_title:
+      "VIVE CARD attivata",
+
+    alert_card_activated_text:
+      "La carta è stata attivata.",
+
+    pid_ph: "es. PVJ2AT5B6Y",
+
+    activation_guide_title:
+      "Come attivare la tua VIVE CARD",
+
+    activation_guide_step_1:
+      "Ordina la tua VIVE CARD.",
+
+    activation_guide_step_2:
+      "Riceverai un'e-mail con la tua PUBLIC_ID.",
+
+    activation_guide_step_3:
+      "Crea un account.",
+
+    activation_guide_step_4:
+      "Conferma il tuo account tramite e-mail.",
+
+    activation_guide_step_5:
+      "Conferma il tuo indirizzo e-mail.",
+
+    activation_guide_step_6:
+      "Accedi con e-mail e password.",
+
+    activation_guide_step_7:
+      "Accetta l'informativa privacy.",
+
+    activation_guide_step_8:
+      "Inserisci la PUBLIC_ID e attiva la carta.",
+
+    activation_guide_step_9:
+      "Completa il tuo profilo.",
   },
+
   fr: {
-    pill: "🔒 Login / activer VIVE CARD",
+    pill: "🔒 Connexion / VIVE CARD",
     email_label: "E-mail",
     pw_label: "Mot de passe",
     pw_toggle: "AFFICHER",
     pw_hide: "MASQUER",
     forgot_pw: "Mot de passe oublié ?",
-    security_hint: "Sécurité : ne partage jamais tes identifiants.",
-    rescue_note:
-      "Recommandation : ne pas enregistrer e-mail et mot de passe sur l’appareil. Une vue d’urgence séparée existe.",
+
     reset_title: "Réinitialiser le mot de passe",
     new_pw_label: "Nouveau mot de passe",
-    new_pw2_label: "Répéter le mot de passe",
-    btn_reset_pw: "Changer le mot de passe",
-    reset_hint: "Après la modification, tu peux te connecter directement.",
+    new_pw2_label: "Confirmer le mot de passe",
+    btn_reset_pw: "Modifier le mot de passe",
+    reset_hint:
+      "Vous pouvez ensuite vous reconnecter.",
+
     btn_login: "Connexion",
-    btn_signup: "Inscription",
+    btn_signup: "Créer un compte",
     btn_order: "Commander VIVE CARD",
     btn_about: "Qu’est-ce que VIVE CARD ?",
     btn_block: "Bloquer / désactiver la carte",
+
     terms_prefix: "J’accepte les",
     terms_and: "et les",
-    terms_agb: "CGV",
-    terms_usage: "conditions d’utilisation",
+    terms_agb: "Conditions générales",
+    terms_usage: "Conditions d’utilisation",
     btn_accept: "Accepter et continuer",
+
     pid_label: "Carte (PUBLIC_ID)",
+    public_id_label: "PUBLIC_ID",
+
     claim_hint:
-      "Une fois connecté, ta carte peut être liée à ton compte.",
-    btn_claim: "Claim Card",
+      "Une fois connecté, vous pouvez associer votre carte à votre compte.",
+
+    btn_claim: "Activer la carte",
     claim_already: "Déjà activée",
-    hint: "Configuration prelaunch. Indexation Google désactivée.",
+
     link_impressum: "Mentions légales",
-    link_privacy: "Protection des données",
-    link_agb: "CGV",
-    link_usage: "Conditions d’utilisation",
-    err_enter: "Veuillez saisir e-mail et mot de passe.",
-    err_enter_email: "Veuillez saisir l’e-mail.",
-    err_login: "Échec de connexion : ",
-    err_signup: "Échec d’inscription : ",
-    err_user_missing: "Connexion OK, mais utilisateur introuvable.",
-    err_profile: "Impossible de charger le profil : ",
-    err_save: "Échec d’enregistrement : ",
+    link_privacy: "Confidentialité",
+    link_agb: "Conditions",
+    link_usage: "Utilisation",
+
+    err_enter:
+      "Veuillez saisir votre e-mail et votre mot de passe.",
+
+    err_enter_email:
+      "Veuillez saisir une adresse e-mail.",
+
+    err_login: "Échec de la connexion : ",
+    err_signup: "Échec de l’inscription : ",
+    err_user_missing: "Utilisateur introuvable.",
+    err_profile: "Erreur de chargement : ",
+    err_save: "Erreur lors de l’enregistrement : ",
     err_relogin: "Veuillez vous reconnecter.",
-    need_terms: "Veuillez d’abord accepter les conditions.",
+
+    need_terms:
+      "Veuillez accepter les conditions.",
+
     need_privacy_claim:
-      "Veuillez d’abord confirmer l’information de confidentialité.",
-    need_pid: "Veuillez saisir la PUBLIC_ID puis appuyer sur Claim Card.",
-    err_pid: "Veuillez saisir la PUBLIC_ID.",
-    err_login_first: "Veuillez d’abord vous connecter.",
-    err_claim: "Échec du claim : ",
-    err_claim_rpc: "Erreur Claim : RPC indisponible.",
-    terms_ok: "Conditions acceptées.",
-    privacy_claim_ok: "Confidentialité acceptée.",
+      "Veuillez accepter la politique de confidentialité.",
+
+    need_pid:
+      "Veuillez saisir la PUBLIC_ID.",
+
+    err_pid:
+      "Veuillez saisir la PUBLIC_ID.",
+
+    err_login_first:
+      "Veuillez d’abord vous connecter.",
+
+    err_claim:
+      "Échec de l’activation : ",
+
+    err_claim_rpc:
+      "Erreur RPC.",
+
+    terms_ok:
+      "Conditions acceptées.",
+
+    privacy_claim_ok:
+      "Confidentialité acceptée.",
+
     signup_ok:
-      "Compte créé. Merci de confirmer votre e-mail via le lien reçu.",
-    err_reset: "Échec du reset : ",
-    reset_sent: "E-mail de réinitialisation envoyé.",
-    err_pw_short: "Mot de passe trop court (min. 6 caractères).",
-    err_pw_match: "Les mots de passe ne correspondent pas.",
-    err_reset_apply: "Modification du mot de passe échouée : ",
-    reset_ok: "Mot de passe modifié avec succès.",
+      "Compte créé. Veuillez confirmer votre e-mail.",
+
+    err_reset:
+      "Échec de la réinitialisation : ",
+
+    reset_sent:
+      "E-mail de réinitialisation envoyé.",
+
+    err_pw_short:
+      "Mot de passe trop court.",
+
+    err_pw_match:
+      "Les mots de passe ne correspondent pas.",
+
+    err_reset_apply:
+      "Erreur de modification : ",
+
+    reset_ok:
+      "Mot de passe mis à jour.",
+
     pid_detected_login:
-      "PUBLIC_ID détectée. Connectez-vous puis appuyez sur Claim Card.",
-    pid_detected: "PUBLIC_ID détectée.",
-    claim_ok: "Claim OK.",
-    err_pid_save: "Impossible d’enregistrer la PUBLIC_ID : ",
+      "PUBLIC_ID détectée. Veuillez vous connecter.",
+
+    pid_detected:
+      "PUBLIC_ID détectée.",
+
+    claim_ok:
+      "Carte activée.",
+
+    err_pid_save:
+      "Erreur PUBLIC_ID : ",
+
     err_privacy_save:
-      "Impossible d’enregistrer le consentement confidentialité : ",
-    banner: "VERSION PRIVÉE PRÉ-LANCEMENT",
-single_account_notice:
-  "Remarque importante : une seule adresse e-mail ou un seul compte peut être utilisé par PUBLIC_ID. Veuillez vous inscrire avec la même adresse e-mail que celle utilisée lors de votre commande.",
-terms_intro:
-  "Avant de pouvoir activer votre VIVE CARD, veuillez confirmer les conditions générales et les conditions d'utilisation.",
+      "Erreur de confidentialité : ",
 
-privacy_claim_title: "Avis de confidentialité pour l'activation de la carte",
-privacy_claim_body:
-  "Avec l'activation de votre VIVE CARD, des informations personnelles peuvent être enregistrées volontairement, y compris d'éventuelles données de santé telles que des allergies, des médicaments, le groupe sanguin ou des notes d'urgence.\n\nCes informations sont fournies et gérées exclusivement par vous. Veuillez n'enregistrer que les données dont vous souhaitez expressément le traitement.",
-privacy_claim_checkbox:
-  "J'ai lu l'avis de confidentialité relatif à l'activation de la carte et j'accepte que les données personnelles que je saisis volontairement – y compris d'éventuelles données de santé – soient enregistrées dans le cadre de ma VIVE CARD.",
-btn_accept_privacy_claim: "Accepter l'avis de confidentialité",
+    terms_intro:
+      "Veuillez accepter les conditions avant d’activer votre carte.",
 
-claim_notice_title: "VIVE CARD détectée",
-claim_notice_text:
-  "Veuillez vous connecter ou créer un compte. Ensuite, votre VIVE CARD sera automatiquement activée.",
-public_id_label: "PUBLIC_ID",
+    privacy_claim_title:
+      "Avis de confidentialité relatif à l’activation de la carte",
 
-claim_success_title: "✅ Votre VIVE CARD a été activée avec succès",
-claim_success_text:
-  "Votre carte est maintenant liée à votre compte. Vous pouvez désormais compléter votre profil et vos informations d'urgence.\n\nSi vous avez commandé d'autres cartes, ouvrez simplement le lien d'activation suivant reçu par e-mail et répétez la procédure.",
-btn_go_profile: "Compléter le profil",
+    privacy_claim_body:
+      "Lors de l’activation de votre VIVE CARD, vous pouvez enregistrer volontairement des informations personnelles, y compris d’éventuelles données de santé telles que des allergies, des médicaments, votre groupe sanguin ou des indications d’urgence.\n\nCes informations sont exclusivement fournies et gérées par vous.",
 
-signup_title: "Créer un compte",
-signup_password_ph: "Au moins 6 caractères",
-signup_password2_ph: "Répéter le mot de passe",
-signup_pw2_label: "Répéter le mot de passe",
-btn_signup_start: "Démarrer l'inscription",
-signup_hint:
-  "Après avoir cliqué, vous recevrez un e-mail de confirmation. Vous pourrez ensuite activer votre compte et associer votre VIVE CARD.",
+    privacy_claim_checkbox:
+      "J’ai lu l’avis de confidentialité et j’accepte que les données personnelles que je saisis volontairement soient enregistrées dans le cadre de ma VIVE CARD.",
 
-block_card_title: "Bloquer / désactiver la carte",
-block_card_intro:
-  "Si votre carte a été perdue ou doit être désactivée, envoyez ici une demande de blocage. Veuillez indiquer l'adresse e-mail et la PUBLIC_ID liées à la carte.",
-block_reason_label: "Motif (optionnel)",
-block_reason_ph: "p. ex. carte perdue, mauvaise attribution, suppression du compte",
-btn_block_card_submit: "Envoyer la demande de blocage",
-block_card_hint:
-  "La demande sera transmise au support. Ensuite, la carte sera vérifiée manuellement puis bloquée ou désactivée.",
+    btn_accept_privacy_claim:
+      "Accepter l’avis de confidentialité",
 
-err_valid_email: "Veuillez saisir une adresse e-mail valide.",
-err_accept_terms_first:
-  "Veuillez d'abord accepter les conditions générales et les conditions d'utilisation.",
-err_signup_failed_generic: "Échec de l'inscription.",
-err_block_card_request: "La demande de blocage n'a pas pu être envoyée.",
-block_card_success:
-  "Votre demande de blocage a été transmise avec succès. La carte a été bloquée immédiatement et notre support examinera le cas dans les plus brefs délais.",
-err_confirm_email_first:
-  "Veuillez d'abord confirmer votre adresse e-mail via le lien dans votre boîte mail.",
-card_status_check_failed: "Impossible de vérifier le statut de la carte : ",
-card_blocked: "Cette VIVE CARD a été bloquée ou désactivée.",
+    claim_notice_title:
+      "VIVE CARD reconnue",
 
-alert_error_title: "Erreur",
-alert_open_link_failed: "Le lien n'a pas pu être ouvert",
-alert_card_activated_title: "VIVE CARD activée",
-alert_card_activated_text:
-  "Votre carte a été activée. Grâce à la session active, vous allez maintenant entrer dans l'application.",
+    claim_notice_text:
+      "Veuillez vérifier votre PUBLIC_ID puis activer votre VIVE CARD.",
 
-pid_ph: "p. ex. PVJ2AT5B6Y",
+    claim_success_title:
+      "✅ Votre VIVE CARD a été activée",
+
+    claim_success_text:
+      "Votre carte est maintenant liée à votre compte.",
+
+    btn_go_profile:
+      "Compléter le profil",
+
+    signup_title:
+      "Créer un compte",
+
+    signup_password_ph:
+      "Au moins 6 caractères",
+
+    signup_password2_ph:
+      "Répéter le mot de passe",
+
+    signup_pw2_label:
+      "Confirmer le mot de passe",
+
+    btn_signup_start:
+      "Démarrer l’inscription",
+
+    signup_hint:
+      "Vous recevrez un e-mail de confirmation.",
+
+    block_card_title:
+      "Bloquer / désactiver la carte",
+
+    block_card_intro:
+      "Envoyez une demande pour bloquer ou désactiver votre carte.",
+
+    block_reason_label:
+      "Motif (optionnel)",
+
+    block_reason_ph:
+      "ex. carte perdue",
+
+    btn_block_card_submit:
+      "Envoyer la demande",
+
+    block_card_hint:
+      "Le support examinera votre demande.",
+
+    err_valid_email:
+      "Veuillez saisir une adresse e-mail valide.",
+
+    err_accept_terms_first:
+      "Veuillez accepter les conditions.",
+
+    err_signup_failed_generic:
+      "Échec de l'inscription.",
+
+    err_block_card_request:
+      "Échec de la demande de blocage.",
+
+    block_card_success:
+      "Demande envoyée avec succès.",
+
+    err_confirm_email_first:
+      "Veuillez confirmer votre e-mail.",
+
+    card_status_check_failed:
+      "Échec de la vérification : ",
+
+    card_blocked:
+      "Cette carte est bloquée.",
+
+    alert_error_title:
+      "Erreur",
+
+    alert_open_link_failed:
+      "Le lien n'a pas pu être ouvert",
+
+    alert_card_activated_title:
+      "VIVE CARD activée",
+
+    alert_card_activated_text:
+      "Votre carte a été activée.",
+
+    pid_ph:
+      "ex. PVJ2AT5B6Y",
+
+    activation_guide_title:
+      "Comment activer votre VIVE CARD",
+
+    activation_guide_step_1:
+      "Commandez votre VIVE CARD.",
+
+    activation_guide_step_2:
+      "Vous recevrez votre PUBLIC_ID par e-mail.",
+
+    activation_guide_step_3:
+      "Créez un compte.",
+
+    activation_guide_step_4:
+      "Confirmez votre compte par e-mail.",
+
+    activation_guide_step_5:
+      "Confirmez votre adresse e-mail.",
+
+    activation_guide_step_6:
+      "Connectez-vous.",
+
+    activation_guide_step_7:
+      "Acceptez l’avis de confidentialité.",
+
+    activation_guide_step_8:
+      "Saisissez votre PUBLIC_ID.",
+
+    activation_guide_step_9:
+      "Complétez votre profil.",
   },
+
   es: {
-    pill: "🔒 Login / activar VIVE CARD",
+    pill: "🔒 Acceso / VIVE CARD",
     email_label: "Correo electrónico",
     pw_label: "Contraseña",
     pw_toggle: "MOSTRAR",
     pw_hide: "OCULTAR",
-    forgot_pw: "¿Olvidaste la contraseña?",
-    security_hint: "Seguridad: nunca compartas tus datos de acceso.",
-    rescue_note:
-      "Recomendación: no guardar correo y contraseña en el dispositivo. Existe una vista de emergencia separada.",
+    forgot_pw: "¿Olvidaste tu contraseña?",
+
     reset_title: "Restablecer contraseña",
     new_pw_label: "Nueva contraseña",
-    new_pw2_label: "Repetir nueva contraseña",
+    new_pw2_label: "Repetir contraseña",
     btn_reset_pw: "Cambiar contraseña",
-    reset_hint: "Después podrás iniciar sesión directamente.",
+    reset_hint:
+      "Después podrás iniciar sesión.",
+
     btn_login: "Iniciar sesión",
-    btn_signup: "Registrarse",
+    btn_signup: "Crear cuenta",
     btn_order: "Pedir VIVE CARD",
     btn_about: "¿Qué es VIVE CARD?",
     btn_block: "Bloquear / desactivar tarjeta",
-    terms_prefix: "Acepto las",
-    terms_and: "y el",
-    terms_agb: "condiciones",
-    terms_usage: "acuerdo de uso",
+
+    terms_prefix: "Acepto los",
+    terms_and: "y las",
+    terms_agb: "Términos",
+    terms_usage: "Condiciones de uso",
     btn_accept: "Aceptar y continuar",
+
     pid_label: "Tarjeta (PUBLIC_ID)",
+    public_id_label: "PUBLIC_ID",
+
     claim_hint:
-      "Después de iniciar sesión, tu tarjeta puede vincularse a tu cuenta.",
-    btn_claim: "Claim Card",
+      "Después de iniciar sesión puedes vincular tu tarjeta.",
+
+    btn_claim: "Activar tarjeta",
     claim_already: "Ya activada",
-    hint: "Configuración prelaunch. Indexación de Google desactivada.",
+
     link_impressum: "Aviso legal",
     link_privacy: "Privacidad",
-    link_agb: "AGB",
-    link_usage: "Acuerdo de uso",
+    link_agb: "Términos",
+    link_usage: "Condiciones de uso",
+
     err_enter: "Introduce correo y contraseña.",
-    err_enter_email: "Introduce el correo.",
-    err_login: "Inicio de sesión fallido: ",
-    err_signup: "Registro fallido: ",
-    err_user_missing: "Login correcto, pero falta el usuario.",
-    err_profile: "No se pudo cargar el perfil: ",
-    err_save: "Guardado fallido: ",
+    err_enter_email: "Introduce un correo electrónico.",
+    err_login: "Error al iniciar sesión: ",
+    err_signup: "Error en el registro: ",
+    err_user_missing: "Usuario no encontrado.",
+    err_profile: "Error al cargar perfil: ",
+    err_save: "Error al guardar: ",
     err_relogin: "Vuelve a iniciar sesión.",
-    need_terms: "Acepta primero las condiciones.",
+
+    need_terms: "Acepta los términos.",
     need_privacy_claim:
-      "Confirma primero la nota de privacidad para activar la tarjeta.",
-    need_pid: "Introduce la PUBLIC_ID y pulsa Claim Card.",
+      "Acepta la política de privacidad.",
+    need_pid: "Introduce la PUBLIC_ID.",
+
     err_pid: "Introduce la PUBLIC_ID.",
     err_login_first: "Primero inicia sesión.",
-    err_claim: "Claim fallido: ",
-    err_claim_rpc: "Error Claim: RPC no disponible.",
-    terms_ok: "Condiciones aceptadas.",
+    err_claim: "Error al activar: ",
+    err_claim_rpc: "Error RPC.",
+
+    terms_ok: "Términos aceptados.",
     privacy_claim_ok: "Privacidad aceptada.",
+
     signup_ok:
-      "Cuenta creada. Ahora confirma tu correo con el enlace recibido.",
-    err_reset: "Reset fallido: ",
-    reset_sent: "Correo de restablecimiento enviado.",
-    err_pw_short: "Contraseña demasiado corta (mín. 6 caracteres).",
+      "Cuenta creada. Revisa tu correo.",
+
+    err_reset: "Error al restablecer: ",
+    reset_sent: "Correo enviado.",
+    err_pw_short: "Contraseña demasiado corta.",
     err_pw_match: "Las contraseñas no coinciden.",
-    err_reset_apply: "Cambio de contraseña fallido: ",
-    reset_ok: "Contraseña cambiada correctamente.",
+    err_reset_apply: "Error al cambiar contraseña: ",
+    reset_ok: "Contraseña actualizada.",
+
     pid_detected_login:
-      "PUBLIC_ID detectada. Inicia sesión y pulsa Claim Card.",
+      "PUBLIC_ID detectada. Inicia sesión.",
+
     pid_detected: "PUBLIC_ID detectada.",
-    claim_ok: "Claim OK.",
-    err_pid_save: "No se pudo guardar la PUBLIC_ID: ",
-    err_privacy_save:
-      "No se pudo guardar el consentimiento de privacidad: ",
-   banner: "VERSIÓN PRIVADA DE PRELANZAMIENTO",
-single_account_notice:
-  "Aviso importante: por cada PUBLIC_ID solo se puede utilizar una dirección de correo electrónico o una cuenta. Regístrate con la misma dirección de correo electrónico que utilizaste en tu pedido.",
-terms_intro:
-  "Antes de poder activar tu VIVE CARD, confirma los términos y condiciones y las condiciones de uso.",
+    claim_ok: "Tarjeta activada.",
 
-privacy_claim_title: "Aviso de privacidad para la activación de la tarjeta",
-privacy_claim_body:
-  "Con la activación de tu VIVE CARD se podrán guardar voluntariamente datos personales, incluidos posibles datos de salud como alergias, medicamentos, grupo sanguíneo o indicaciones de emergencia.\n\nEstos datos son proporcionados y gestionados exclusivamente por ti. Guarda solo los datos cuyo tratamiento deseas expresamente.",
-privacy_claim_checkbox:
-  "He leído el aviso de privacidad para la activación de la tarjeta y acepto que los datos personales introducidos voluntariamente por mí – incluidos posibles datos de salud – se almacenen en el marco de mi VIVE CARD.",
-btn_accept_privacy_claim: "Aceptar aviso de privacidad",
+    err_pid_save: "Error al guardar PUBLIC_ID: ",
+    err_privacy_save: "Error al guardar privacidad: ",
 
-claim_notice_title: "VIVE CARD detectada",
-claim_notice_text:
-  "Inicia sesión o crea una cuenta. Después, tu VIVE CARD se activará automáticamente.",
-public_id_label: "PUBLIC_ID",
+    terms_intro:
+      "Acepta los términos antes de activar la tarjeta.",
 
-claim_success_title: "✅ Tu VIVE CARD se ha activado correctamente",
-claim_success_text:
-  "Tu tarjeta ya está vinculada a tu cuenta. Ahora puedes completar tu perfil y tu información de emergencia.\n\nSi has pedido más tarjetas, solo tienes que abrir el siguiente enlace de activación de tu correo electrónico y repetir el proceso.",
-btn_go_profile: "Completar perfil",
+    privacy_claim_title:
+      "Aviso de privacidad para la activación de la tarjeta",
 
-signup_title: "Crear cuenta",
-signup_password_ph: "Al menos 6 caracteres",
-signup_password2_ph: "Repetir contraseña",
-signup_pw2_label: "Repetir contraseña",
-btn_signup_start: "Iniciar registro",
-signup_hint:
-  "Después de hacer clic recibirás un correo de confirmación. Después podrás activar tu cuenta y asignar tu VIVE CARD.",
+    privacy_claim_body:
+      "Al activar tu VIVE CARD puedes guardar voluntariamente información personal, incluidos posibles datos de salud como alergias, medicamentos, grupo sanguíneo o indicaciones de emergencia.\n\nEstos datos son proporcionados y gestionados exclusivamente por ti.",
 
-block_card_title: "Bloquear / desactivar tarjeta",
-block_card_intro:
-  "Si tu tarjeta se ha perdido o debe desactivarse, envía aquí una solicitud de bloqueo. Indica la dirección de correo electrónico y la PUBLIC_ID vinculadas a la tarjeta.",
-block_reason_label: "Motivo (opcional)",
-block_reason_ph: "p. ej. tarjeta perdida, asignación incorrecta, eliminar cuenta",
-btn_block_card_submit: "Enviar solicitud de bloqueo",
-block_card_hint:
-  "La solicitud se enviará al soporte. Después, la tarjeta será revisada manualmente y bloqueada o desactivada.",
+    privacy_claim_checkbox:
+      "He leído el aviso de privacidad y acepto que los datos personales introducidos voluntariamente se guarden como parte de mi VIVE CARD.",
 
-err_valid_email: "Introduce una dirección de correo electrónico válida.",
-err_accept_terms_first:
-  "Acepta primero los términos y condiciones y las condiciones de uso.",
-err_signup_failed_generic: "Error en el registro.",
-err_block_card_request: "No se pudo enviar la solicitud de bloqueo.",
-block_card_success:
-  "Tu solicitud de bloqueo se ha enviado correctamente. La tarjeta se ha bloqueado de inmediato y nuestro soporte revisará el caso lo antes posible.",
-err_confirm_email_first:
-  "Confirma primero tu dirección de correo electrónico mediante el enlace de tu bandeja de entrada.",
-card_status_check_failed: "No se pudo comprobar el estado de la tarjeta: ",
-card_blocked: "Esta VIVE CARD ha sido bloqueada o desactivada.",
+    btn_accept_privacy_claim:
+      "Aceptar aviso de privacidad",
 
-alert_error_title: "Error",
-alert_open_link_failed: "No se pudo abrir el enlace",
-alert_card_activated_title: "VIVE CARD activada",
-alert_card_activated_text:
-  "Tu tarjeta ha sido activada. Gracias a la sesión activa, ahora entrarás en la aplicación.",
+    claim_notice_title:
+      "VIVE CARD reconocida",
 
-pid_ph: "p. ej. PVJ2AT5B6Y",
+    claim_notice_text:
+      "Comprueba tu PUBLIC_ID y activa tu VIVE CARD.",
+
+    claim_success_title:
+      "✅ Tarjeta activada correctamente",
+
+    claim_success_text:
+      "Tu tarjeta está vinculada a tu cuenta.",
+
+    btn_go_profile:
+      "Completar perfil",
+
+    signup_title:
+      "Crear cuenta",
+
+    signup_password_ph:
+      "Al menos 6 caracteres",
+
+    signup_password2_ph:
+      "Repetir contraseña",
+
+    signup_pw2_label:
+      "Repetir contraseña",
+
+    btn_signup_start:
+      "Iniciar registro",
+
+    signup_hint:
+      "Recibirás un correo de confirmación.",
+
+    block_card_title:
+      "Bloquear tarjeta",
+
+    block_card_intro:
+      "Envía una solicitud para bloquear o desactivar tu tarjeta.",
+
+    block_reason_label:
+      "Motivo (opcional)",
+
+    block_reason_ph:
+      "ej. tarjeta perdida",
+
+    btn_block_card_submit:
+      "Enviar solicitud",
+
+    block_card_hint:
+      "El soporte revisará tu caso.",
+
+    err_valid_email:
+      "Introduce un correo válido.",
+
+    err_accept_terms_first:
+      "Acepta los términos primero.",
+
+    err_signup_failed_generic:
+      "Registro fallido.",
+
+    err_block_card_request:
+      "Error en solicitud.",
+
+    block_card_success:
+      "Solicitud enviada.",
+
+    err_confirm_email_first:
+      "Confirma tu correo primero.",
+
+    card_status_check_failed:
+      "Error al comprobar tarjeta: ",
+
+    card_blocked:
+      "Tarjeta bloqueada.",
+
+    alert_error_title:
+      "Error",
+
+    alert_open_link_failed:
+      "No se pudo abrir el enlace",
+
+    alert_card_activated_title:
+      "VIVE CARD activada",
+
+    alert_card_activated_text:
+      "Tu tarjeta ha sido activada.",
+
+    pid_ph:
+      "ej. PVJ2AT5B6Y",
+
+    activation_guide_title:
+      "Cómo activar tu VIVE CARD",
+
+    activation_guide_step_1:
+      "Pide tu VIVE CARD.",
+
+    activation_guide_step_2:
+      "Recibirás tu PUBLIC_ID por correo electrónico.",
+
+    activation_guide_step_3:
+      "Crea una cuenta.",
+
+    activation_guide_step_4:
+      "Confirma tu cuenta.",
+
+    activation_guide_step_5:
+      "Confirma tu correo electrónico.",
+
+    activation_guide_step_6:
+      "Inicia sesión.",
+
+    activation_guide_step_7:
+      "Acepta el aviso de privacidad.",
+
+    activation_guide_step_8:
+      "Introduce tu PUBLIC_ID.",
+
+    activation_guide_step_9:
+      "Completa tu perfil.",
   },
+
   en: {
-    pill: "🔒 Login / activate VIVE CARD",
+    pill: "🔒 Login / VIVE CARD",
     email_label: "Email",
     pw_label: "Password",
     pw_toggle: "SHOW",
     pw_hide: "HIDE",
     forgot_pw: "Forgot password?",
-    security_hint: "Security: never share your login data with third parties.",
-    rescue_note:
-      "Recommendation: do not store email + password on the device. There is a separate emergency view for responders.",
+
     reset_title: "Reset password",
     new_pw_label: "New password",
     new_pw2_label: "Repeat new password",
     btn_reset_pw: "Change password",
-    reset_hint: "After changing it, you can log in directly.",
+    reset_hint:
+      "You can log in after changing it.",
+
     btn_login: "Login",
-    btn_signup: "Sign up",
+    btn_signup: "Create account",
     btn_order: "Order VIVE CARD",
     btn_about: "What is VIVE CARD?",
     btn_block: "Block / deactivate card",
+
     terms_prefix: "I accept the",
     terms_and: "and the",
-    terms_agb: "terms",
-    terms_usage: "usage agreement",
+    terms_agb: "Terms",
+    terms_usage: "Terms of use",
     btn_accept: "Accept & continue",
+
     pid_label: "Card (PUBLIC_ID)",
+    public_id_label: "PUBLIC_ID",
+
     claim_hint:
-      "As soon as you are logged in, your card can be linked to your account.",
-    btn_claim: "Claim Card",
+      "Once you are logged in, you can link your card to your account.",
+
+    btn_claim: "Activate card",
     claim_already: "Already activated",
-    hint: "Prelaunch setup. Google indexing is disabled.",
-    link_impressum: "Imprint",
+
+    link_impressum: "Legal notice",
     link_privacy: "Privacy",
     link_agb: "Terms",
-    link_usage: "Usage agreement",
-    err_enter: "Please enter email and password.",
-    err_enter_email: "Please enter email.",
+    link_usage: "Terms of use",
+
+    err_enter: "Enter email and password.",
+    err_enter_email: "Enter email.",
     err_login: "Login failed: ",
-    err_signup: "Sign up failed: ",
-    err_user_missing: "Login OK, but user is missing.",
-    err_profile: "Profile could not be loaded: ",
-    err_save: "Saving failed: ",
+    err_signup: "Signup failed: ",
+    err_user_missing: "User missing.",
+    err_profile: "Profile load failed: ",
+    err_save: "Save failed: ",
     err_relogin: "Please log in again.",
-    need_terms: "Please accept terms & usage agreement first.",
-    need_privacy_claim:
-      "Please confirm the privacy notice for card activation first.",
-    need_pid: "Please enter PUBLIC_ID and press Claim Card.",
-    err_pid: "Please enter PUBLIC_ID.",
-    err_login_first: "Please log in first.",
-    err_claim: "Claim failed: ",
-    err_claim_rpc: "Claim error: RPC not available.",
+
+    need_terms: "Accept terms first.",
+    need_privacy_claim: "Accept privacy notice.",
+    need_pid: "Enter PUBLIC_ID.",
+
+    err_pid: "Enter PUBLIC_ID.",
+    err_login_first: "Login first.",
+    err_claim: "Activation failed: ",
+    err_claim_rpc: "RPC error.",
+
     terms_ok: "Terms accepted.",
-    privacy_claim_ok: "Privacy notice accepted.",
+    privacy_claim_ok: "Privacy accepted.",
+
     signup_ok:
-      "Account created. Please confirm your email using the link in your inbox.",
+      "Account created. Please confirm your email.",
+
     err_reset: "Reset failed: ",
-    reset_sent: "Reset email has been sent. Please check your inbox.",
-    err_pw_short: "Password too short (min. 6 characters).",
+    reset_sent: "Reset email sent.",
+    err_pw_short: "Password too short.",
     err_pw_match: "Passwords do not match.",
     err_reset_apply: "Password change failed: ",
-    reset_ok: "Password successfully changed.",
+    reset_ok: "Password updated.",
+
     pid_detected_login:
-      "PUBLIC_ID detected. Please log in and then press Claim Card.",
-    pid_detected: "PUBLIC_ID detected.",
-    claim_ok: "Claim OK.",
-    err_pid_save: "PUBLIC_ID could not be saved: ",
+      "PUBLIC_ID detected. Please login.",
+
+    pid_detected:
+      "PUBLIC_ID detected.",
+
+    claim_ok:
+      "Card activated.",
+
+    err_pid_save:
+      "Save PUBLIC_ID failed: ",
+
     err_privacy_save:
-      "Privacy consent could not be saved: ",
-    banner: "PRE-LAUNCH PRIVATE VERSION",
-single_account_notice:
-  "Important notice: only one email address or account can be used per PUBLIC_ID. Please register with the same email address you used for your order.",
-terms_intro:
-  "Before you can activate your VIVE CARD, please confirm the Terms and Conditions and the Terms of Use.",
+      "Save privacy failed: ",
 
-privacy_claim_title: "Privacy notice for card activation",
-privacy_claim_body:
-  "When activating your VIVE CARD, you may voluntarily store personal information, including possible health data such as allergies, medications, blood type, or emergency notes.\n\nThis information is provided and managed exclusively by you. Please store only data that you explicitly want to be processed.",
-privacy_claim_checkbox:
-  "I have read the privacy notice for card activation and agree that personal data voluntarily entered by me – including possible health data – may be stored as part of my VIVE CARD.",
-btn_accept_privacy_claim: "Accept privacy notice",
+    terms_intro:
+      "Accept the terms before activating your card.",
 
-claim_notice_title: "VIVE CARD detected",
-claim_notice_text:
-  "Please log in or create an account. After that, your VIVE CARD will be activated automatically.",
-public_id_label: "PUBLIC_ID",
+    privacy_claim_title:
+      "Privacy notice for card activation",
 
-claim_success_title: "✅ Your VIVE CARD has been activated successfully",
-claim_success_text:
-  "Your card is now linked to your account. You can now complete your profile and your emergency information.\n\nIf you ordered additional cards, simply open the next activation link from your email and repeat the process.",
-btn_go_profile: "Complete profile",
+    privacy_claim_body:
+      "When activating your VIVE CARD, you may voluntarily store personal information, including possible health data such as allergies, medications, blood group or emergency notes.\n\nThis information is provided and managed exclusively by you.",
 
-signup_title: "Create account",
-signup_password_ph: "At least 6 characters",
-signup_password2_ph: "Repeat password",
-signup_pw2_label: "Repeat password",
-btn_signup_start: "Start registration",
-signup_hint:
-  "After clicking, you will receive a confirmation email. After that, you can activate your account and assign your VIVE CARD.",
+    privacy_claim_checkbox:
+      "I have read the privacy notice and agree that personal data voluntarily entered by me may be stored as part of my VIVE CARD.",
 
-block_card_title: "Block / deactivate card",
-block_card_intro:
-  "If your card has been lost or needs to be deactivated, submit a block request here. Please enter the email address and PUBLIC_ID linked to the card.",
-block_reason_label: "Reason (optional)",
-block_reason_ph: "e.g. lost card, wrong assignment, delete account",
-btn_block_card_submit: "Send block request",
-block_card_hint:
-  "The request will be forwarded to support. After that, the card will be checked manually and blocked or deactivated.",
+    btn_accept_privacy_claim:
+      "Accept privacy notice",
 
-err_valid_email: "Please enter a valid email address.",
-err_accept_terms_first:
-  "Please accept the Terms and Conditions and the Terms of Use first.",
-err_signup_failed_generic: "Sign up failed.",
-err_block_card_request: "Block request could not be sent.",
-block_card_success:
-  "Your block request was submitted successfully. The card was blocked immediately and our support team will review the case as soon as possible.",
-err_confirm_email_first:
-  "Please confirm your email address first using the link in your inbox.",
-card_status_check_failed: "Card status could not be checked: ",
-card_blocked: "This VIVE CARD has been blocked or deactivated.",
+    claim_notice_title:
+      "VIVE CARD detected",
 
-alert_error_title: "Error",
-alert_open_link_failed: "The link could not be opened",
-alert_card_activated_title: "VIVE CARD activated",
-alert_card_activated_text:
-  "Your card has been activated. Because your session is active, you will now enter the app.",
+    claim_notice_text:
+      "Please check your PUBLIC_ID and activate your VIVE CARD.",
 
-pid_ph: "e.g. PVJ2AT5B6Y",
+    claim_success_title:
+      "✅ Card activated successfully",
+
+    claim_success_text:
+      "Your card is now linked to your account.",
+
+    btn_go_profile:
+      "Complete profile",
+
+    signup_title:
+      "Create account",
+
+    signup_password_ph:
+      "At least 6 characters",
+
+    signup_password2_ph:
+      "Repeat password",
+
+    signup_pw2_label:
+      "Repeat password",
+
+    btn_signup_start:
+      "Start signup",
+
+    signup_hint:
+      "You will receive a confirmation email.",
+
+    block_card_title:
+      "Block / deactivate card",
+
+    block_card_intro:
+      "Submit a request to block or deactivate your card.",
+
+    block_reason_label:
+      "Reason (optional)",
+
+    block_reason_ph:
+      "e.g. lost card",
+
+    btn_block_card_submit:
+      "Send request",
+
+    block_card_hint:
+      "Support will review the request.",
+
+    err_valid_email:
+      "Enter a valid email.",
+
+    err_accept_terms_first:
+      "Accept terms first.",
+
+    err_signup_failed_generic:
+      "Signup failed.",
+
+    err_block_card_request:
+      "Block request failed.",
+
+    block_card_success:
+      "Request sent.",
+
+    err_confirm_email_first:
+      "Confirm email first.",
+
+    card_status_check_failed:
+      "Card check failed: ",
+
+    card_blocked:
+      "Card blocked.",
+
+    alert_error_title:
+      "Error",
+
+    alert_open_link_failed:
+      "The link could not be opened",
+
+    alert_card_activated_title:
+      "VIVE CARD activated",
+
+    alert_card_activated_text:
+      "Your card has been activated.",
+
+    pid_ph:
+      "e.g. PVJ2AT5B6Y",
+
+    activation_guide_title:
+      "How to activate your VIVE CARD",
+
+    activation_guide_step_1:
+      "Order your VIVE CARD.",
+
+    activation_guide_step_2:
+      "You will receive your PUBLIC_ID by email.",
+
+    activation_guide_step_3:
+      "Create an account.",
+
+    activation_guide_step_4:
+      "Confirm your account by email.",
+
+    activation_guide_step_5:
+      "Confirm your email address.",
+
+    activation_guide_step_6:
+      "Log in with email and password.",
+
+    activation_guide_step_7:
+      "Accept the privacy notice.",
+
+    activation_guide_step_8:
+      "Enter your PUBLIC_ID and activate the card.",
+
+    activation_guide_step_9:
+      "Complete your personal profile.",
   },
 };
 
 function isValidEmail(email: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim());
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+    String(email || "").trim()
+  );
 }
 
 function normalizePid(value: string | null | undefined) {
@@ -681,71 +1139,143 @@ function normalizePid(value: string | null | undefined) {
     .replace(/[^A-Z0-9]/g, "");
 }
 
-function mergeLang(base: Lang) {
-  return I18N[base] || I18N.de;
-}
-
 export default function LoginScreen({ navigation }: any) {
   const [lang, setLang] = useState<Lang>("de");
-  const t = useMemo(() => mergeLang(lang), [lang]);
 
-  const [msg, setMsg] = useState<{ text: string; type: "" | "ok" | "err" }>({
+  const t = useMemo(
+    () => I18N[lang] || I18N.de,
+    [lang]
+  );
+
+  const [langOpen, setLangOpen] = useState(false);
+
+  const [msg, setMsg] = useState<MessageState>({
     text: "",
     type: "",
   });
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
   const [publicId, setPublicId] = useState("");
 
   const [pwVisible, setPwVisible] = useState(false);
 
-  const [showResetBox, setShowResetBox] = useState(false);
-  const [newPassword, setNewPassword] = useState("");
-  const [newPassword2, setNewPassword2] = useState("");
+  const [showResetBox, setShowResetBox] =
+    useState(false);
 
-  const [showTermsBox, setShowTermsBox] = useState(false);
-  const [termsCheck, setTermsCheck] = useState(false);
+  const [newPassword, setNewPassword] =
+    useState("");
 
-  const [showPrivacyBox, setShowPrivacyBox] = useState(false);
-  const [privacyCheck, setPrivacyCheck] = useState(false);
+  const [newPassword2, setNewPassword2] =
+    useState("");
 
-  const [showClaimNotice, setShowClaimNotice] = useState(false);
-  const [claimNoticePid, setClaimNoticePid] = useState("");
-  const [claimSuccessPid, setClaimSuccessPid] = useState("");
+  const [showTermsBox, setShowTermsBox] =
+    useState(false);
 
-  const [signupOpen, setSignupOpen] = useState(false);
-  const [signupMsg, setSignupMsg] = useState<{
-    text: string;
-    type: "" | "ok" | "err";
-  }>({ text: "", type: "" });
-  const [signupEmail, setSignupEmail] = useState("");
-  const [signupPassword, setSignupPassword] = useState("");
-  const [signupPassword2, setSignupPassword2] = useState("");
-  const [signupTermsCheck, setSignupTermsCheck] = useState(false);
-  const [signupPwVisible, setSignupPwVisible] = useState(false);
+  const [termsCheck, setTermsCheck] =
+    useState(false);
 
-  const [blockOpen, setBlockOpen] = useState(false);
-  const [blockMsg, setBlockMsg] = useState<{
-    text: string;
-    type: "" | "ok" | "err";
-  }>({ text: "", type: "" });
-  const [blockEmail, setBlockEmail] = useState("");
-  const [blockPublicId, setBlockPublicId] = useState("");
-  const [blockReason, setBlockReason] = useState("");
+  const [showPrivacyBox, setShowPrivacyBox] =
+    useState(false);
 
-  const [busy, setBusy] = useState<string | null>(null);
+  const [privacyCheck, setPrivacyCheck] =
+    useState(false);
 
-  const setMainMessage = (text: string, type: "" | "ok" | "err" = "") => {
-    setMsg({ text, type });
+  const [showActivationArea, setShowActivationArea] =
+    useState(false);
+
+  const [showClaimNotice, setShowClaimNotice] =
+    useState(false);
+
+  const [claimNoticePid, setClaimNoticePid] =
+    useState("");
+
+  const [claimSuccessPid, setClaimSuccessPid] =
+    useState("");
+
+  const [guideOpen, setGuideOpen] =
+    useState(false);
+
+  const [signupOpen, setSignupOpen] =
+    useState(false);
+
+  const [signupMsg, setSignupMsg] =
+    useState<MessageState>({
+      text: "",
+      type: "",
+    });
+
+  const [signupEmail, setSignupEmail] =
+    useState("");
+
+  const [signupPassword, setSignupPassword] =
+    useState("");
+
+  const [signupPassword2, setSignupPassword2] =
+    useState("");
+
+  const [
+    signupTermsCheck,
+    setSignupTermsCheck,
+  ] = useState(false);
+
+  const [
+    signupPwVisible,
+    setSignupPwVisible,
+  ] = useState(false);
+
+  const [blockOpen, setBlockOpen] =
+    useState(false);
+
+  const [blockMsg, setBlockMsg] =
+    useState<MessageState>({
+      text: "",
+      type: "",
+    });
+
+  const [blockEmail, setBlockEmail] =
+    useState("");
+
+  const [
+    blockPublicId,
+    setBlockPublicId,
+  ] = useState("");
+
+  const [blockReason, setBlockReason] =
+    useState("");
+
+  const [busy, setBusy] =
+    useState<string | null>(null);
+
+  const setMainMessage = (
+    text: string,
+    type: "" | "ok" | "err" = ""
+  ) => {
+    setMsg({
+      text,
+      type,
+    });
   };
 
-  const setSignupMessage = (text: string, type: "" | "ok" | "err" = "") => {
-    setSignupMsg({ text, type });
+  const setSignupMessage = (
+    text: string,
+    type: "" | "ok" | "err" = ""
+  ) => {
+    setSignupMsg({
+      text,
+      type,
+    });
   };
 
-  const setBlockMessage = (text: string, type: "" | "ok" | "err" = "") => {
-    setBlockMsg({ text, type });
+  const setBlockMessage = (
+    text: string,
+    type: "" | "ok" | "err" = ""
+  ) => {
+    setBlockMsg({
+      text,
+      type,
+    });
   };
 
   const resetClaimState = () => {
@@ -753,25 +1283,48 @@ export default function LoginScreen({ navigation }: any) {
   };
 
   const openUrl = async (url: string) => {
-  try {
-    const supported = await Linking.canOpenURL(url);
-    if (!supported) {
-      Alert.alert(t.alert_error_title, t.alert_open_link_failed);
-      return;
-    }
-    await Linking.openURL(url);
-  } catch {
-    Alert.alert(t.alert_error_title, t.alert_open_link_failed);
-  }
-};
+    try {
+      const supported =
+        await Linking.canOpenURL(url);
 
-  const getCurrentUser = async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error) return { user: null, error };
-    return { user: data?.user || null, error: null };
+      if (!supported) {
+        Alert.alert(
+          t.alert_error_title,
+          t.alert_open_link_failed
+        );
+
+        return;
+      }
+
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert(
+        t.alert_error_title,
+        t.alert_open_link_failed
+      );
+    }
   };
 
-  const loadProfile = async (ownerId: string) => {
+  const getCurrentUser = async () => {
+    const { data, error } =
+      await supabase.auth.getUser();
+
+    if (error) {
+      return {
+        user: null,
+        error,
+      };
+    }
+
+    return {
+      user: data?.user || null,
+      error: null,
+    };
+  };
+
+  const loadProfile = async (
+    ownerId: string
+  ) => {
     return await supabase
       .from("profiles")
       .select(
@@ -781,25 +1334,34 @@ export default function LoginScreen({ navigation }: any) {
       .maybeSingle();
   };
 
-  const upsertProfile = async (values: any) => {
+  const upsertProfile = async (
+    values: any
+  ) => {
     return await supabase
       .from("profiles")
-      .upsert(values, { onConflict: "owner_id" })
+      .upsert(values, {
+        onConflict: "owner_id",
+      })
       .select(
         "terms_accepted_at, public_id, privacy_claim_accepted_at, email_confirmed_at"
       )
       .maybeSingle();
   };
 
-  const savePrivacyClaimConsent = async (ownerId: string) => {
+  const savePrivacyClaimConsent = async (
+    ownerId: string
+  ) => {
     return await supabase
       .from("profiles")
       .upsert(
         {
           owner_id: ownerId,
-          privacy_claim_accepted_at: new Date().toISOString(),
+          privacy_claim_accepted_at:
+            new Date().toISOString(),
         },
-        { onConflict: "owner_id" }
+        {
+          onConflict: "owner_id",
+        }
       )
       .select(
         "terms_accepted_at, public_id, privacy_claim_accepted_at, email_confirmed_at"
@@ -808,57 +1370,136 @@ export default function LoginScreen({ navigation }: any) {
   };
 
   const getOrCreateProfile = async () => {
-    const { user, error: userErr } = await getCurrentUser();
+    const {
+      user,
+      error: userErr,
+    } = await getCurrentUser();
+
     if (userErr || !user) {
-      return { user: null, profile: null, error: new Error(t.err_relogin) };
+      return {
+        user: null,
+        profile: null,
+        error: new Error(t.err_relogin),
+      };
     }
 
-    let { data: profile, error } = await loadProfile(user.id);
-    if (error) return { user, profile: null, error };
+    let {
+      data: profile,
+      error,
+    } = await loadProfile(user.id);
+
+    if (error) {
+      return {
+        user,
+        profile: null,
+        error,
+      };
+    }
 
     if (!profile) {
-      const up = await upsertProfile({ owner_id: user.id });
-      if (up.error) return { user, profile: null, error: up.error };
+      const up =
+        await upsertProfile({
+          owner_id: user.id,
+        });
+
+      if (up.error) {
+        return {
+          user,
+          profile: null,
+          error: up.error,
+        };
+      }
+
       profile = up.data || null;
     }
 
-    return { user, profile, error: null };
+    return {
+      user,
+      profile,
+      error: null,
+    };
   };
 
-  const getCardByPid = async (pid: string) => {
-    const cleanPid = normalizePid(pid);
-    if (!cleanPid) return { card: null, error: null };
+  const getCardByPid = async (
+    pid: string
+  ) => {
+    const cleanPid =
+      normalizePid(pid);
 
-    const { data, error } = await supabase
+    if (!cleanPid) {
+      return {
+        card: null,
+        error: null,
+      };
+    }
+
+    const {
+      data,
+      error,
+    } = await supabase
       .from("cards")
-      .select("id, public_id, status, blocked_at")
+      .select(
+        "id, public_id, status, blocked_at"
+      )
       .eq("public_id", cleanPid)
       .maybeSingle();
 
-    if (error) return { card: null, error };
-    return { card: data || null, error: null };
+    if (error) {
+      return {
+        card: null,
+        error,
+      };
+    }
+
+    return {
+      card: data || null,
+      error: null,
+    };
   };
 
   const isBlockedCard = (card: any) => {
     if (!card) return false;
-    return String(card.status || "") === "blocked" || !!card.blocked_at;
+
+    return (
+      String(card.status || "") ===
+        "blocked" ||
+      !!card.blocked_at
+    );
   };
 
-  const ensureCardNotBlocked = async (pid: string) => {
-    const cleanPid = normalizePid(pid);
-    if (!cleanPid) return { ok: true, card: null, message: "" };
+  const ensureCardNotBlocked = async (
+    pid: string
+  ) => {
+    const cleanPid =
+      normalizePid(pid);
 
-    const { card, error } = await getCardByPid(cleanPid);
+    if (!cleanPid) {
+      return {
+        ok: true,
+        card: null,
+        message: "",
+      };
+    }
+
+    const {
+      card,
+      error,
+    } = await getCardByPid(cleanPid);
 
     if (error) {
       return {
         ok: false,
         card: null,
-        message: t.card_status_check_failed + error.message,
+        message:
+          t.card_status_check_failed +
+          error.message,
       };
     }
 
-    if (card && isBlockedCard(card)) {
+    if (
+      card &&
+      isBlockedCard(card)
+    ) {
       return {
         ok: false,
         card,
@@ -866,1497 +1507,3743 @@ export default function LoginScreen({ navigation }: any) {
       };
     }
 
-    return { ok: true, card, message: "" };
+    return {
+      ok: true,
+      card,
+      message: "",
+    };
   };
 
-  const performClaimFlow = async (pid: string) => {
-    const cleanPid = normalizePid(pid);
+  const showCardActivation = (
+    pid = ""
+  ) => {
+    const cleanPid =
+      normalizePid(pid);
+
+    setShowActivationArea(true);
+
+    if (cleanPid) {
+      setPublicId(cleanPid);
+
+      setClaimNoticePid(cleanPid);
+
+      setShowClaimNotice(true);
+    } else {
+      setShowClaimNotice(false);
+    }
+  };
+
+  const performClaimFlow = async (
+    pid: string
+  ) => {
+    const cleanPid =
+      normalizePid(pid);
+
     if (!cleanPid) {
-      setMainMessage(t.err_pid, "err");
+      setMainMessage(
+        t.err_pid,
+        "err"
+      );
+
       return false;
     }
 
     setPublicId(cleanPid);
 
-    const { data: sess } = await supabase.auth.getSession();
+    const {
+      data: sess,
+    } =
+      await supabase.auth.getSession();
+
     if (!sess?.session) {
-      setMainMessage(t.err_login_first, "err");
+      setMainMessage(
+        t.err_login_first,
+        "err"
+      );
+
       return false;
     }
 
-    const { user, profile, error } = await getOrCreateProfile();
+    const {
+      user,
+      profile,
+      error,
+    } =
+      await getOrCreateProfile();
 
-    if (error || !user) {
-      setMainMessage(error?.message || t.err_user_missing, "err");
+    if (
+      error ||
+      !user ||
+      !profile
+    ) {
+      setMainMessage(
+        error?.message ||
+          t.err_user_missing,
+        "err"
+      );
+
       return false;
     }
 
     const authConfirmedAt =
-      (user as any)?.email_confirmed_at || (user as any)?.confirmed_at || null;
+      (user as any)
+        ?.email_confirmed_at ||
+      (user as any)
+        ?.confirmed_at ||
+      null;
 
-    if (!profile?.email_confirmed_at && authConfirmedAt) {
-      const syncRes = await upsertProfile({
-        owner_id: user.id,
-        email: String(user.email || "").trim().toLowerCase(),
-        email_confirmed_at: authConfirmedAt,
-      });
+    if (
+      !profile.email_confirmed_at &&
+      authConfirmedAt
+    ) {
+      const syncRes =
+        await upsertProfile({
+          owner_id: user.id,
+          email: String(
+            user.email || ""
+          )
+            .trim()
+            .toLowerCase(),
+          email_confirmed_at:
+            authConfirmedAt,
+        });
 
-      if (!syncRes.error && syncRes.data) {
-        profile.email_confirmed_at = authConfirmedAt;
+      if (
+        !syncRes.error &&
+        syncRes.data
+      ) {
+        profile.email_confirmed_at =
+          authConfirmedAt;
       }
     }
 
-    if (!profile?.email_confirmed_at) {
+    if (
+      !profile.email_confirmed_at
+    ) {
       await supabase.auth.signOut();
-      setMainMessage(t.err_confirm_email_first, "err");
+
+      setMainMessage(
+        t.err_confirm_email_first,
+        "err"
+      );
+
       return false;
     }
 
-    if (!profile?.terms_accepted_at) {
+    if (
+      !profile.terms_accepted_at
+    ) {
+      setShowActivationArea(false);
       setShowPrivacyBox(false);
       setShowTermsBox(true);
-      setMainMessage(t.need_terms, "ok");
+
+      setMainMessage(
+        t.need_terms,
+        "ok"
+      );
+
       return false;
     }
 
-    if (!profile?.privacy_claim_accepted_at) {
-      setPublicId(cleanPid);
+    if (
+      !profile
+        .privacy_claim_accepted_at
+    ) {
+      setShowActivationArea(false);
       setShowTermsBox(false);
       setShowPrivacyBox(true);
-      setMainMessage(t.need_privacy_claim, "ok");
+
+      setMainMessage(
+        t.need_privacy_claim,
+        "ok"
+      );
+
       return false;
     }
 
-    const blockCheck = await ensureCardNotBlocked(cleanPid);
+    const blockCheck =
+      await ensureCardNotBlocked(
+        cleanPid
+      );
+
     if (!blockCheck.ok) {
-      setMainMessage(blockCheck.message, "err");
+      setMainMessage(
+        blockCheck.message,
+        "err"
+      );
+
       return false;
     }
 
     try {
-      const { error: claimError } = await supabase.rpc("claim_card", {
-        p_public_id: cleanPid,
-      });
+      const {
+        error: claimError,
+      } =
+        await supabase.rpc(
+          "claim_card",
+          {
+            p_public_id:
+              cleanPid,
+          }
+        );
 
       if (claimError) {
-        setMainMessage(t.err_claim + claimError.message, "err");
+        setMainMessage(
+          t.err_claim +
+            claimError.message,
+          "err"
+        );
+
         return false;
       }
     } catch {
-      setMainMessage(t.err_claim_rpc, "err");
+      setMainMessage(
+        t.err_claim_rpc,
+        "err"
+      );
+
       return false;
     }
 
-    const up = await upsertProfile({
-      owner_id: user.id,
-      public_id: cleanPid,
-    });
+    const up =
+      await upsertProfile({
+        owner_id: user.id,
+        public_id: cleanPid,
+      });
 
     if (up.error) {
-      setMainMessage(t.err_pid_save + up.error.message, "err");
+      setMainMessage(
+        t.err_pid_save +
+          up.error.message,
+        "err"
+      );
+
       return false;
     }
 
+    setShowActivationArea(false);
     setShowClaimNotice(false);
-    setClaimNoticePid(cleanPid);
-    setClaimSuccessPid(cleanPid);
-    setMainMessage(t.claim_ok, "ok");
+
+    setClaimNoticePid(
+      cleanPid
+    );
+
+    setClaimSuccessPid(
+      cleanPid
+    );
+
+    setMainMessage(
+      t.claim_ok,
+      "ok"
+    );
+
     return true;
   };
 
-  const handleForgotPassword = async () => {
-    try {
-      setBusy("forgot");
-      setMainMessage("");
+  const handleForgotPassword =
+    async () => {
+      try {
+        setBusy("forgot");
+        setMainMessage("");
 
-      const cleanEmail = email.trim();
-      if (!cleanEmail) {
-  setMainMessage(t.err_enter_email, "err");
-  return;
-}
-if (!isValidEmail(cleanEmail)) {
-  setMainMessage(t.err_valid_email, "err");
-  return;
-}
+        const cleanEmail =
+          email.trim().toLowerCase();
 
-      const redirectTo = "https://vive-card.com/login";
+        if (!cleanEmail) {
+          setMainMessage(
+            t.err_enter_email,
+            "err"
+          );
 
-      const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
-        redirectTo,
-      });
+          return;
+        }
 
-      if (error) {
-        setMainMessage(t.err_reset + error.message, "err");
-        return;
+        if (
+          !isValidEmail(
+            cleanEmail
+          )
+        ) {
+          setMainMessage(
+            t.err_valid_email,
+            "err"
+          );
+
+          return;
+        }
+
+        const redirectTo =
+          "https://vive-card.com/login";
+
+        const {
+          error,
+        } =
+          await supabase.auth.resetPasswordForEmail(
+            cleanEmail,
+            {
+              redirectTo,
+            }
+          );
+
+        if (error) {
+          setMainMessage(
+            t.err_reset +
+              error.message,
+            "err"
+          );
+
+          return;
+        }
+
+        setShowTermsBox(false);
+        setShowPrivacyBox(false);
+        setShowActivationArea(false);
+
+        setShowResetBox(true);
+
+        setMainMessage(
+          t.reset_sent,
+          "ok"
+        );
+      } finally {
+        setBusy(null);
       }
+    };
 
-      setShowTermsBox(false);
-      setShowPrivacyBox(false);
-      setShowResetBox(true);
-      setMainMessage(t.reset_sent, "ok");
-    } finally {
-      setBusy(null);
-    }
-  };
+  const handleApplyReset =
+    async () => {
+      try {
+        setBusy("reset");
 
-  const handleApplyReset = async () => {
-    try {
-      setBusy("reset");
-      setMainMessage("");
+        setMainMessage("");
 
-      if (!newPassword || newPassword.length < 6) {
-        setMainMessage(t.err_pw_short, "err");
-        return;
+        if (
+          !newPassword ||
+          newPassword.length < 6
+        ) {
+          setMainMessage(
+            t.err_pw_short,
+            "err"
+          );
+
+          return;
+        }
+
+        if (
+          newPassword !==
+          newPassword2
+        ) {
+          setMainMessage(
+            t.err_pw_match,
+            "err"
+          );
+
+          return;
+        }
+
+        const {
+          error,
+        } =
+          await supabase.auth.updateUser(
+            {
+              password:
+                newPassword,
+            }
+          );
+
+        if (error) {
+          setMainMessage(
+            t.err_reset_apply +
+              error.message,
+            "err"
+          );
+
+          return;
+        }
+
+        try {
+          await supabase.auth.signOut();
+        } catch {}
+
+        setShowResetBox(false);
+
+        setNewPassword("");
+        setNewPassword2("");
+
+        setMainMessage(
+          t.reset_ok,
+          "ok"
+        );
+      } finally {
+        setBusy(null);
       }
-
-      if (newPassword !== newPassword2) {
-        setMainMessage(t.err_pw_match, "err");
-        return;
-      }
-
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
-
-      if (error) {
-        setMainMessage(t.err_reset_apply + error.message, "err");
-        return;
-      }
-
-      setShowResetBox(false);
-      setNewPassword("");
-      setNewPassword2("");
-      setMainMessage(t.reset_ok, "ok");
-    } finally {
-      setBusy(null);
-    }
-  };
+    };
 
   const handleLogin = async () => {
     try {
       setBusy("login");
+
       setMainMessage("");
+
+      setShowResetBox(false);
       setShowTermsBox(false);
       setShowPrivacyBox(false);
+      setShowActivationArea(false);
+
       resetClaimState();
 
-      const cleanEmail = email.trim().toLowerCase();
-      if (!cleanEmail || !password) {
-        setMainMessage(t.err_enter, "err");
+      const cleanEmail =
+        email
+          .trim()
+          .toLowerCase();
+
+      if (
+        !cleanEmail ||
+        !password
+      ) {
+        setMainMessage(
+          t.err_enter,
+          "err"
+        );
+
         return;
       }
 
-      if (!isValidEmail(cleanEmail)) {
-        setMainMessage(t.err_valid_email, "err");
+      if (
+        !isValidEmail(cleanEmail)
+      ) {
+        setMainMessage(
+          t.err_valid_email,
+          "err"
+        );
+
         return;
       }
 
-      const { error: loginError } = await supabase.auth.signInWithPassword({
-        email: cleanEmail,
-        password,
-      });
+      const {
+        data: loginData,
+        error: loginError,
+      } =
+        await supabase.auth.signInWithPassword(
+          {
+            email:
+              cleanEmail,
+            password,
+          }
+        );
 
       if (loginError) {
-        setMainMessage(t.err_login + loginError.message, "err");
+        setMainMessage(
+          t.err_login +
+            loginError.message,
+          "err"
+        );
+
         return;
       }
 
-      const { user, profile, error } = await getOrCreateProfile();
+      if (
+        !loginData?.user ||
+        !loginData?.session
+      ) {
+        setMainMessage(
+          t.err_relogin,
+          "err"
+        );
 
-      if (error || !user) {
-        setMainMessage(error?.message || t.err_user_missing, "err");
+        return;
+      }
+
+      const {
+        user,
+        profile,
+        error,
+      } =
+        await getOrCreateProfile();
+
+      if (
+        error ||
+        !user ||
+        !profile
+      ) {
+        setMainMessage(
+          error?.message ||
+            t.err_user_missing,
+          "err"
+        );
+
         return;
       }
 
       const authConfirmedAt =
-        (user as any)?.email_confirmed_at ||
-        (user as any)?.confirmed_at ||
+        (user as any)
+          ?.email_confirmed_at ||
+        (user as any)
+          ?.confirmed_at ||
         null;
 
-      if (!profile?.email_confirmed_at && authConfirmedAt) {
-        const syncRes = await upsertProfile({
-          owner_id: user.id,
-          email: String(user.email || "").trim().toLowerCase(),
-          email_confirmed_at: authConfirmedAt,
-        });
+      if (
+        !profile
+          .email_confirmed_at &&
+        authConfirmedAt
+      ) {
+        const syncRes =
+          await upsertProfile({
+            owner_id:
+              user.id,
+            email: String(
+              user.email || ""
+            )
+              .trim()
+              .toLowerCase(),
 
-        if (!syncRes.error && syncRes.data) {
-          profile.email_confirmed_at = authConfirmedAt;
+            email_confirmed_at:
+              authConfirmedAt,
+          });
+
+        if (
+          !syncRes.error &&
+          syncRes.data
+        ) {
+          profile.email_confirmed_at =
+            authConfirmedAt;
         }
       }
 
-      if (!profile?.email_confirmed_at) {
+      if (
+        !profile
+          .email_confirmed_at
+      ) {
         await supabase.auth.signOut();
-setMainMessage(t.err_confirm_email_first, "err");
+
+        setMainMessage(
+          t.err_confirm_email_first,
+          "err"
+        );
+
         return;
       }
 
-      if (!profile?.terms_accepted_at) {
+      if (
+        !profile
+          .terms_accepted_at
+      ) {
         setShowTermsBox(true);
-        setMainMessage(t.need_terms, "ok");
+
+        setMainMessage(
+          t.need_terms,
+          "ok"
+        );
+
         return;
       }
 
-      const pidToUse = normalizePid(publicId);
+      const pidToUse =
+        normalizePid(
+          publicId
+        );
 
-      if (!profile?.privacy_claim_accepted_at) {
-        if (pidToUse) setPublicId(pidToUse);
+      if (
+        !profile
+          .privacy_claim_accepted_at
+      ) {
+        if (pidToUse) {
+          setPublicId(
+            pidToUse
+          );
+        }
+
         setShowPrivacyBox(true);
-        setMainMessage(t.need_privacy_claim, "ok");
+
+        setMainMessage(
+          t.need_privacy_claim,
+          "ok"
+        );
+
         return;
       }
 
       if (pidToUse) {
-        await performClaimFlow(pidToUse);
+        await performClaimFlow(
+          pidToUse
+        );
+
         return;
       }
 
-      if (profile?.public_id) {
-        const blockCheck = await ensureCardNotBlocked(profile.public_id);
+      if (
+        profile.public_id
+      ) {
+        const existingPid =
+          normalizePid(
+            profile.public_id
+          );
+
+        const blockCheck =
+          await ensureCardNotBlocked(
+            existingPid
+          );
+
         if (!blockCheck.ok) {
-          setMainMessage(blockCheck.message, "err");
+          setMainMessage(
+            blockCheck.message,
+            "err"
+          );
+
           return;
         }
+
+        setPublicId(
+          existingPid
+        );
+
+        /*
+          Wenn deine App-Navigation bereits automatisch
+          auf eine aktive Supabase-Session reagiert,
+          wird jetzt der eingeloggte App-Bereich geöffnet.
+        */
+
+        return;
       }
 
-      setMainMessage(t.need_pid, "ok");
+      showCardActivation("");
+
+      setMainMessage(
+        t.need_pid,
+        "ok"
+      );
     } finally {
       setBusy(null);
     }
   };
 
-  const handleAcceptTerms = async () => {
-    try {
-      setBusy("terms");
-      setMainMessage("");
+  const handleAcceptTerms =
+    async () => {
+      try {
+        setBusy("terms");
 
-      const { user, error: userErr } = await getCurrentUser();
-      if (userErr || !user) {
-        setMainMessage(t.err_relogin, "err");
-        return;
-      }
+        setMainMessage("");
 
-      const { data: profile, error } = await upsertProfile({
-        owner_id: user.id,
-        terms_accepted_at: new Date().toISOString(),
-      });
+        if (!termsCheck) {
+          setMainMessage(
+            t.need_terms,
+            "err"
+          );
 
-      if (error) {
-        setMainMessage(t.err_save + error.message, "err");
-        return;
-      }
-
-      setShowTermsBox(false);
-      setTermsCheck(false);
-      setMainMessage(t.terms_ok, "ok");
-
-      const pidToUse = normalizePid(publicId);
-
-      if (!profile?.privacy_claim_accepted_at) {
-        if (pidToUse) setPublicId(pidToUse);
-        setShowPrivacyBox(true);
-        setMainMessage(t.need_privacy_claim, "ok");
-        return;
-      }
-
-      if (pidToUse) {
-        await performClaimFlow(pidToUse);
-        return;
-      }
-
-      if (profile?.public_id) {
-        const blockCheck = await ensureCardNotBlocked(profile.public_id);
-        if (!blockCheck.ok) {
-          setMainMessage(blockCheck.message, "err");
           return;
         }
-      }
 
-      setMainMessage(t.need_pid, "ok");
-    } finally {
-      setBusy(null);
-    }
-  };
+        const {
+          user,
+          error: userErr,
+        } =
+          await getCurrentUser();
 
-  const handleAcceptPrivacyClaim = async () => {
-    try {
-      setBusy("privacy");
-      setMainMessage("");
+        if (
+          userErr ||
+          !user
+        ) {
+          setMainMessage(
+            t.err_relogin,
+            "err"
+          );
 
-      const { user, error: userErr } = await getCurrentUser();
-      if (userErr || !user) {
-        setMainMessage(t.err_relogin, "err");
-        return;
-      }
-
-      const { data: profile, error } = await savePrivacyClaimConsent(user.id);
-      if (error) {
-        setMainMessage(t.err_privacy_save + error.message, "err");
-        return;
-      }
-
-      setShowPrivacyBox(false);
-      setPrivacyCheck(false);
-      setMainMessage(t.privacy_claim_ok, "ok");
-
-      const pidToUse = normalizePid(publicId);
-
-      if (pidToUse) {
-        await performClaimFlow(pidToUse);
-        return;
-      }
-
-      if (profile?.public_id) {
-        const blockCheck = await ensureCardNotBlocked(profile.public_id);
-        if (!blockCheck.ok) {
-          setMainMessage(blockCheck.message, "err");
           return;
         }
-      }
 
-      setMainMessage(t.need_pid, "ok");
-    } finally {
-      setBusy(null);
-    }
-  };
+        const {
+          data: profile,
+          error,
+        } =
+          await upsertProfile({
+            owner_id:
+              user.id,
+
+            terms_accepted_at:
+              new Date().toISOString(),
+          });
+
+        if (error) {
+          setMainMessage(
+            t.err_save +
+              error.message,
+            "err"
+          );
+
+          return;
+        }
+
+        setShowTermsBox(false);
+        setTermsCheck(false);
+
+        setMainMessage(
+          t.terms_ok,
+          "ok"
+        );
+
+        const pidToUse =
+          normalizePid(
+            publicId
+          );
+
+        if (
+          !profile
+            ?.privacy_claim_accepted_at
+        ) {
+          setShowPrivacyBox(true);
+
+          setMainMessage(
+            t.need_privacy_claim,
+            "ok"
+          );
+
+          return;
+        }
+
+        if (pidToUse) {
+          await performClaimFlow(
+            pidToUse
+          );
+
+          return;
+        }
+
+        showCardActivation("");
+
+        setMainMessage(
+          t.need_pid,
+          "ok"
+        );
+      } finally {
+        setBusy(null);
+      }
+    };
+
+  const handleAcceptPrivacyClaim =
+    async () => {
+      try {
+        setBusy("privacy");
+
+        setMainMessage("");
+
+        if (!privacyCheck) {
+          setMainMessage(
+            t.need_privacy_claim,
+            "err"
+          );
+
+          return;
+        }
+
+        const {
+          user,
+          error: userErr,
+        } =
+          await getCurrentUser();
+
+        if (
+          userErr ||
+          !user
+        ) {
+          setMainMessage(
+            t.err_relogin,
+            "err"
+          );
+
+          return;
+        }
+
+        const {
+          data: profile,
+          error,
+        } =
+          await savePrivacyClaimConsent(
+            user.id
+          );
+
+        if (error) {
+          setMainMessage(
+            t.err_privacy_save +
+              error.message,
+            "err"
+          );
+
+          return;
+        }
+
+        setShowPrivacyBox(false);
+
+        setPrivacyCheck(false);
+
+        setMainMessage(
+          t.privacy_claim_ok,
+          "ok"
+        );
+
+        const pidToUse =
+          normalizePid(
+            publicId
+          );
+
+        if (pidToUse) {
+          await performClaimFlow(
+            pidToUse
+          );
+
+          return;
+        }
+
+        if (
+          profile?.public_id
+        ) {
+          const existingPid =
+            normalizePid(
+              profile.public_id
+            );
+
+          const blockCheck =
+            await ensureCardNotBlocked(
+              existingPid
+            );
+
+          if (!blockCheck.ok) {
+            setMainMessage(
+              blockCheck.message,
+              "err"
+            );
+
+            return;
+          }
+
+          return;
+        }
+
+        showCardActivation("");
+
+        setMainMessage(
+          t.need_pid,
+          "ok"
+        );
+      } finally {
+        setBusy(null);
+      }
+    };
 
   const handleOpenSignup = () => {
     resetClaimState();
-    setSignupEmail(email.trim());
+
+    setSignupEmail(
+      email.trim()
+    );
+
     setSignupPassword("");
     setSignupPassword2("");
+
     setSignupTermsCheck(false);
+
     setSignupMessage("");
+
     setSignupOpen(true);
   };
 
-  const handleSignup = async () => {
-    try {
-      setBusy("signup");
-      setSignupMessage("");
+  const handleSignup =
+    async () => {
+      try {
+        setBusy("signup");
 
-      const cleanEmail = signupEmail.trim().toLowerCase();
+        setSignupMessage("");
 
-      if (!cleanEmail) {
-        setSignupMessage(t.err_enter_email, "err");
-        return;
-      }
-      if (!isValidEmail(cleanEmail)) {
-        setSignupMessage(t.err_valid_email, "err");
-        return;
-      }
-      if (!signupPassword || signupPassword.length < 6) {
-        setSignupMessage(t.err_pw_short, "err");
-        return;
-      }
-      if (signupPassword !== signupPassword2) {
-        setSignupMessage(t.err_pw_match, "err");
-        return;
-      }
-      if (!signupTermsCheck) {
-        setSignupMessage(t.err_accept_terms_first, "err");
-        return;
-      }
+        const cleanEmail =
+          signupEmail
+            .trim()
+            .toLowerCase();
 
-      const response = await fetch(
-        `${SUPABASE_URL}/functions/v1/signup-with-email`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({
-            email: cleanEmail,
-            password: signupPassword,
-            terms_accepted: true,
-          }),
+        if (!cleanEmail) {
+          setSignupMessage(
+            t.err_enter_email,
+            "err"
+          );
+
+          return;
         }
-      );
 
-      const data = await response.json().catch(() => ({}));
+        if (
+          !isValidEmail(
+            cleanEmail
+          )
+        ) {
+          setSignupMessage(
+            t.err_valid_email,
+            "err"
+          );
 
-      if (!response.ok) {
-        setSignupMessage(data?.error || t.err_signup_failed_generic, "err");
-        return;
+          return;
+        }
+
+        if (
+          !signupPassword ||
+          signupPassword.length <
+            6
+        ) {
+          setSignupMessage(
+            t.err_pw_short,
+            "err"
+          );
+
+          return;
+        }
+
+        if (
+          signupPassword !==
+          signupPassword2
+        ) {
+          setSignupMessage(
+            t.err_pw_match,
+            "err"
+          );
+
+          return;
+        }
+
+        if (
+          !signupTermsCheck
+        ) {
+          setSignupMessage(
+            t.err_accept_terms_first,
+            "err"
+          );
+
+          return;
+        }
+
+        const response =
+          await fetch(
+            `${SUPABASE_URL}/functions/v1/signup-with-email`,
+            {
+              method:
+                "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+
+                apikey:
+                  SUPABASE_ANON_KEY,
+
+                Authorization:
+                  `Bearer ${SUPABASE_ANON_KEY}`,
+              },
+
+              body:
+                JSON.stringify({
+                  email:
+                    cleanEmail,
+
+                  password:
+                    signupPassword,
+
+                  terms_accepted:
+                    true,
+                }),
+            }
+          );
+
+        const data =
+          await response
+            .json()
+            .catch(
+              () => ({})
+            );
+
+        if (!response.ok) {
+          setSignupMessage(
+            data?.error ||
+              t.err_signup_failed_generic,
+            "err"
+          );
+
+          return;
+        }
+
+        setEmail(
+          cleanEmail
+        );
+
+        setSignupOpen(false);
+
+        setMainMessage(
+          t.signup_ok,
+          "ok"
+        );
+      } catch (e: any) {
+        setSignupMessage(
+          e?.message ||
+            t.err_signup,
+          "err"
+        );
+      } finally {
+        setBusy(null);
       }
-
-      setEmail(cleanEmail);
-      setSignupOpen(false);
-      setMainMessage(t.signup_ok, "ok");
-    } catch (e: any) {
-      setSignupMessage(e?.message || t.err_signup, "err");
-    } finally {
-      setBusy(null);
-    }
-  };
+    };
 
   const handleClaim = async () => {
     try {
       setBusy("claim");
+
       setMainMessage("");
+
       resetClaimState();
-      await performClaimFlow(publicId);
+
+      await performClaimFlow(
+        publicId
+      );
     } finally {
       setBusy(null);
     }
   };
 
-  const handleOpenBlockModal = () => {
-    setBlockEmail(email.trim());
-    setBlockPublicId(normalizePid(publicId));
-    setBlockReason("");
-    setBlockMessage("");
-    setBlockOpen(true);
-  };
-
-  const handleSubmitBlockRequest = async () => {
-    try {
-      setBusy("block");
-      setBlockMessage("");
-
-      const cleanEmail = blockEmail.trim().toLowerCase();
-      const cleanPid = normalizePid(blockPublicId);
-
-      if (!cleanEmail) {
-        setBlockMessage(t.err_enter_email, "err");
-        return;
-      }
-      if (!isValidEmail(cleanEmail)) {
-        setBlockMessage(t.err_valid_email, "err");
-        return;
-      }
-      if (!cleanPid) {
-        setBlockMessage(t.err_pid, "err");
-        return;
-      }
-
-      const response = await fetch(
-        `${SUPABASE_URL}/functions/v1/request-card-block`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-            apikey: SUPABASE_ANON_KEY,
-          },
-          body: JSON.stringify({
-            email: cleanEmail,
-            public_id: cleanPid,
-            reason: blockReason.trim(),
-          }),
-        }
+  const handleOpenBlockModal =
+    () => {
+      setBlockEmail(
+        email.trim()
       );
 
-      const data = await response.json().catch(() => ({}));
+      setBlockPublicId(
+        normalizePid(publicId)
+      );
 
-      if (!response.ok) {
+      setBlockReason("");
+
+      setBlockMessage("");
+
+      setBlockOpen(true);
+    };
+
+  const handleSubmitBlockRequest =
+    async () => {
+      try {
+        setBusy("block");
+
+        setBlockMessage("");
+
+        const cleanEmail =
+          blockEmail
+            .trim()
+            .toLowerCase();
+
+        const cleanPid =
+          normalizePid(
+            blockPublicId
+          );
+
+        if (!cleanEmail) {
+          setBlockMessage(
+            t.err_enter_email,
+            "err"
+          );
+
+          return;
+        }
+
+        if (
+          !isValidEmail(
+            cleanEmail
+          )
+        ) {
+          setBlockMessage(
+            t.err_valid_email,
+            "err"
+          );
+
+          return;
+        }
+
+        if (!cleanPid) {
+          setBlockMessage(
+            t.err_pid,
+            "err"
+          );
+
+          return;
+        }
+
+        const response =
+          await fetch(
+            `${SUPABASE_URL}/functions/v1/request-card-block`,
+            {
+              method:
+                "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+
+                Authorization:
+                  `Bearer ${SUPABASE_ANON_KEY}`,
+
+                apikey:
+                  SUPABASE_ANON_KEY,
+              },
+
+              body:
+                JSON.stringify({
+                  email:
+                    cleanEmail,
+
+                  public_id:
+                    cleanPid,
+
+                  reason:
+                    blockReason.trim(),
+                }),
+            }
+          );
+
+        const data =
+          await response
+            .json()
+            .catch(
+              () => ({})
+            );
+
+        if (!response.ok) {
+          setBlockMessage(
+            data?.error ||
+              data?.details ||
+              t.err_block_card_request,
+            "err"
+          );
+
+          return;
+        }
+
         setBlockMessage(
-          data?.error || data?.details || t.err_block_card_request,
+          t.block_card_success,
+          "ok"
+        );
+
+        setBlockReason("");
+      } catch {
+        setBlockMessage(
+          t.err_block_card_request,
           "err"
         );
-        return;
+      } finally {
+        setBusy(null);
       }
-
-      setBlockMessage(t.block_card_success, "ok");
-    } catch {
-      setBlockMessage(t.err_block_card_request, "err");
-    } finally {
-      setBusy(null);
-    }
-  };
+    };
 
   const goProfile = async () => {
-  const pid = normalizePid(claimSuccessPid || publicId);
+    const pid =
+      normalizePid(
+        claimSuccessPid ||
+          publicId
+      );
 
-  if (!pid) {
-    return;
-  }
+    if (!pid) {
+      return;
+    }
 
-  const blockCheck = await ensureCardNotBlocked(pid);
-  if (!blockCheck.ok) {
-    setMainMessage(blockCheck.message, "err");
-    return;
-  }
+    const blockCheck =
+      await ensureCardNotBlocked(
+        pid
+      );
 
-  Alert.alert(t.alert_card_activated_title, t.alert_card_activated_text);
-};
+    if (!blockCheck.ok) {
+      setMainMessage(
+        blockCheck.message,
+        "err"
+      );
+
+      return;
+    }
+
+    /*
+      Falls dein Navigator einen Card-Screen besitzt,
+      versuchen wir ihn direkt zu öffnen.
+
+      Falls dein Root-Navigator ohnehin anhand der
+      Supabase-Session umschaltet, ist dies nur ein Bonus.
+    */
+    if (
+      navigation?.navigate
+    ) {
+      try {
+        navigation.navigate(
+          "Card",
+          {
+            pid,
+          }
+        );
+
+        return;
+      } catch {}
+    }
+
+    Alert.alert(
+      t.alert_card_activated_title,
+      t.alert_card_activated_text
+    );
+  };
 
   useEffect(() => {
-    const currentLang =
-      (Platform.OS === "ios" ? "de" : "de") as Lang;
-    setLang(currentLang);
+    setLang("de");
   }, []);
+
+  const guideSteps = [
+    t.activation_guide_step_1,
+    t.activation_guide_step_2,
+    t.activation_guide_step_3,
+    t.activation_guide_step_4,
+    t.activation_guide_step_5,
+    t.activation_guide_step_6,
+    t.activation_guide_step_7,
+    t.activation_guide_step_8,
+    t.activation_guide_step_9,
+  ];
 
   return (
     <>
-      <View style={styles.banner}>
-        <Text style={styles.bannerText}>{t.banner}</Text>
-      </View>
+      <SafeAreaView style={styles.safe}>
+        <View
+          pointerEvents="none"
+          style={
+            styles.backgroundAccentTop
+          }
+        />
 
-      <KeyboardAvoidingView
-        style={styles.screen}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <ScrollView
+        <View
+          pointerEvents="none"
+          style={
+            styles.backgroundAccentRight
+          }
+        />
+
+        <KeyboardAvoidingView
           style={styles.screen}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
+          behavior={
+            Platform.OS === "ios"
+              ? "padding"
+              : undefined
+          }
         >
-          <View style={styles.wrap}>
-            <View style={styles.brand}>
-              <View style={styles.logoFake} />
-              <Text style={styles.brandTitle}>VIVE CARD</Text>
-            </View>
-
-            <View style={styles.card}>
-              <View style={styles.pill}>
-                <Text style={styles.pillText}>{t.pill}</Text>
-
-                <View style={styles.langRow}>
-                  {LANG_OPTIONS.map((item) => {
-                    const active = item === lang;
-                    return (
-                      <TouchableOpacity
-                        key={item}
-                        style={[
-                          styles.langChip,
-                          active && styles.langChipActive,
-                        ]}
-                        onPress={() => setLang(item)}
-                      >
-                        <Text
-                          style={[
-                            styles.langChipText,
-                            active && styles.langChipTextActive,
-                          ]}
-                        >
-                          {item.toUpperCase()}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-
-              <View style={styles.sep} />
-
-              <FieldLabel text={t.email_label} />
-              <TextInput
-                style={styles.input}
-                placeholder="name@domain.ch"
-                placeholderTextColor="#95a0b0"
-                autoCapitalize="none"
-                keyboardType="email-address"
-                value={email}
-                onChangeText={setEmail}
-              />
-
-              <FieldLabel text={t.pw_label} />
-              <View style={styles.passwordWrap}>
-                <TextInput
-                  style={[styles.input, styles.passwordInput]}
-                  placeholder="••••••••"
-                  placeholderTextColor="#95a0b0"
-                  secureTextEntry={!pwVisible}
-                  autoCapitalize="none"
-                  value={password}
-                  onChangeText={setPassword}
-                />
-                <TouchableOpacity
-                  style={styles.pwToggle}
-                  onPress={() => setPwVisible((v) => !v)}
-                >
-                  <Text style={styles.pwToggleText}>
-                    {pwVisible ? t.pw_hide : t.pw_toggle}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.inlineRow}>
-                <TouchableOpacity onPress={handleForgotPassword}>
-                  <Text style={styles.linkBtn}>{t.forgot_pw}</Text>
-                </TouchableOpacity>
-
-                <Text style={styles.securityHint}>{t.security_hint}</Text>
-              </View>
-
-              <Text style={styles.smallText}>{t.rescue_note}</Text>
-
-              <View style={styles.warnBox}>
-                <Text style={styles.warnBoxText}>{t.single_account_notice}</Text>
-              </View>
-
-              {showResetBox && (
-                <View style={styles.infoBox}>
-                  <Text style={styles.smallTitle}>{t.reset_title}</Text>
-
-                  <FieldLabel text={t.new_pw_label} />
-                  <TextInput
-                    style={styles.input}
-                    secureTextEntry
-                    placeholder="••••••••"
-                    placeholderTextColor="#95a0b0"
-                    value={newPassword}
-                    onChangeText={setNewPassword}
-                  />
-
-                  <FieldLabel text={t.new_pw2_label} />
-                  <TextInput
-                    style={styles.input}
-                    secureTextEntry
-                    placeholder="••••••••"
-                    placeholderTextColor="#95a0b0"
-                    value={newPassword2}
-                    onChangeText={setNewPassword2}
-                  />
-
-                  <TouchableOpacity
-                    style={styles.primaryButton}
-                    onPress={handleApplyReset}
-                    disabled={busy !== null}
-                  >
-                    <Text style={styles.primaryButtonText}>
-                      {busy === "reset" ? "..." : t.btn_reset_pw}
-                    </Text>
-                  </TouchableOpacity>
-
-                  <Text style={styles.smallText}>{t.reset_hint}</Text>
-                </View>
-              )}
-
-              <View style={styles.buttonRow}>
-                <TouchableOpacity
-                  style={styles.primaryButtonFlex}
-                  onPress={handleLogin}
-                  disabled={busy !== null}
-                >
-                  <Text style={styles.primaryButtonText}>
-                    {busy === "login" ? "..." : t.btn_login}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.secondaryButtonFlex}
-                  onPress={handleOpenSignup}
-                  disabled={busy !== null}
-                >
-                  <Text style={styles.secondaryButtonText}>
-                    {t.btn_signup}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.buttonRow}>
-                <TouchableOpacity
-                  style={styles.secondaryButtonFlex}
-                  onPress={() => openUrl("https://vive-card.com/order.html")}
-                >
-                  <Text style={styles.secondaryButtonText}>
-                    {t.btn_order}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.secondaryButtonFlex}
-                  onPress={handleOpenBlockModal}
-                >
-                  <Text style={styles.secondaryButtonText}>
-                    {t.btn_block}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              <TouchableOpacity
-                style={styles.secondaryButtonFull}
-                onPress={() => openUrl("https://vive-card.com/")}
-              >
-                <Text style={styles.secondaryButtonText}>{t.btn_about}</Text>
-              </TouchableOpacity>
-
-              {showTermsBox && (
-                <View style={styles.infoBox}>
-                  <Text style={styles.smallText}>{t.terms_intro}</Text>
-
-                  <View style={styles.checkRow}>
-                    <Switch
-                      value={termsCheck}
-                      onValueChange={setTermsCheck}
-                    />
-                   <Text style={styles.checkText}>
-  {t.terms_prefix}{" "}
-  <Text
-    style={styles.inlineLink}
-    onPress={() => openUrl("https://vive-card.com/agb.html")}
-  >
-    {t.terms_agb}
-  </Text>{" "}
-  {t.terms_and}{" "}
-  <Text
-    style={styles.inlineLink}
-    onPress={() => openUrl("https://vive-card.com/nutzung.html")}
-  >
-    {t.terms_usage}
-  </Text>
-  .
-</Text>
-                  </View>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.primaryButton,
-                      !termsCheck && styles.disabledButton,
-                    ]}
-                    onPress={handleAcceptTerms}
-                    disabled={!termsCheck || busy !== null}
-                  >
-                    <Text style={styles.primaryButtonText}>
-                      {busy === "terms" ? "..." : t.btn_accept}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-
-              {showPrivacyBox && (
-  <View style={styles.infoBox}>
-    <Text style={styles.smallTitle}>{t.privacy_claim_title}</Text>
-
-    <View style={styles.warnBox}>
-      <Text style={styles.warnBoxText}>{t.privacy_claim_body}</Text>
-    </View>
-
-    <View style={styles.checkRow}>
-      <Switch
-        value={privacyCheck}
-        onValueChange={setPrivacyCheck}
-      />
-      <Text style={styles.checkText}>{t.privacy_claim_checkbox}</Text>
-    </View>
-
-    <TouchableOpacity
-      style={[
-        styles.primaryButton,
-        !privacyCheck && styles.disabledButton,
-      ]}
-      onPress={handleAcceptPrivacyClaim}
-      disabled={!privacyCheck || busy !== null}
-    >
-      <Text style={styles.primaryButtonText}>
-        {busy === "privacy" ? "..." : t.btn_accept_privacy_claim}
-      </Text>
-    </TouchableOpacity>
-  </View>
-)}
-              <View style={styles.sep} />
-
-              {showClaimNotice && !!claimNoticePid && (
-                <View style={styles.claimNoticeBox}>
-                  <Text style={styles.claimNoticeTitle}>{t.claim_notice_title}</Text>
-                  <Text style={styles.claimNoticeText}>{t.claim_notice_text}</Text>
-                  <View style={styles.pidBadge}>
-                    <Text style={styles.pidBadgeText}>
-  {t.public_id_label}: {claimNoticePid}
-</Text>
-                  </View>
-                </View>
-              )}
-
-              <FieldLabel text={t.pid_label} />
-              <TextInput
-                style={styles.input}
-                placeholder={t.pid_ph}
-                placeholderTextColor="#95a0b0"
-                autoCapitalize="characters"
-                autoCorrect={false}
-                value={publicId}
-                onChangeText={(v) => setPublicId(normalizePid(v))}
-              />
-              <Text style={styles.smallText}>{t.claim_hint}</Text>
-
-              <TouchableOpacity
-                style={styles.secondaryButtonFull}
-                onPress={handleClaim}
-                disabled={busy !== null || claimSuccessPid.length > 0}
-              >
-                <Text style={styles.secondaryButtonText}>
-                  {claimSuccessPid ? t.claim_already : t.btn_claim}
-                </Text>
-              </TouchableOpacity>
-
-              {!!msg.text && (
-                <Text
-                  style={[
-                    styles.message,
-                    msg.type === "ok" && styles.messageOk,
-                    msg.type === "err" && styles.messageErr,
-                  ]}
-                >
-                  {msg.text}
-                </Text>
-              )}
-
-              {!!claimSuccessPid && (
-                <View style={styles.claimSuccessCard}>
-                  <Text style={styles.claimSuccessTitle}>{t.claim_success_title}</Text>
-                  <Text style={styles.claimSuccessText}>{t.claim_success_text}</Text>
-
-                  <TouchableOpacity
-                    style={styles.primaryButton}
-                    onPress={goProfile}
-                  >
-                    <Text style={styles.primaryButtonText}>{t.btn_go_profile}</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-
-              <Text style={styles.hintText}>{t.hint}</Text>
-
-              <View style={styles.sep} />
-
-              <View style={styles.footerLinks}>
-                <Text
-                  style={styles.footerLink}
-                  onPress={() => openUrl("https://vive-card.com/impressum.html")}
-                >
-                  {t.link_impressum}
-                </Text>
-                <Text
-                  style={styles.footerLink}
-                  onPress={() =>
-                    openUrl("https://vive-card.com/datenschutz.html")
+          <ScrollView
+            style={styles.screen}
+            contentContainerStyle={
+              styles.scrollContent
+            }
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={
+              false
+            }
+          >
+            <View style={styles.wrap}>
+              <View style={styles.brand}>
+                <View
+                  style={
+                    styles.brandLogo
                   }
                 >
-                  {t.link_privacy}
-                </Text>
+                  <View
+                    style={
+                      styles.brandLogoInner
+                    }
+                  />
+
+                  <View
+                    style={
+                      styles.brandLogoCut
+                    }
+                  />
+                </View>
+
                 <Text
-                  style={styles.footerLink}
-                  onPress={() => openUrl("https://vive-card.com/agb.html")}
+                  style={
+                    styles.brandTitle
+                  }
                 >
-                  {t.link_agb}
-                </Text>
-                <Text
-                  style={styles.footerLink}
-                  onPress={() => openUrl("https://vive-card.com/nutzung.html")}
-                >
-                  {t.link_usage}
+                  VIVE CARD
                 </Text>
               </View>
 
-              <Text style={styles.copyright}>
-                ©️ {new Date().getFullYear()} Vive-Card • Danilo Torsello (CH)
-              </Text>
+              <View style={styles.card}>
+                <View style={styles.pill}>
+                  <Text
+                    style={
+                      styles.pillText
+                    }
+                    numberOfLines={2}
+                  >
+                    {t.pill}
+                  </Text>
+
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    style={
+                      styles.langSelect
+                    }
+                    onPress={() =>
+                      setLangOpen(true)
+                    }
+                  >
+                    <Text
+                      style={
+                        styles.langSelectText
+                      }
+                    >
+                      {lang.toUpperCase()}⌄
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.sep} />
+
+                <FieldLabel
+                  text={t.email_label}
+                />
+
+                <TextInput
+                  style={styles.input}
+                  placeholder="name@domain.ch"
+                  placeholderTextColor={
+                    COLORS.placeholder
+                  }
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="email-address"
+                  textContentType="emailAddress"
+                  value={email}
+                  onChangeText={setEmail}
+                  returnKeyType="next"
+                />
+
+                <FieldLabel
+                  text={t.pw_label}
+                />
+
+                <View
+                  style={
+                    styles.passwordWrap
+                  }
+                >
+                  <TextInput
+                    style={[
+                      styles.input,
+                      styles.passwordInput,
+                    ]}
+                    placeholder="••••••••"
+                    placeholderTextColor={
+                      COLORS.placeholder
+                    }
+                    secureTextEntry={
+                      !pwVisible
+                    }
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    textContentType="password"
+                    value={password}
+                    onChangeText={
+                      setPassword
+                    }
+                    returnKeyType="done"
+                    onSubmitEditing={
+                      handleLogin
+                    }
+                  />
+
+                  <TouchableOpacity
+                    style={
+                      styles.pwToggle
+                    }
+                    onPress={() =>
+                      setPwVisible(
+                        (v) => !v
+                      )
+                    }
+                  >
+                    <Text
+                      style={
+                        styles.pwToggleText
+                      }
+                    >
+                      {pwVisible
+                        ? t.pw_hide
+                        : t.pw_toggle}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={
+                    handleForgotPassword
+                  }
+                  disabled={
+                    busy !== null
+                  }
+                  style={
+                    styles.forgotWrap
+                  }
+                >
+                  <Text
+                    style={
+                      styles.linkBtn
+                    }
+                  >
+                    {busy === "forgot"
+                      ? "..."
+                      : t.forgot_pw}
+                  </Text>
+                </TouchableOpacity>
+
+                {showResetBox ? (
+                  <View
+                    style={
+                      styles.infoBox
+                    }
+                  >
+                    <Text
+                      style={
+                        styles.infoBoxTitle
+                      }
+                    >
+                      {t.reset_title}
+                    </Text>
+
+                    <FieldLabel
+                      text={
+                        t.new_pw_label
+                      }
+                    />
+
+                    <TextInput
+                      style={
+                        styles.input
+                      }
+                      secureTextEntry
+                      placeholder="••••••••"
+                      placeholderTextColor={
+                        COLORS.placeholder
+                      }
+                      value={
+                        newPassword
+                      }
+                      onChangeText={
+                        setNewPassword
+                      }
+                    />
+
+                    <FieldLabel
+                      text={
+                        t.new_pw2_label
+                      }
+                    />
+
+                    <TextInput
+                      style={
+                        styles.input
+                      }
+                      secureTextEntry
+                      placeholder="••••••••"
+                      placeholderTextColor={
+                        COLORS.placeholder
+                      }
+                      value={
+                        newPassword2
+                      }
+                      onChangeText={
+                        setNewPassword2
+                      }
+                      onSubmitEditing={
+                        handleApplyReset
+                      }
+                    />
+
+                    <PrimaryButton
+                      text={
+                        busy === "reset"
+                          ? "..."
+                          : t.btn_reset_pw
+                      }
+                      onPress={
+                        handleApplyReset
+                      }
+                      disabled={
+                        busy !== null
+                      }
+                    />
+
+                    <Text
+                      style={
+                        styles.smallText
+                      }
+                    >
+                      {t.reset_hint}
+                    </Text>
+                  </View>
+                ) : null}
+
+                <View
+                  style={
+                    styles.buttonRow
+                  }
+                >
+                  <PrimaryButton
+                    text={
+                      busy === "login"
+                        ? "..."
+                        : t.btn_login
+                    }
+                    onPress={
+                      handleLogin
+                    }
+                    disabled={
+                      busy !== null
+                    }
+                    flex
+                  />
+
+                  <SecondaryButton
+                    text={t.btn_signup}
+                    onPress={
+                      handleOpenSignup
+                    }
+                    disabled={
+                      busy !== null
+                    }
+                    flex
+                  />
+                </View>
+
+                <View
+                  style={
+                    styles.buttonRow
+                  }
+                >
+                  <SecondaryButton
+                    text={t.btn_order}
+                    onPress={() =>
+                      openUrl(
+                        "https://vive-card.com/order.html"
+                      )
+                    }
+                    flex
+                  />
+
+                  <SecondaryButton
+                    text={t.btn_block}
+                    onPress={
+                      handleOpenBlockModal
+                    }
+                    flex
+                  />
+                </View>
+
+                <SecondaryButton
+                  text={t.btn_about}
+                  onPress={() =>
+                    openUrl(
+                      "https://vive-card.com/"
+                    )
+                  }
+                />
+
+                {showTermsBox ? (
+                  <View
+                    style={
+                      styles.infoBox
+                    }
+                  >
+                    <Text
+                      style={
+                        styles.smallTextNoMargin
+                      }
+                    >
+                      {t.terms_intro}
+                    </Text>
+
+                    <CheckboxRow
+                      checked={
+                        termsCheck
+                      }
+                      onPress={() =>
+                        setTermsCheck(
+                          (v) => !v
+                        )
+                      }
+                    >
+                      <Text
+                        style={
+                          styles.checkText
+                        }
+                      >
+                        {
+                          t.terms_prefix
+                        }{" "}
+                        <Text
+                          style={
+                            styles.inlineLink
+                          }
+                          onPress={() =>
+                            openUrl(
+                              "https://vive-card.com/agb.html"
+                            )
+                          }
+                        >
+                          {t.terms_agb}
+                        </Text>{" "}
+                        {t.terms_and}{" "}
+                        <Text
+                          style={
+                            styles.inlineLink
+                          }
+                          onPress={() =>
+                            openUrl(
+                              "https://vive-card.com/nutzung.html"
+                            )
+                          }
+                        >
+                          {
+                            t.terms_usage
+                          }
+                        </Text>
+                        .
+                      </Text>
+                    </CheckboxRow>
+
+                    <PrimaryButton
+                      text={
+                        busy === "terms"
+                          ? "..."
+                          : t.btn_accept
+                      }
+                      onPress={
+                        handleAcceptTerms
+                      }
+                      disabled={
+                        !termsCheck ||
+                        busy !== null
+                      }
+                    />
+                  </View>
+                ) : null}
+
+                {showPrivacyBox ? (
+                  <View
+                    style={[
+                      styles.infoBox,
+                      styles.privacyBox,
+                    ]}
+                  >
+                    <Text
+                      style={
+                        styles.infoBoxTitle
+                      }
+                    >
+                      {
+                        t.privacy_claim_title
+                      }
+                    </Text>
+
+                    <View
+                      style={
+                        styles.privacyTextBox
+                      }
+                    >
+                      <Text
+                        style={
+                          styles.privacyBodyText
+                        }
+                      >
+                        {
+                          t.privacy_claim_body
+                        }
+                      </Text>
+                    </View>
+
+                    <CheckboxRow
+                      checked={
+                        privacyCheck
+                      }
+                      onPress={() =>
+                        setPrivacyCheck(
+                          (v) => !v
+                        )
+                      }
+                    >
+                      <Text
+                        style={
+                          styles.checkText
+                        }
+                      >
+                        {
+                          t.privacy_claim_checkbox
+                        }
+                      </Text>
+                    </CheckboxRow>
+
+                    <PrimaryButton
+                      text={
+                        busy ===
+                        "privacy"
+                          ? "..."
+                          : t.btn_accept_privacy_claim
+                      }
+                      onPress={
+                        handleAcceptPrivacyClaim
+                      }
+                      disabled={
+                        !privacyCheck ||
+                        busy !== null
+                      }
+                    />
+                  </View>
+                ) : null}
+
+                {showActivationArea ? (
+                  <View
+                    style={
+                      styles.activationArea
+                    }
+                  >
+                    {showClaimNotice &&
+                    claimNoticePid ? (
+                      <View
+                        style={
+                          styles.claimNoticeBox
+                        }
+                      >
+                        <Text
+                          style={
+                            styles.claimNoticeTitle
+                          }
+                        >
+                          {
+                            t.claim_notice_title
+                          }
+                        </Text>
+
+                        <Text
+                          style={
+                            styles.claimNoticeText
+                          }
+                        >
+                          {
+                            t.claim_notice_text
+                          }
+                        </Text>
+
+                        <View
+                          style={
+                            styles.pidBadge
+                          }
+                        >
+                          <Text
+                            style={
+                              styles.pidBadgeText
+                            }
+                          >
+                            {
+                              t.public_id_label
+                            }
+                            :{" "}
+                            {
+                              claimNoticePid
+                            }
+                          </Text>
+                        </View>
+                      </View>
+                    ) : null}
+
+                    <FieldLabel
+                      text={t.pid_label}
+                    />
+
+                    <TextInput
+                      style={
+                        styles.input
+                      }
+                      placeholder={
+                        t.pid_ph
+                      }
+                      placeholderTextColor={
+                        COLORS.placeholder
+                      }
+                      autoCapitalize="characters"
+                      autoCorrect={false}
+                      value={publicId}
+                      onChangeText={(v) =>
+                        setPublicId(
+                          normalizePid(
+                            v
+                          )
+                        )
+                      }
+                      onSubmitEditing={
+                        handleClaim
+                      }
+                    />
+
+                    <Text
+                      style={
+                        styles.smallTextNoMargin
+                      }
+                    >
+                      {t.claim_hint}
+                    </Text>
+
+                    <SecondaryButton
+                      text={
+                        claimSuccessPid
+                          ? t.claim_already
+                          : busy ===
+                            "claim"
+                          ? "..."
+                          : t.btn_claim
+                      }
+                      onPress={
+                        handleClaim
+                      }
+                      disabled={
+                        busy !== null ||
+                        !!claimSuccessPid
+                      }
+                    />
+                  </View>
+                ) : null}
+
+                {!!msg.text ? (
+                  <Text
+                    style={[
+                      styles.message,
+                      msg.type ===
+                        "ok" &&
+                        styles.messageOk,
+
+                      msg.type ===
+                        "err" &&
+                        styles.messageErr,
+                    ]}
+                  >
+                    {msg.text}
+                  </Text>
+                ) : null}
+
+                {!!claimSuccessPid ? (
+                  <View
+                    style={
+                      styles.claimSuccessCard
+                    }
+                  >
+                    <Text
+                      style={
+                        styles.claimSuccessTitle
+                      }
+                    >
+                      {
+                        t.claim_success_title
+                      }
+                    </Text>
+
+                    <Text
+                      style={
+                        styles.claimSuccessText
+                      }
+                    >
+                      {
+                        t.claim_success_text
+                      }
+                    </Text>
+
+                    <PrimaryButton
+                      text={
+                        t.btn_go_profile
+                      }
+                      onPress={
+                        goProfile
+                      }
+                    />
+                  </View>
+                ) : null}
+
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  style={
+                    styles.guideBox
+                  }
+                  onPress={() =>
+                    setGuideOpen(
+                      (v) => !v
+                    )
+                  }
+                >
+                  <View
+                    style={
+                      styles.guideHeader
+                    }
+                  >
+                    <Text
+                      style={
+                        styles.guideTitle
+                      }
+                    >
+                      {
+                        t.activation_guide_title
+                      }
+                    </Text>
+
+                    <View
+                      style={
+                        styles.guideToggle
+                      }
+                    >
+                      <Text
+                        style={
+                          styles.guideToggleText
+                        }
+                      >
+                        {guideOpen
+                          ? "−"
+                          : "+"}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {guideOpen ? (
+                    <View
+                      style={
+                        styles.guideContent
+                      }
+                    >
+                      {guideSteps.map(
+                        (
+                          step,
+                          index
+                        ) => (
+                          <View
+                            key={`${index}-${step}`}
+                            style={
+                              styles.guideStep
+                            }
+                          >
+                            <View
+                              style={
+                                styles.guideStepNumber
+                              }
+                            >
+                              <Text
+                                style={
+                                  styles.guideStepNumberText
+                                }
+                              >
+                                {index +
+                                  1}
+                              </Text>
+                            </View>
+
+                            <Text
+                              style={
+                                styles.guideStepText
+                              }
+                            >
+                              {step}
+                            </Text>
+                          </View>
+                        )
+                      )}
+                    </View>
+                  ) : null}
+                </TouchableOpacity>
+
+                <View
+                  style={
+                    styles.footerSep
+                  }
+                />
+
+                <View
+                  style={
+                    styles.footerLinks
+                  }
+                >
+                  <Text
+                    style={
+                      styles.footerLink
+                    }
+                    onPress={() =>
+                      openUrl(
+                        "https://vive-card.com/impressum.html"
+                      )
+                    }
+                  >
+                    {
+                      t.link_impressum
+                    }
+                  </Text>
+
+                  <Text
+                    style={
+                      styles.footerLink
+                    }
+                    onPress={() =>
+                      openUrl(
+                        "https://vive-card.com/datenschutz.html"
+                      )
+                    }
+                  >
+                    {t.link_privacy}
+                  </Text>
+
+                  <Text
+                    style={
+                      styles.footerLink
+                    }
+                    onPress={() =>
+                      openUrl(
+                        "https://vive-card.com/agb.html"
+                      )
+                    }
+                  >
+                    {t.link_agb}
+                  </Text>
+
+                  <Text
+                    style={
+                      styles.footerLink
+                    }
+                    onPress={() =>
+                      openUrl(
+                        "https://vive-card.com/nutzung.html"
+                      )
+                    }
+                  >
+                    {t.link_usage}
+                  </Text>
+                </View>
+
+                <Text
+                  style={
+                    styles.copyright
+                  }
+                >
+                  ©️{" "}
+                  {new Date().getFullYear()}{" "}
+                  Vive-Card • Danilo
+                  Torsello (CH)
+                </Text>
+              </View>
             </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+
+      {/* SPRACHWAHL */}
+
+      <Modal
+        visible={langOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() =>
+          setLangOpen(false)
+        }
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() =>
+            setLangOpen(false)
+          }
+        >
+          <Pressable
+            style={
+              styles.languageModal
+            }
+            onPress={() => {}}
+          >
+            {LANG_OPTIONS.map(
+              (item) => {
+                const active =
+                  item === lang;
+
+                return (
+                  <TouchableOpacity
+                    key={item}
+                    style={[
+                      styles.languageOption,
+
+                      active &&
+                        styles.languageOptionActive,
+                    ]}
+                    onPress={() => {
+                      setLang(item);
+                      setLangOpen(
+                        false
+                      );
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.languageOptionText,
+
+                        active &&
+                          styles.languageOptionTextActive,
+                      ]}
+                    >
+                      {
+                        LANGUAGE_NAMES[
+                          item
+                        ]
+                      }
+                    </Text>
+
+                    {active ? (
+                      <Text
+                        style={
+                          styles.languageCheck
+                        }
+                      >
+                        ✓
+                      </Text>
+                    ) : null}
+                  </TouchableOpacity>
+                );
+              }
+            )}
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* REGISTRIERUNG */}
 
       <Modal
         visible={signupOpen}
         transparent
         animationType="fade"
-        onRequestClose={() => setSignupOpen(false)}
+        onRequestClose={() =>
+          setSignupOpen(false)
+        }
       >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setSignupOpen(false)}
+        <KeyboardAvoidingView
+          style={
+            styles.modalKeyboard
+          }
+          behavior={
+            Platform.OS === "ios"
+              ? "padding"
+              : undefined
+          }
         >
-          <Pressable style={styles.modalCard} onPress={() => {}}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t.signup_title}</Text>
-              <TouchableOpacity
-                style={styles.modalCloseBtn}
-                onPress={() => setSignupOpen(false)}
-              >
-                <Text style={styles.modalCloseBtnText}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.sep} />
-
-            <FieldLabel text={t.email_label} />
-            <TextInput
-              style={styles.input}
-              placeholder="name@domain.ch"
-              placeholderTextColor="#95a0b0"
-              autoCapitalize="none"
-              keyboardType="email-address"
-              value={signupEmail}
-              onChangeText={setSignupEmail}
-            />
-
-            <FieldLabel text={t.pw_label} />
-            <View style={styles.passwordWrap}>
-              <TextInput
-                style={[styles.input, styles.passwordInput]}
-                placeholder={t.signup_password_ph}
-                placeholderTextColor="#95a0b0"
-                secureTextEntry={!signupPwVisible}
-                value={signupPassword}
-                onChangeText={setSignupPassword}
-              />
-              <TouchableOpacity
-                style={styles.pwToggle}
-                onPress={() => setSignupPwVisible((v) => !v)}
-              >
-                <Text style={styles.pwToggleText}>
-                  {signupPwVisible ? t.pw_hide : t.pw_toggle}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <FieldLabel text={t.signup_pw2_label} />
-            <TextInput
-              style={styles.input}
-              placeholder={t.signup_password2_ph}
-              placeholderTextColor="#95a0b0"
-              secureTextEntry={!signupPwVisible}
-              value={signupPassword2}
-              onChangeText={setSignupPassword2}
-            />
-
-            <View style={styles.checkRow}>
-              <Switch
-                value={signupTermsCheck}
-                onValueChange={setSignupTermsCheck}
-              />
-<Text style={styles.checkText}>
-  {t.terms_prefix}{" "}
-  <Text
-    style={styles.inlineLink}
-    onPress={() => openUrl("https://vive-card.com/agb.html")}
-  >
-    {t.terms_agb}
-  </Text>{" "}
-  {t.terms_and}{" "}
-  <Text
-    style={styles.inlineLink}
-    onPress={() => openUrl("https://vive-card.com/nutzung.html")}
-  >
-    {t.terms_usage}
-  </Text>
-  .
-</Text>
-            </View>
-
-            <TouchableOpacity
-              style={styles.primaryButton}
-              onPress={handleSignup}
-              disabled={busy !== null}
+          <Pressable
+            style={
+              styles.modalOverlay
+            }
+            onPress={() =>
+              setSignupOpen(false)
+            }
+          >
+            <Pressable
+              style={
+                styles.modalCard
+              }
+              onPress={() => {}}
             >
-              <Text style={styles.primaryButtonText}>
-                {busy === "signup" ? "..." : t.btn_signup_start}
-              </Text>
-            </TouchableOpacity>
-
-            {!!signupMsg.text && (
-              <Text
-                style={[
-                  styles.message,
-                  signupMsg.type === "ok" && styles.messageOk,
-                  signupMsg.type === "err" && styles.messageErr,
-                ]}
+              <ScrollView
+                showsVerticalScrollIndicator={
+                  false
+                }
+                keyboardShouldPersistTaps="handled"
               >
-                {signupMsg.text}
-              </Text>
-            )}
+                <View
+                  style={
+                    styles.modalHeader
+                  }
+                >
+                  <Text
+                    style={
+                      styles.modalTitle
+                    }
+                  >
+                    {t.signup_title}
+                  </Text>
 
-            <Text style={styles.smallText}>{t.signup_hint}</Text>
+                  <TouchableOpacity
+                    style={
+                      styles.modalCloseBtn
+                    }
+                    onPress={() =>
+                      setSignupOpen(
+                        false
+                      )
+                    }
+                  >
+                    <Text
+                      style={
+                        styles.modalCloseBtnText
+                      }
+                    >
+                      ✕
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View
+                  style={styles.sep}
+                />
+
+                <FieldLabel
+                  text={
+                    t.email_label
+                  }
+                />
+
+                <TextInput
+                  style={
+                    styles.input
+                  }
+                  placeholder="name@domain.ch"
+                  placeholderTextColor={
+                    COLORS.placeholder
+                  }
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="email-address"
+                  value={
+                    signupEmail
+                  }
+                  onChangeText={
+                    setSignupEmail
+                  }
+                />
+
+                <FieldLabel
+                  text={
+                    t.pw_label
+                  }
+                />
+
+                <View
+                  style={
+                    styles.passwordWrap
+                  }
+                >
+                  <TextInput
+                    style={[
+                      styles.input,
+                      styles.passwordInput,
+                    ]}
+                    placeholder={
+                      t.signup_password_ph
+                    }
+                    placeholderTextColor={
+                      COLORS.placeholder
+                    }
+                    secureTextEntry={
+                      !signupPwVisible
+                    }
+                    autoCapitalize="none"
+                    value={
+                      signupPassword
+                    }
+                    onChangeText={
+                      setSignupPassword
+                    }
+                  />
+
+                  <TouchableOpacity
+                    style={
+                      styles.pwToggle
+                    }
+                    onPress={() =>
+                      setSignupPwVisible(
+                        (v) => !v
+                      )
+                    }
+                  >
+                    <Text
+                      style={
+                        styles.pwToggleText
+                      }
+                    >
+                      {signupPwVisible
+                        ? t.pw_hide
+                        : t.pw_toggle}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                <FieldLabel
+                  text={
+                    t.signup_pw2_label
+                  }
+                />
+
+                <TextInput
+                  style={
+                    styles.input
+                  }
+                  placeholder={
+                    t.signup_password2_ph
+                  }
+                  placeholderTextColor={
+                    COLORS.placeholder
+                  }
+                  secureTextEntry={
+                    !signupPwVisible
+                  }
+                  autoCapitalize="none"
+                  value={
+                    signupPassword2
+                  }
+                  onChangeText={
+                    setSignupPassword2
+                  }
+                />
+
+                <CheckboxRow
+                  checked={
+                    signupTermsCheck
+                  }
+                  onPress={() =>
+                    setSignupTermsCheck(
+                      (v) => !v
+                    )
+                  }
+                >
+                  <Text
+                    style={
+                      styles.checkText
+                    }
+                  >
+                    {t.terms_prefix}{" "}
+                    <Text
+                      style={
+                        styles.inlineLink
+                      }
+                      onPress={() =>
+                        openUrl(
+                          "https://vive-card.com/agb.html"
+                        )
+                      }
+                    >
+                      {t.terms_agb}
+                    </Text>{" "}
+                    {t.terms_and}{" "}
+                    <Text
+                      style={
+                        styles.inlineLink
+                      }
+                      onPress={() =>
+                        openUrl(
+                          "https://vive-card.com/nutzung.html"
+                        )
+                      }
+                    >
+                      {t.terms_usage}
+                    </Text>
+                    .
+                  </Text>
+                </CheckboxRow>
+
+                <PrimaryButton
+                  text={
+                    busy === "signup"
+                      ? "..."
+                      : t.btn_signup_start
+                  }
+                  onPress={
+                    handleSignup
+                  }
+                  disabled={
+                    busy !== null
+                  }
+                />
+
+                {!!signupMsg.text ? (
+                  <Text
+                    style={[
+                      styles.message,
+
+                      signupMsg.type ===
+                        "ok" &&
+                        styles.messageOk,
+
+                      signupMsg.type ===
+                        "err" &&
+                        styles.messageErr,
+                    ]}
+                  >
+                    {
+                      signupMsg.text
+                    }
+                  </Text>
+                ) : null}
+
+                <Text
+                  style={
+                    styles.smallText
+                  }
+                >
+                  {t.signup_hint}
+                </Text>
+              </ScrollView>
+            </Pressable>
           </Pressable>
-        </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
+
+      {/* KARTE SPERREN */}
 
       <Modal
         visible={blockOpen}
         transparent
         animationType="fade"
-        onRequestClose={() => setBlockOpen(false)}
+        onRequestClose={() =>
+          setBlockOpen(false)
+        }
       >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setBlockOpen(false)}
+        <KeyboardAvoidingView
+          style={
+            styles.modalKeyboard
+          }
+          behavior={
+            Platform.OS === "ios"
+              ? "padding"
+              : undefined
+          }
         >
-          <Pressable style={styles.modalCard} onPress={() => {}}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t.block_card_title}</Text>
-              <TouchableOpacity
-                style={styles.modalCloseBtn}
-                onPress={() => setBlockOpen(false)}
-              >
-                <Text style={styles.modalCloseBtnText}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.sep} />
-
-            <Text style={styles.smallText}>{t.block_card_intro}</Text>
-
-           <FieldLabel text={t.email_label} />
-            <TextInput
-              style={styles.input}
-              placeholder="name@domain.ch"
-              placeholderTextColor="#95a0b0"
-              autoCapitalize="none"
-              keyboardType="email-address"
-              value={blockEmail}
-              onChangeText={setBlockEmail}
-            />
-
-            <FieldLabel text={t.public_id_label} />
-            <TextInput
-              style={styles.input}
-              placeholder={t.pid_ph}
-              placeholderTextColor="#95a0b0"
-              autoCapitalize="characters"
-              autoCorrect={false}
-              value={blockPublicId}
-              onChangeText={(v) => setBlockPublicId(normalizePid(v))}
-            />
-
-            <FieldLabel text={t.block_reason_label} />
-            <TextInput
-              style={[styles.input, styles.textarea]}
-              placeholder={t.block_reason_ph}
-              placeholderTextColor="#95a0b0"
-              multiline
-              value={blockReason}
-              onChangeText={setBlockReason}
-            />
-
-            <TouchableOpacity
-              style={styles.primaryButton}
-              onPress={handleSubmitBlockRequest}
-              disabled={busy !== null}
+          <Pressable
+            style={
+              styles.modalOverlay
+            }
+            onPress={() =>
+              setBlockOpen(false)
+            }
+          >
+            <Pressable
+              style={
+                styles.modalCard
+              }
+              onPress={() => {}}
             >
-              <Text style={styles.primaryButtonText}>
-                {busy === "block" ? "..." : t.btn_block_card_submit}
-              </Text>
-            </TouchableOpacity>
-
-            {!!blockMsg.text && (
-              <Text
-                style={[
-                  styles.message,
-                  blockMsg.type === "ok" && styles.messageOk,
-                  blockMsg.type === "err" && styles.messageErr,
-                ]}
+              <ScrollView
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={
+                  false
+                }
               >
-                {blockMsg.text}
-              </Text>
-            )}
+                <View
+                  style={
+                    styles.modalHeader
+                  }
+                >
+                  <Text
+                    style={
+                      styles.modalTitle
+                    }
+                  >
+                    {
+                      t.block_card_title
+                    }
+                  </Text>
 
-           <Text style={styles.smallText}>{t.block_card_hint}</Text>
+                  <TouchableOpacity
+                    style={
+                      styles.modalCloseBtn
+                    }
+                    onPress={() =>
+                      setBlockOpen(
+                        false
+                      )
+                    }
+                  >
+                    <Text
+                      style={
+                        styles.modalCloseBtnText
+                      }
+                    >
+                      ✕
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View
+                  style={styles.sep}
+                />
+
+                <Text
+                  style={
+                    styles.smallTextNoMargin
+                  }
+                >
+                  {t.block_card_intro}
+                </Text>
+
+                <FieldLabel
+                  text={
+                    t.email_label
+                  }
+                />
+
+                <TextInput
+                  style={
+                    styles.input
+                  }
+                  placeholder="name@domain.ch"
+                  placeholderTextColor={
+                    COLORS.placeholder
+                  }
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  value={
+                    blockEmail
+                  }
+                  onChangeText={
+                    setBlockEmail
+                  }
+                />
+
+                <FieldLabel
+                  text={
+                    t.public_id_label
+                  }
+                />
+
+                <TextInput
+                  style={
+                    styles.input
+                  }
+                  placeholder={
+                    t.pid_ph
+                  }
+                  placeholderTextColor={
+                    COLORS.placeholder
+                  }
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  value={
+                    blockPublicId
+                  }
+                  onChangeText={(v) =>
+                    setBlockPublicId(
+                      normalizePid(
+                        v
+                      )
+                    )
+                  }
+                />
+
+                <FieldLabel
+                  text={
+                    t.block_reason_label
+                  }
+                />
+
+                <TextInput
+                  style={[
+                    styles.input,
+                    styles.textarea,
+                  ]}
+                  placeholder={
+                    t.block_reason_ph
+                  }
+                  placeholderTextColor={
+                    COLORS.placeholder
+                  }
+                  multiline
+                  value={
+                    blockReason
+                  }
+                  onChangeText={
+                    setBlockReason
+                  }
+                />
+
+                <PrimaryButton
+                  text={
+                    busy === "block"
+                      ? "..."
+                      : t.btn_block_card_submit
+                  }
+                  onPress={
+                    handleSubmitBlockRequest
+                  }
+                  disabled={
+                    busy !== null
+                  }
+                />
+
+                {!!blockMsg.text ? (
+                  <Text
+                    style={[
+                      styles.message,
+
+                      blockMsg.type ===
+                        "ok" &&
+                        styles.messageOk,
+
+                      blockMsg.type ===
+                        "err" &&
+                        styles.messageErr,
+                    ]}
+                  >
+                    {blockMsg.text}
+                  </Text>
+                ) : null}
+
+                <Text
+                  style={
+                    styles.smallText
+                  }
+                >
+                  {
+                    t.block_card_hint
+                  }
+                </Text>
+              </ScrollView>
+            </Pressable>
           </Pressable>
-        </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
     </>
   );
 }
 
-function FieldLabel({ text }: { text: string }) {
-  return <Text style={styles.label}>{text}</Text>;
+function FieldLabel({
+  text,
+}: {
+  text: string;
+}) {
+  return (
+    <Text style={styles.label}>
+      {text}
+    </Text>
+  );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: "#0e0f12",
-  },
-  scrollContent: {
-    paddingTop: 72,
-    paddingBottom: 28,
-    paddingHorizontal: 18,
-    justifyContent: "center",
-  },
-  banner: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 50,
-    backgroundColor: "#e10600",
-    paddingTop: Platform.OS === "ios" ? 16 : 8,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.18)",
-  },
-  bannerText: {
-    color: "#ffffff",
-    textAlign: "center",
-    fontSize: 12,
-    fontWeight: "900",
-    letterSpacing: 1.2,
-  },
-  wrap: {
-    width: "100%",
-    maxWidth: 520,
-    alignSelf: "center",
-  },
-  brand: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginTop: 18,
-    marginBottom: 14,
-  },
-  logoFake: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: "#1d2230",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-  },
-  brandTitle: {
-    color: "#f3f5f7",
-    fontSize: 18,
-    fontWeight: "900",
-    letterSpacing: 1,
-  },
-  card: {
-    backgroundColor: "rgba(22,24,29,0.92)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    borderRadius: 14,
-    padding: 22,
-  },
-  pill: {
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.10)",
-    backgroundColor: "rgba(0,0,0,0.18)",
-    borderRadius: 999,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    gap: 10,
-  },
-  pillText: {
-    color: "#b7bcc4",
-    fontSize: 12,
-    fontWeight: "700",
-    marginBottom: 8,
-  },
-  langRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-  },
-  langChip: {
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.10)",
-    backgroundColor: "rgba(0,0,0,0.18)",
-    borderRadius: 999,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-  },
-  langChipActive: {
-    backgroundColor: "#2a2d35",
-    borderColor: "rgba(255,255,255,0.20)",
-  },
-  langChipText: {
-    color: "#b7bcc4",
-    fontSize: 12,
-    fontWeight: "800",
-  },
-  langChipTextActive: {
-    color: "#ffffff",
-  },
-  sep: {
-    height: 1,
-    backgroundColor: "rgba(255,255,255,0.08)",
-    marginVertical: 14,
-  },
-  label: {
-    color: "#b7bcc4",
-    fontSize: 12,
-    marginBottom: 6,
-    marginTop: 2,
-  },
-  input: {
-    width: "100%",
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.10)",
-    backgroundColor: "rgba(0,0,0,0.25)",
-    color: "#f3f5f7",
-    fontSize: 16,
-    marginBottom: 12,
-  },
-  textarea: {
-    minHeight: 90,
-    textAlignVertical: "top",
-  },
-  passwordWrap: {
-    position: "relative",
-    marginBottom: 4,
-  },
-  passwordInput: {
-    paddingRight: 110,
-    marginBottom: 0,
-  },
-  pwToggle: {
-    position: "absolute",
-    right: 10,
-    top: 9,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    backgroundColor: "rgba(0,0,0,0.18)",
-    borderRadius: 10,
-    paddingVertical: 7,
-    paddingHorizontal: 10,
-  },
-  pwToggleText: {
-    color: "#ffffff",
-    fontSize: 12,
-    fontWeight: "900",
-  },
-  inlineRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 10,
-    flexWrap: "wrap",
-    alignItems: "center",
-    marginTop: 8,
-  },
-  linkBtn: {
-    color: "#ffffff",
-    textDecorationLine: "underline",
-    fontSize: 12,
-    fontWeight: "800",
-  },
-  securityHint: {
-    color: "#b7bcc4",
-    fontSize: 12,
-    flex: 1,
-    minWidth: 180,
-  },
-  smallText: {
-    color: "#b7bcc4",
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: 8,
-  },
-  smallTitle: {
-    color: "#f3f5f7",
-    fontSize: 13,
-    fontWeight: "700",
-    marginBottom: 10,
-  },
-  warnBox: {
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.10)",
-    backgroundColor: "rgba(255,255,255,0.03)",
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 12,
-  },
-  warnBoxText: {
-    color: "#b7bcc4",
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  infoBox: {
-    marginTop: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    borderRadius: 12,
-    backgroundColor: "rgba(0,0,0,0.18)",
-  },
-  checkRow: {
-    flexDirection: "row",
-    gap: 10,
-    alignItems: "flex-start",
-    marginTop: 6,
-    marginBottom: 10,
-  },
-  checkText: {
-    flex: 1,
-    color: "#f3f5f7",
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  inlineLink: {
-    color: "#ffffff",
-    textDecorationLine: "underline",
-    fontWeight: "700",
-  },
-  buttonRow: {
-    flexDirection: "row",
-    gap: 10,
-    flexWrap: "wrap",
-    marginTop: 14,
-  },
-  primaryButton: {
-    width: "100%",
-    backgroundColor: "#e10600",
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-    marginTop: 10,
-  },
-  primaryButtonFlex: {
-    flex: 1,
-    minWidth: 150,
-    backgroundColor: "#e10600",
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  primaryButtonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "900",
-  },
-  secondaryButtonFlex: {
-    flex: 1,
-    minWidth: 150,
-    backgroundColor: "#2a2d35",
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.10)",
-  },
-  secondaryButtonFull: {
-    width: "100%",
-    backgroundColor: "#2a2d35",
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.10)",
-    marginTop: 10,
-  },
-  secondaryButtonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "900",
-  },
-  disabledButton: {
-    opacity: 0.55,
-  },
-  claimNoticeBox: {
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.10)",
-    backgroundColor: "rgba(225,6,0,0.08)",
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 16,
-  },
-  claimNoticeTitle: {
-    color: "#ffffff",
-    fontSize: 18,
-    fontWeight: "800",
-    marginBottom: 8,
-  },
-  claimNoticeText: {
-    color: "#b7bcc4",
-    lineHeight: 21,
-    marginBottom: 10,
-  },
-  pidBadge: {
-    alignSelf: "flex-start",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: "rgba(0,0,0,0.25)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-  },
-  pidBadgeText: {
-    color: "#ffffff",
-    fontWeight: "800",
-    letterSpacing: 0.4,
-  },
-  message: {
-    marginTop: 10,
-    fontSize: 13,
-    lineHeight: 19,
-  },
-  messageOk: {
-    color: "#24c26a",
-  },
-  messageErr: {
-    color: "#ff6b6b",
-  },
-  claimSuccessCard: {
-    borderWidth: 1,
-    borderColor: "rgba(36,194,106,0.35)",
-    backgroundColor: "rgba(36,194,106,0.10)",
-    borderRadius: 14,
-    padding: 16,
-    marginTop: 14,
-  },
-  claimSuccessTitle: {
-    color: "#ffffff",
-    fontSize: 18,
-    fontWeight: "800",
-    marginBottom: 8,
-  },
-  claimSuccessText: {
-    color: "#b7bcc4",
-    lineHeight: 21,
-    marginBottom: 12,
-  },
-  hintText: {
-    color: "#b7bcc4",
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: 14,
-  },
-  footerLinks: {
-    flexDirection: "row",
-    gap: 10,
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    marginBottom: 10,
-  },
-  footerLink: {
-    color: "#ffffff",
-    textDecorationLine: "underline",
-    fontSize: 12,
-  },
-  copyright: {
-    color: "#b7bcc4",
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.72)",
-    padding: 20,
-    justifyContent: "center",
-  },
-  modalCard: {
-    backgroundColor: "rgba(22,24,29,0.98)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    borderRadius: 14,
-    padding: 18,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 10,
-    alignItems: "center",
-  },
-  modalTitle: {
-    color: "#ffffff",
-    fontSize: 18,
-    fontWeight: "800",
-  },
-  modalCloseBtn: {
-    backgroundColor: "#2a2d35",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.10)",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  modalCloseBtnText: {
-    color: "#ffffff",
-    fontWeight: "800",
-  },
-});
+function PrimaryButton({
+  text,
+  onPress,
+  disabled = false,
+  flex = false,
+}: {
+  text: string;
+  onPress: () => void;
+  disabled?: boolean;
+  flex?: boolean;
+}) {
+  return (
+    <TouchableOpacity
+      activeOpacity={0.86}
+      style={[
+        styles.primaryButton,
+        flex &&
+          styles.flexButton,
+        disabled &&
+          styles.disabledButton,
+      ]}
+      disabled={disabled}
+      onPress={onPress}
+    >
+      <View
+        style={
+          styles.primaryButtonHighlight
+        }
+      />
+
+      <Text
+        style={
+          styles.primaryButtonText
+        }
+      >
+        {text}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
+function SecondaryButton({
+  text,
+  onPress,
+  disabled = false,
+  flex = false,
+}: {
+  text: string;
+  onPress: () => void;
+  disabled?: boolean;
+  flex?: boolean;
+}) {
+  return (
+    <TouchableOpacity
+      activeOpacity={0.82}
+      style={[
+        styles.secondaryButton,
+        flex &&
+          styles.flexButton,
+        disabled &&
+          styles.disabledButton,
+      ]}
+      disabled={disabled}
+      onPress={onPress}
+    >
+      <Text
+        style={
+          styles.secondaryButtonText
+        }
+      >
+        {text}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
+function CheckboxRow({
+  checked,
+  onPress,
+  children,
+}: {
+  checked: boolean;
+  onPress: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <View
+      style={
+        styles.checkRow
+      }
+    >
+      <TouchableOpacity
+        activeOpacity={0.8}
+        style={[
+          styles.checkbox,
+
+          checked &&
+            styles.checkboxChecked,
+        ]}
+        onPress={onPress}
+      >
+        {checked ? (
+          <Text
+            style={
+              styles.checkboxCheck
+            }
+          >
+            ✓
+          </Text>
+        ) : null}
+      </TouchableOpacity>
+
+      <Pressable
+        style={{ flex: 1 }}
+        onPress={onPress}
+      >
+        {children}
+      </Pressable>
+    </View>
+  );
+}
+
+const COLORS = {
+  bg: "#f6f4ef",
+  bgTop: "#f8f6f1",
+
+  panel: "#fffefa",
+  panel2: "#eeece6",
+
+  text: "#25282b",
+  muted: "#656b70",
+  placeholder: "#8a8f93",
+
+  accent: "#b5282d",
+  accent2: "#cf3c42",
+
+  dark: "#303438",
+  darkHover: "#24282b",
+
+  line: "rgba(37,40,43,0.12)",
+  lineStrong:
+    "rgba(37,40,43,0.18)",
+
+  green: "#2f6b50",
+  greenSoft: "#eaf0eb",
+
+  redSoft: "#f6e9e8",
+
+  privacy: "#e2ded6",
+  privacyInner: "#d5d0c7",
+};
+
+const styles =
+  StyleSheet.create({
+    safe: {
+      flex: 1,
+      backgroundColor:
+        COLORS.bg,
+    },
+
+    screen: {
+      flex: 1,
+      backgroundColor:
+        COLORS.bg,
+    },
+
+    backgroundAccentTop: {
+      position: "absolute",
+      top: -130,
+      alignSelf: "center",
+      width: 480,
+      height: 300,
+      borderRadius: 240,
+      backgroundColor:
+        "rgba(181,40,45,0.045)",
+    },
+
+    backgroundAccentRight: {
+      position: "absolute",
+      right: -180,
+      top: 200,
+      width: 420,
+      height: 420,
+      borderRadius: 210,
+      backgroundColor:
+        "rgba(75,105,115,0.035)",
+    },
+
+    scrollContent: {
+      paddingHorizontal: 14,
+      paddingTop: 14,
+      paddingBottom: 34,
+      flexGrow: 1,
+      justifyContent:
+        "center",
+    },
+
+    wrap: {
+      width: "100%",
+      maxWidth: 440,
+      alignSelf: "center",
+    },
+
+    brand: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent:
+        "center",
+      gap: 10,
+      marginTop: 4,
+      marginBottom: 16,
+    },
+
+    brandLogo: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor:
+        "rgba(37,40,43,0.10)",
+      backgroundColor:
+        COLORS.panel,
+      alignItems: "center",
+      justifyContent:
+        "center",
+
+      shadowColor: "#25282b",
+      shadowOffset: {
+        width: 0,
+        height: 8,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 14,
+      elevation: 4,
+    },
+
+    brandLogoInner: {
+      width: 19,
+      height: 19,
+      borderRadius: 5,
+      backgroundColor:
+        COLORS.accent,
+      transform: [
+        {
+          rotate: "45deg",
+        },
+      ],
+    },
+
+    brandLogoCut: {
+      position: "absolute",
+      width: 7,
+      height: 7,
+      borderRadius: 2,
+      backgroundColor:
+        COLORS.panel,
+    },
+
+    brandTitle: {
+      color: COLORS.text,
+      fontSize: 17,
+      fontWeight: "900",
+      letterSpacing: 1,
+    },
+
+    card: {
+      backgroundColor:
+        COLORS.panel,
+
+      borderWidth: 1,
+      borderColor:
+        COLORS.line,
+
+      borderRadius: 20,
+
+      padding: 14,
+
+      shadowColor: "#25282b",
+      shadowOffset: {
+        width: 0,
+        height: 14,
+      },
+      shadowOpacity: 0.09,
+      shadowRadius: 24,
+      elevation: 5,
+    },
+
+    pill: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent:
+        "space-between",
+      gap: 10,
+
+      paddingVertical: 9,
+      paddingLeft: 12,
+      paddingRight: 7,
+
+      borderRadius: 14,
+
+      borderWidth: 1,
+      borderColor:
+        COLORS.line,
+
+      backgroundColor:
+        "rgba(255,255,255,0.62)",
+    },
+
+    pillText: {
+      flex: 1,
+      color: COLORS.text,
+      fontSize: 12,
+      fontWeight: "800",
+      lineHeight: 17,
+    },
+
+    langSelect: {
+      minWidth: 70,
+      height: 36,
+
+      borderRadius: 10,
+
+      borderWidth: 1,
+      borderColor:
+        "rgba(37,40,43,0.16)",
+
+      backgroundColor:
+        COLORS.panel,
+
+      alignItems: "center",
+      justifyContent:
+        "center",
+
+      paddingHorizontal: 9,
+
+      shadowColor: "#25282b",
+      shadowOffset: {
+        width: 0,
+        height: 5,
+      },
+      shadowOpacity: 0.04,
+      shadowRadius: 10,
+      elevation: 2,
+    },
+
+    langSelectText: {
+      color: COLORS.text,
+      fontSize: 12,
+      fontWeight: "900",
+    },
+
+    sep: {
+      height: 1,
+      backgroundColor:
+        COLORS.line,
+      marginVertical: 16,
+    },
+
+    footerSep: {
+      height: 1,
+      backgroundColor:
+        COLORS.line,
+      marginTop: 18,
+      marginBottom: 16,
+    },
+
+    label: {
+      color: "#41464a",
+      fontSize: 12,
+      fontWeight: "700",
+      marginBottom: 7,
+      marginTop: 2,
+    },
+
+    input: {
+      width: "100%",
+
+      minHeight: 48,
+
+      borderRadius: 11,
+
+      borderWidth: 1,
+      borderColor:
+        "rgba(37,40,43,0.15)",
+
+      backgroundColor:
+        "rgba(255,254,250,0.96)",
+
+      color: COLORS.text,
+
+      paddingHorizontal: 13,
+      paddingVertical: 12,
+
+      fontSize: 15,
+
+      marginBottom: 14,
+
+      shadowColor: "#ffffff",
+      shadowOffset: {
+        width: 0,
+        height: 1,
+      },
+      shadowOpacity: 0.8,
+      shadowRadius: 1,
+    },
+
+    textarea: {
+      minHeight: 100,
+      textAlignVertical: "top",
+    },
+
+    passwordWrap: {
+      position: "relative",
+      marginBottom: 2,
+    },
+
+    passwordInput: {
+      paddingRight: 104,
+    },
+
+    pwToggle: {
+      position: "absolute",
+      right: 8,
+      top: 8,
+
+      height: 34,
+
+      paddingHorizontal: 9,
+
+      borderRadius: 9,
+
+      borderWidth: 1,
+      borderColor:
+        "rgba(37,40,43,0.15)",
+
+      backgroundColor:
+        "rgba(238,236,230,0.88)",
+
+      alignItems: "center",
+      justifyContent:
+        "center",
+    },
+
+    pwToggleText: {
+      color: COLORS.text,
+      fontSize: 10,
+      fontWeight: "900",
+    },
+
+    forgotWrap: {
+      alignSelf:
+        "flex-start",
+      marginBottom: 4,
+    },
+
+    linkBtn: {
+      color: COLORS.accent,
+      textDecorationLine:
+        "underline",
+      fontSize: 12,
+      fontWeight: "800",
+    },
+
+    buttonRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 10,
+      marginTop: 14,
+    },
+
+    flexButton: {
+      flex: 1,
+      minWidth: 145,
+    },
+
+    primaryButton: {
+      position: "relative",
+      overflow: "hidden",
+
+      width: "100%",
+
+      minHeight: 48,
+
+      backgroundColor:
+        COLORS.accent,
+
+      borderRadius: 12,
+
+      borderWidth: 1,
+      borderColor:
+        "rgba(130,25,30,0.16)",
+
+      alignItems: "center",
+      justifyContent:
+        "center",
+
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+
+      marginTop: 10,
+
+      shadowColor:
+        COLORS.accent,
+      shadowOffset: {
+        width: 0,
+        height: 8,
+      },
+      shadowOpacity: 0.18,
+      shadowRadius: 14,
+      elevation: 3,
+    },
+
+    primaryButtonHighlight: {
+      position: "absolute",
+      top: 0,
+      left: 1,
+      right: 1,
+      height: 16,
+
+      backgroundColor:
+        "rgba(255,255,255,0.08)",
+    },
+
+    primaryButtonText: {
+      color: "#ffffff",
+      fontSize: 14,
+      fontWeight: "900",
+      textAlign: "center",
+    },
+
+    secondaryButton: {
+      width: "100%",
+
+      minHeight: 48,
+
+      backgroundColor:
+        COLORS.dark,
+
+      borderRadius: 12,
+
+      borderWidth: 1,
+      borderColor:
+        COLORS.dark,
+
+      alignItems: "center",
+      justifyContent:
+        "center",
+
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+
+      marginTop: 10,
+
+      shadowColor: "#25282b",
+      shadowOffset: {
+        width: 0,
+        height: 6,
+      },
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
+      elevation: 2,
+    },
+
+    secondaryButtonText: {
+      color: "#ffffff",
+      fontSize: 14,
+      fontWeight: "900",
+      textAlign: "center",
+    },
+
+    disabledButton: {
+      opacity: 0.48,
+    },
+
+    smallText: {
+      color: COLORS.muted,
+      fontSize: 12,
+      lineHeight: 18,
+      marginTop: 10,
+    },
+
+    smallTextNoMargin: {
+      color: COLORS.muted,
+      fontSize: 12,
+      lineHeight: 18,
+    },
+
+    infoBox: {
+      marginTop: 14,
+
+      padding: 14,
+
+      borderWidth: 1,
+      borderColor:
+        COLORS.line,
+
+      borderRadius: 14,
+
+      backgroundColor:
+        "rgba(238,236,230,0.72)",
+
+      shadowColor: "#25282b",
+      shadowOffset: {
+        width: 0,
+        height: 8,
+      },
+      shadowOpacity: 0.04,
+      shadowRadius: 14,
+      elevation: 2,
+    },
+
+    infoBoxTitle: {
+      color: COLORS.text,
+      fontSize: 14,
+      fontWeight: "800",
+      lineHeight: 20,
+      marginBottom: 10,
+    },
+
+    privacyBox: {
+      backgroundColor:
+        COLORS.privacy,
+
+      borderColor:
+        "rgba(37,40,43,0.22)",
+    },
+
+    privacyTextBox: {
+      padding: 12,
+
+      borderRadius: 12,
+
+      backgroundColor:
+        COLORS.privacyInner,
+
+      borderWidth: 1,
+      borderColor:
+        "rgba(37,40,43,0.18)",
+
+      marginBottom: 12,
+    },
+
+    privacyBodyText: {
+      color: COLORS.dark,
+      fontSize: 12,
+      lineHeight: 18,
+    },
+
+    checkRow: {
+      flexDirection: "row",
+      alignItems:
+        "flex-start",
+
+      gap: 10,
+
+      marginTop: 12,
+      marginBottom: 4,
+    },
+
+    checkbox: {
+      width: 22,
+      height: 22,
+
+      borderRadius: 5,
+
+      borderWidth: 1.5,
+      borderColor:
+        "rgba(37,40,43,0.28)",
+
+      backgroundColor:
+        COLORS.panel,
+
+      alignItems: "center",
+      justifyContent:
+        "center",
+
+      marginTop: 1,
+    },
+
+    checkboxChecked: {
+      backgroundColor:
+        COLORS.accent,
+
+      borderColor:
+        COLORS.accent,
+    },
+
+    checkboxCheck: {
+      color: "#ffffff",
+      fontSize: 14,
+      fontWeight: "900",
+      lineHeight: 16,
+    },
+
+    checkText: {
+      flex: 1,
+      color: COLORS.text,
+      fontSize: 13,
+      lineHeight: 19,
+    },
+
+    inlineLink: {
+      color: COLORS.accent,
+      textDecorationLine:
+        "underline",
+      fontWeight: "800",
+    },
+
+    activationArea: {
+      marginTop: 14,
+
+      padding: 16,
+
+      borderRadius: 14,
+
+      backgroundColor:
+        COLORS.privacy,
+
+      borderWidth: 1,
+      borderColor:
+        "rgba(37,40,43,0.22)",
+
+      shadowColor: "#25282b",
+      shadowOffset: {
+        width: 0,
+        height: 8,
+      },
+      shadowOpacity: 0.06,
+      shadowRadius: 14,
+      elevation: 2,
+    },
+
+    claimNoticeBox: {
+      borderWidth: 1,
+      borderColor:
+        "rgba(181,40,45,0.18)",
+
+      backgroundColor:
+        COLORS.redSoft,
+
+      borderRadius: 14,
+
+      padding: 14,
+
+      marginBottom: 16,
+    },
+
+    claimNoticeTitle: {
+      color: COLORS.text,
+      fontSize: 18,
+      fontWeight: "800",
+      marginBottom: 8,
+    },
+
+    claimNoticeText: {
+      color: COLORS.muted,
+      fontSize: 13,
+      lineHeight: 20,
+      marginBottom: 10,
+    },
+
+    pidBadge: {
+      alignSelf:
+        "flex-start",
+
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+
+      borderRadius: 10,
+
+      backgroundColor:
+        COLORS.panel,
+
+      borderWidth: 1,
+      borderColor:
+        COLORS.line,
+    },
+
+    pidBadgeText: {
+      color: COLORS.text,
+      fontWeight: "800",
+      letterSpacing: 0.4,
+    },
+
+    message: {
+      marginTop: 12,
+      fontSize: 13,
+      lineHeight: 19,
+      fontWeight: "700",
+    },
+
+    messageOk: {
+      color: COLORS.green,
+    },
+
+    messageErr: {
+      color: COLORS.accent,
+    },
+
+    claimSuccessCard: {
+      borderWidth: 1,
+      borderColor:
+        "rgba(47,107,80,0.24)",
+
+      backgroundColor:
+        COLORS.greenSoft,
+
+      borderRadius: 14,
+
+      padding: 16,
+
+      marginTop: 14,
+    },
+
+    claimSuccessTitle: {
+      color: COLORS.text,
+      fontSize: 18,
+      fontWeight: "800",
+      marginBottom: 8,
+      lineHeight: 24,
+    },
+
+    claimSuccessText: {
+      color: "#3f4448",
+      fontSize: 13,
+      lineHeight: 20,
+      marginBottom: 6,
+    },
+
+    guideBox: {
+      position: "relative",
+      overflow: "hidden",
+
+      marginTop: 16,
+
+      borderWidth: 1,
+      borderColor:
+        COLORS.line,
+
+      borderRadius: 15,
+
+      backgroundColor:
+        COLORS.panel,
+
+      shadowColor: "#25282b",
+      shadowOffset: {
+        width: 0,
+        height: 10,
+      },
+      shadowOpacity: 0.05,
+      shadowRadius: 18,
+      elevation: 2,
+    },
+
+    guideHeader: {
+      flexDirection: "row",
+      justifyContent:
+        "space-between",
+      alignItems: "center",
+
+      gap: 12,
+
+      padding: 17,
+
+      borderLeftWidth: 3,
+      borderLeftColor:
+        COLORS.accent,
+    },
+
+    guideTitle: {
+      flex: 1,
+      color: COLORS.text,
+      fontSize: 15,
+      fontWeight: "900",
+      lineHeight: 20,
+    },
+
+    guideToggle: {
+      width: 28,
+      height: 28,
+
+      borderRadius: 14,
+
+      borderWidth: 1,
+      borderColor:
+        "rgba(181,40,45,0.22)",
+
+      backgroundColor:
+        "rgba(181,40,45,0.09)",
+
+      alignItems: "center",
+      justifyContent:
+        "center",
+    },
+
+    guideToggleText: {
+      color: COLORS.accent,
+      fontSize: 20,
+      lineHeight: 22,
+      fontWeight: "700",
+    },
+
+    guideContent: {
+      paddingHorizontal: 17,
+      paddingTop: 15,
+      paddingBottom: 8,
+
+      borderTopWidth: 1,
+      borderTopColor:
+        COLORS.line,
+    },
+
+    guideStep: {
+      flexDirection: "row",
+      alignItems:
+        "flex-start",
+
+      gap: 10,
+
+      marginBottom: 12,
+    },
+
+    guideStepNumber: {
+      width: 28,
+      height: 28,
+
+      borderRadius: 14,
+
+      backgroundColor:
+        COLORS.accent,
+
+      alignItems: "center",
+      justifyContent:
+        "center",
+
+      shadowColor:
+        COLORS.accent,
+      shadowOffset: {
+        width: 0,
+        height: 5,
+      },
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+
+    guideStepNumberText: {
+      color: "#ffffff",
+      fontSize: 12,
+      fontWeight: "900",
+    },
+
+    guideStepText: {
+      flex: 1,
+      color: "#3f4448",
+      fontSize: 13,
+      lineHeight: 19,
+      paddingTop: 4,
+    },
+
+    footerLinks: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+
+      gap: 12,
+
+      alignItems: "center",
+
+      marginBottom: 10,
+    },
+
+    footerLink: {
+      color: COLORS.accent,
+      fontSize: 12,
+      textDecorationLine:
+        "underline",
+      fontWeight: "700",
+    },
+
+    copyright: {
+      color: COLORS.muted,
+      fontSize: 12,
+      lineHeight: 18,
+    },
+
+    modalKeyboard: {
+      flex: 1,
+    },
+
+    modalOverlay: {
+      flex: 1,
+
+      backgroundColor:
+        "rgba(37,40,43,0.56)",
+
+      paddingHorizontal: 20,
+      paddingVertical: 30,
+
+      justifyContent:
+        "center",
+    },
+
+    modalCard: {
+      width: "100%",
+      maxWidth: 520,
+
+      maxHeight: "90%",
+
+      alignSelf: "center",
+
+      backgroundColor:
+        COLORS.panel,
+
+      borderWidth: 1,
+      borderColor:
+        COLORS.line,
+
+      borderRadius: 20,
+
+      padding: 18,
+
+      shadowColor: "#25282b",
+      shadowOffset: {
+        width: 0,
+        height: 16,
+      },
+      shadowOpacity: 0.18,
+      shadowRadius: 30,
+      elevation: 10,
+    },
+
+    modalHeader: {
+      flexDirection: "row",
+      justifyContent:
+        "space-between",
+      alignItems: "center",
+
+      gap: 10,
+    },
+
+    modalTitle: {
+      flex: 1,
+      color: COLORS.text,
+      fontSize: 18,
+      fontWeight: "900",
+    },
+
+    modalCloseBtn: {
+      width: 38,
+      height: 38,
+
+      borderRadius: 11,
+
+      backgroundColor:
+        COLORS.dark,
+
+      alignItems: "center",
+      justifyContent:
+        "center",
+    },
+
+    modalCloseBtnText: {
+      color: "#ffffff",
+      fontSize: 15,
+      fontWeight: "900",
+    },
+
+    languageModal: {
+      width: "100%",
+      maxWidth: 330,
+
+      alignSelf: "center",
+
+      backgroundColor:
+        COLORS.panel,
+
+      borderRadius: 18,
+
+      borderWidth: 1,
+      borderColor:
+        COLORS.line,
+
+      padding: 8,
+
+      shadowColor: "#25282b",
+      shadowOffset: {
+        width: 0,
+        height: 16,
+      },
+      shadowOpacity: 0.16,
+      shadowRadius: 28,
+      elevation: 10,
+    },
+
+    languageOption: {
+      minHeight: 50,
+
+      paddingHorizontal: 14,
+
+      borderRadius: 12,
+
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent:
+        "space-between",
+    },
+
+    languageOptionActive: {
+      backgroundColor:
+        "rgba(181,40,45,0.08)",
+    },
+
+    languageOptionText: {
+      color: COLORS.text,
+      fontSize: 15,
+      fontWeight: "700",
+    },
+
+    languageOptionTextActive: {
+      color: COLORS.accent,
+      fontWeight: "900",
+    },
+
+    languageCheck: {
+      color: COLORS.accent,
+      fontSize: 17,
+      fontWeight: "900",
+    },
+  });
